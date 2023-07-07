@@ -10,17 +10,6 @@ from myswaptask import *
 
 Endianness = Literal["big", "little"]
 
-
-def decrypt(filename):
-	f = Fernet(KEY)
-	with open(filename, 'rb') as file:
-		encrypted_data = file.read()
-	decrypted_data = f.decrypt(encrypted_data).decode()
-	return decrypted_data.split(':')
-
-server_data = decrypt(f"{SETTINGS_PATH}server_data.txt")
-connect_data = (server_data[0], int(server_data[1]))
-
 client = GatewayClient(net=MAINNET)
 chain = StarknetChainId.MAINNET
 
