@@ -457,7 +457,7 @@ def main():
     addresses = f.read().lower().split("\n")
     f.close()
     for i in range(len(addresses)):
-        if len(addresses[i]) > 50:
+        if len(addresses[i]) < 50:
             addresses[i] = "0x" + "0"*(42-len(addresses[i])) + addresses[i][2::]
         else:
             addresses[i] = "0x" + "0"*(66-len(addresses[i])) + addresses[i][2::]
