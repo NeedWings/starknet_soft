@@ -329,7 +329,9 @@ def task_12():
     for i in range(SETTINGS["AmountToCreate"]):
         account, call_data, salt, class_hash = generate_argent_account()
         web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))    
-        wallet = web3.eth.account.from_key(hex(account.signer.private_key)).address
+        private_key = "0x" + "0"*(66-len(hex(account.signer.private_key))) + hex(account.signer.private_key)[2::]
+
+        wallet = web3.eth.account.from_key(private_key).address
         res += f"{hex(account.signer.private_key)}  {hex(account.address)}  {wallet}\n"
     f = open(f"{SETTINGS_PATH}{SETTINGS['OutFile']}", "w")
     f.write(res)
@@ -379,8 +381,9 @@ async def bridge_to_arb_from_stark(account: Account, delay: int):
     await wait_for_better_eth_gwei(hex(account.address))
 
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+    private_key = "0x" + "0"*(66-len(hex(account.signer.private_key))) + hex(account.signer.private_key)[2::]
 
-    wallet = web3.eth.account.from_key(hex(account.signer.private_key)).address
+    wallet = web3.eth.account.from_key(private_key).address
 
     
     amount = get_random_value(SETTINGS["EtherToWithdraw"])
