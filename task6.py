@@ -57,6 +57,8 @@ async def starkgate(amount: float, private_key: str, recepient: str):
 
 
 async def eth_bridge_official(private_key: str, recepient: str, delay: int):
+    private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
+
     await asyncio.sleep(delay)
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])))
     wallet = web3.eth.account.from_key(private_key).address
