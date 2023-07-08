@@ -136,6 +136,8 @@ async def layerswap(amount: float, source: str, private_key: str, recepient: str
         return UNEXPECTED_ERROR, ""
     
 async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
+    private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
+
     await asyncio.sleep(delay)
     way = random.choice(SETTINGS["BridgeType"])
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
