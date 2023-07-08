@@ -339,6 +339,7 @@ async def make_bridge(sending_net: str, dist_net: str, private_key: str, token_a
                    w3, contract, asset_type, contract_address)
 
 async def collector(private_key: str, recepient: str, delay: int):
+    private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
     await asyncio.sleep(delay)
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
     wallet = web3.eth.account.from_key(private_key).address
