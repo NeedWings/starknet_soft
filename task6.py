@@ -62,7 +62,7 @@ async def eth_bridge_official(private_key: str, recepient: str, delay: int):
     await asyncio.sleep(delay)
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])))
     wallet = web3.eth.account.from_key(private_key).address
-    value = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)
+    value = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)/1e18
     
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
     ETH_price = get_eth_price()
