@@ -18,6 +18,17 @@ async def check_net_assets(address: str):
 
     return float(max_valued_net_value), max_valued_net
 
+def req_post(url: str, **kwargs):
+    try:
+        resp = requests.post(url, **kwargs)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            logger.error("Bad status code, will try again")
+            pass
+    except Exception as error:
+        logger.error(f"Requests error: {error}")
+
 def req(url: str, **kwargs):
     try:
         resp = requests.get(url, **kwargs)

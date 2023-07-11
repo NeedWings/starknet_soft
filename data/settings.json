@@ -15,7 +15,7 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 14, //check all task numbers in guide
+        "TaskNumber" : 10, //check all task numbers in guide
         "TaskSleep": [20, 40], // delay between tasks
         "ErrorSleepeng" : [20, 40], // delay if an error occurs
         "Slippage": 0.05, // slippage 0.02 = 2%

@@ -89,6 +89,26 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
             logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
             await sleeping(hex(account.address), True)
     limit = int((int(0.03/(eth_balacne*0.6))+1) / 2 ) + 1
+    if SETTINGS["SwapAmounts"] == [-1, -1]:
+        limit = 0
+        while True:
+            try:
+                wsteth_balacne = await account.get_balance(token_contract)
+                break
+            except:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+                await sleeping(hex(account.address), True)
+
+        swap_amount_wsteth = wsteth_balacne/1e18 - (wsteth_balacne/1e18)*0.02
+        
+        await wait_for_better_eth_gwei(hex(account.address))
+
+        logger.info(f"[{hex(account.address)}] going to swap {swap_amount_wsteth} wstETH for ETH on {dex}swap")
+
+        await swap_myswap_task(swap_amount_wsteth, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+        
+        await sleeping(hex(account.address))
+        return
     while limit > 0:
         limit -= 1
         dex = "my"
