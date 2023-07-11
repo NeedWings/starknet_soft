@@ -338,10 +338,11 @@ async def make_bridge(sending_net: str, dist_net: str, private_key: str, token_a
     return await process_bridge(private_key, dist_net, sending_net, token_address,
                    w3, contract, asset_type, contract_address)
 
-async def collector(private_key: str, recepient: str, delay: int):
+async def collector(private_key: str, recepient: str, eth_key, delay: int):
     await asyncio.sleep(delay)
-    web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
-    wallet = web3.eth.account.from_key(private_key).address
+    #web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
+    #wallet = web3.eth.account.from_key(private_key).address
+    wallet = eth_account.from_key(eth_key).address #less network footprint
     while True:
         try:
             net_name, amount, ticker_name, token_contract = await check_main_asset(wallet)
@@ -349,13 +350,13 @@ async def collector(private_key: str, recepient: str, delay: int):
             
                 if net_name in ["ARBITRUM_MAINNET"]:
                     logger.info(f'[{wallet}] Will wake swap for eth')
-                    await sushi_swap_handler(private_key, net_name, amount, ticker_name, token_contract)
+                    await sushi_swap_handler(eth_key, net_name, amount, ticker_name, token_contract)
                     break
                 else:
                     while True:
                         logger.info(f"[{wallet}] Want to make bridge! (main asset in net: {net_name})")
                         dist_net = "ARBITRUM_MAINNET"
-                        bridge_status = await make_bridge(net_name, dist_net, private_key, token_contract)
+                        bridge_status = await make_bridge(net_name, dist_net, eth_key, token_contract)
                         break
                         
                     if bridge_status is True:
@@ -380,7 +381,7 @@ async def collector(private_key: str, recepient: str, delay: int):
             logger.error(f"[{wallet}] failed to make bridge/swap Error: " + str(error))
             await sleeping(wallet, True)
     
-    await eth_bridge_no_off(private_key, recepient, 0)
+    await eth_bridge_no_off(private_key, recepient, eth_key, 0)
 
 
 def task_9(stark_keys):

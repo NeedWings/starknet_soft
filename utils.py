@@ -1,6 +1,6 @@
 import random
 from cfg import *
-
+from eth_account import Account as eth_account
 
 
 async def check_net_assets(address: str):

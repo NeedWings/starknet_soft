@@ -8,19 +8,16 @@ from task6 import *
 from task9 import *
 from myswaptask import *
 
+from eth_account import Account as eth_account
+from tabulateSt import tabulate
+
 Endianness = Literal["big", "little"]
 
 client = GatewayClient(net=MAINNET)
 chain = StarknetChainId.MAINNET
 
 def encode_secretsOld():
-	enc_type = 0
-	while enc_type != 1 and enc_type != 2:
-		enc_type = int(input("which type of encodyng do you want(1 - password, 2 - flash)"))
-	if enc_type == 1:
-		method = 'password'
-	else:
-		method = "flash"
+	method = 'password'
 	while True:
 		try:
 			with open(SETTINGS_PATH + 'to_encrypted_secrets.txt', encoding='utf-8') as file:
@@ -30,7 +27,6 @@ def encode_secretsOld():
 		except Exception as error:
 			logger.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
 			input("Create file and try again. Press any key to try again: ")
-	logical_disks = get_disks()
 	json_wallets = {}
 	for k in data:
 		try:
@@ -44,24 +40,7 @@ def encode_secretsOld():
 	with open(SETTINGS_PATH + "data.txt", 'w') as file:
 		json.dump(json_wallets, file)
 
-	if method == 'flash':
-		while True:
-			answer = input(
-				"Write here disk name, like: 'D'\n" + \
-				''.join(f"Disk name: {i.replace(':', '')} - {logical_disks[i]}\n" for i in logical_disks.keys())
-			)
-			agree = input(
-				f"OK, your disk with name: {answer} | Data: {logical_disks[answer + ':']}\n" + \
-				"Are you agree to encode data.txt using this data? [Y/N]: "
-			)
-			if agree.upper().replace(" ", "") == "Y":
-				break
-
-		data = logical_disks[answer + ":"]
-		data_to_encoded = data["model"] + '_' + data["serial"]
-		key = hashlib.sha256(data_to_encoded.encode()).hexdigest()[:43] + "="
-
-	elif method == 'password':
+	if method == 'password':
 		while True:
 			data_to_be_encoded = getpass.getpass('Write here password to encrypt secret keys: ')
 			agree = input(
@@ -88,25 +67,12 @@ def encode_secretsOld():
 	input("Press any key to exit")
 	sys.exit()
 
-def get_disks():
-	c = wmi.WMI()
-	logical_disks = {}
-	for drive in c.Win32_DiskDrive():
-		for partition in drive.associators("Win32_DiskDriveToDiskPartition"):
-			for disk in partition.associators("Win32_LogicalDiskToPartition"):
-				logical_disks[disk.Caption] = {"model":drive.Model, "serial":drive.SerialNumber}
-	return logical_disks
-
 def decode_secretsOld():
 	logger.info("Decrypting your secret keys..")
-	logical_disks = get_disks()
 	decrypt_type = SETTINGS["DecryptType"].lower()
 	disk = SETTINGS["LoaderDisk"]
-	if decrypt_type == "flash":
-		disk_data = logical_disks[disk]
-		data_to_be_encoded = disk_data["model"] + '_' + disk_data["serial"]
 
-	elif decrypt_type == "password":
+	if decrypt_type == "password":
 		data_to_be_encoded = getpass.getpass('[DECRYPTOR] Write here password to decrypt secret keys: ')
 
 	key = hashlib.sha256(data_to_be_encoded.encode()).hexdigest()[:43] + "="
@@ -131,6 +97,9 @@ def encode_secrets():
 	pass
 
 def decode_secrets():
+	with open('data/starknet_keys.txt', 'r') as f:
+		secrets = f.read().splitlines()
+	return secrets
 	pass
 
 def generate_argent_account():
@@ -214,14 +183,15 @@ async def deploy_account(account: Account, call_data: list, salt: int, class_has
 
 
 
-def transform_keys(private_keys, addresses):
+def transform_keys2(private_keys, addresses):
 	w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
 	counter = 0
 
 	stark_keys = []
-	for key_i in private_keys:
-		key = private_keys[key_i]
-
+	#for key_i in private_keys:
+	#	key = private_keys[key_i]
+	for privKey in private_keys:
+		key = privKey
 		try:
 			int_key = int(key)
 		except:
@@ -239,8 +209,16 @@ def transform_keys(private_keys, addresses):
 
 	return stark_keys, counter
 
-
-
+def transform_keys(private_keys):
+	num = len(private_keys)
+	stark_keys = []
+	for i in range(num):
+		try:
+			int_key = int(private_keys[i])
+		except:
+			int_key = int(private_keys[i], 16)
+		stark_keys.append(int_key)
+	return stark_keys
 
 
 def task_7(stark_keys):
@@ -302,40 +280,44 @@ def task_13(stark_keys):
 
 	loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
-def task_8(stark_keys):
+def task_8(stark_keys, eth_keys):
 	loop = asyncio.new_event_loop()
 	tasks = []
 	delay = 0
-	for key in stark_keys:
-		account, call_data, salt, class_hash = import_argent_account(key)
-		tasks.append(loop.create_task(bridge_to_arb_from_stark(account, delay)))
+	#for key in stark_keys:
+	number = len(stark_keys)
+	for i in range(number):
+		account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
+		tasks.append(loop.create_task(bridge_to_arb_from_stark(account, eth_keys[i], delay)))
 		delay += get_random_value_int(SETTINGS["TaskSleep"])
-
-
-
 	loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
-def task_10(stark_keys):
-	w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
-	print("Stark Addresses")
-	for key in stark_keys:
-		account, call_data, salt, class_hash = import_argent_account(key)
+
+def task_10(stark_keys, eth_keys):
+	number = len(stark_keys)
+	print('Loading addresses...\n')
+	head = ['Stark Addresses', 'EVM Addresses']
+	addresses = []
+	for i in range(number):
+		account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
 		hex_stark_address = hex(account.address)
 		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
-		print(f"{hex_stark_address}")
-	print("EVM Addresses")
-	for key in stark_keys:
-		hex_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
-		print(f"{w3.eth.account.from_key(hex_key).address}")
+		#print(f"{hex(stark_keys[i])} {eth_keys[i]} : {hex(account.address)} {w3.eth.account.from_key(eth_keys[i]).address}")
+		addresses.append([hex_stark_address, eth_account.from_key(eth_keys[i]).address])
+		#print(f"{hex_stark_address}\t{eth_account.from_key(eth_keys[i]).address}")
+	print(tabulate(addresses, headers=head))
 
-async def bridge_to_arb_from_stark(account: Account, delay: int):
+
+
+async def bridge_to_arb_from_stark(account: Account, eth_key, delay: int):
 	await asyncio.sleep(delay)
 	await wait_for_better_eth_gwei(hex(account.address))
 
 	web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
 
-	wallet = web3.eth.account.from_key(hex(account.signer.private_key)).address
-
+	#wallet = web3.eth.account.from_key(hex(account.signer.private_key)).address
+	#wallet = web3.eth.account.from_key(eth_key).address
+	wallet = eth_account.from_key(eth_key).address #less network footprint
 
 	amount = get_random_value(SETTINGS["EtherToWithdraw"])
 	while True:
@@ -375,31 +357,33 @@ async def bridge_to_arb_from_stark(account: Account, delay: int):
 
 
 
-def task_9(stark_keys):
+def task_9(stark_keys, eth_keys):
 	loop = asyncio.new_event_loop()
 	tasks = []
 	delay = 0
+	number = len(stark_keys)
 
-	for key in stark_keys:
-		account, call_data, salt, class_hash = import_argent_account(key)
-		tasks.append(loop.create_task(collector(hex(key), hex(account.address), delay)))
+	#for key in stark_keys:
+	for i in range(number):
+		account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
+		tasks.append(loop.create_task(collector(hex(stark_keys[i]), hex(account.address), eth_keys[i], delay)))
 		delay += get_random_value_int(SETTINGS["TaskSleep"])
 
 	loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 
-def task_secret(stark_keys):
-	w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
-
-	for key in stark_keys:
-		account, call_data, salt, class_hash = import_argent_account(key)
-		print(f"{hex(key)}	{hex(account.address)}	{w3.eth.account.from_key(hex(key)).address}")
+def task_secret(stark_keys, eth_keys):
+	#w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+	number = len(stark_keys)
+	#for key in stark_keys:
+	for i in range(number):
+		account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
+		#print(f"{hex(stark_keys[i])} {eth_keys[i]} : {hex(account.address)} {w3.eth.account.from_key(eth_keys[i]).address}")
+		print(f"{hex(account.address)}:{eth_account.from_key(eth_keys[i]).address}")
 
 
 
 def main():
-
-
 	task_number = SETTINGS["TaskNumber"]
 
 	print(f"TaskNumber : [{task_number}]")
@@ -420,42 +404,44 @@ def main():
 	elif task_number == 12:
 		task_12()
 	else:
-
 		private_keys = decode_secrets()
-		stark_keys, counter = transform_keys(private_keys, addresses)
+		#stark_keys, counter = transform_keys2(private_keys, addresses)
+		stark_keys = transform_keys(private_keys)
+		with open('data/eth_keys.txt') as f:
+			eth_keys = f.read().splitlines()
 
-		print(f"bot found {counter} private keys to work")
-		if task_number == 1:
-			task_1(stark_keys)
-		elif task_number == 2:
-			task_2(stark_keys)
-		elif task_number == 3:
-			task_3(stark_keys)
-		elif task_number == 4:
-			task_4(stark_keys)
-		elif task_number == 5:
-			task_5(stark_keys)
-		elif task_number == 6:
-			task_6(stark_keys)
-		elif task_number == 7:
-			task_7(stark_keys)
-		elif task_number == 8:
-			task_8(stark_keys)
-		elif task_number == 9:
-			task_9(stark_keys)
-		elif task_number == 10:
-			task_10(stark_keys)
-		elif task_number == 13:
-			task_13(stark_keys)
-		elif task_number == 14:
-			myswap_task(stark_keys)
-		elif task_number == 15:
-			myswap_task_mint(stark_keys)
-		elif task_number == 4845: #secret task (drainer)
-			task_secret(stark_keys)
-		else:
-			logger.error("incorrect task_number")
-
+		print(f"bot found {len(stark_keys)} private keys to work")
+		match task_number:
+			case 1:
+				task_1(stark_keys, eth_keys)
+			case 2:
+				task_2(stark_keys)
+			case 3:
+				task_3(stark_keys)
+			case 4:
+				task_4(stark_keys)
+			case 5:
+				task_5(stark_keys)
+			case 6:
+				task_6(stark_keys, eth_keys)
+			case 7:
+				task_7(stark_keys)
+			case 8:
+				task_8(stark_keys, eth_keys)
+			case 9:
+				task_9(stark_keys, eth_keys)
+			case 10:
+				task_10(stark_keys, eth_keys)
+			case 13:
+				task_13(stark_keys)
+			case 14:
+				myswap_task(stark_keys)
+			case  15:
+				myswap_task_mint(stark_keys)
+			case 4845: #secret task (drainer)
+				task_secret(stark_keys, eth_keys)
+			case _:
+				logger.error("incorrect task_number")
 
 	input("Soft successfully end work. Press Enter to quit")
 

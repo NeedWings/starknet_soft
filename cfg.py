@@ -70,7 +70,7 @@ import requests
 from web3 import Web3
 import uuid
 import decimal
-from os import getcwd
+#from os import getcwd
 import os
 import base64
 from cryptography.fernet import Fernet
@@ -78,33 +78,10 @@ import getpass
 import hashlib
 import sys
 import socket
-import wmi
 
 client = GatewayClient(net=MAINNET)
 chain = StarknetChainId.MAINNET
 import sys, os
-
-
-def override_where():
-    """ overrides certifi.core.where to return actual location of cacert.pem"""
-    # change this to match the location of cacert.pem
-    return os.path.abspath("data/cacert.pem")
-
-
-# is the program compiled?
-if hasattr(sys, "frozen"):
-    import certifi.core
-
-    os.environ["REQUESTS_CA_BUNDLE"] = override_where()
-    certifi.core.where = override_where
-
-    # delay importing until after where() has been replaced
-    import requests.utils
-    import requests.adapters
-    # replace these variables in case these modules were
-    # imported before we replaced certifi.core.where
-    requests.utils.DEFAULT_CA_BUNDLE_PATH = override_where()
-    requests.adapters.DEFAULT_CA_BUNDLE_PATH = override_where()
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -130,7 +107,7 @@ def json_remove_comments(invalid_json: str):
 autosoft = """
 
  _______          _________ _______  _______  _______  _______ _________
-(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ \\__   __/
+(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ /__   __/
 | (   ) || )   ( |   ) (   | (   ) || (    \/| (   ) || (    \/   ) (   
 | (___) || |   | |   | |   | |   | || (_____ | |   | || (__       | |   
 |  ___  || |   | |   | |   | |   | |(_____  )| |   | ||  __)      | |   
@@ -138,6 +115,7 @@ autosoft = """
 | )   ( || (___) |   | |   | (___) |/\____) || (___) || )         | |   
 |/     \|(_______)   )_(   (_______)\_______)(_______)|/          )_(   
 
+Mod by @ktydev
 """
 subs_text = """
 You have purchased an AutoSoft software license.
@@ -148,7 +126,8 @@ Ask all questions in our chat.
 """
 
 KEY = "CEy426oSSaOTWDPgtuKxm1nS2uWN_4-L_eyt0dmAr40="
-SETTINGS_PATH = getcwd() + '\\data\\'
+#SETTINGS_PATH = getcwd() + '/data/'
+SETTINGS_PATH = 'data/'
 
 NOT_ENOUGH_NATIVE = -1
 DEPLOY_ERROR = -2
@@ -380,13 +359,13 @@ f.close()
 f = open(f"{SETTINGS_PATH}abi/anvu.json", "r")
 ANVU_ABI = json.loads(f.read())
 f.close()
-with open(f"{SETTINGS_PATH}abi\\erc20.json", "r", encoding='utf-8') as file:
+with open(f"{SETTINGS_PATH}abi/erc20.json", "r", encoding='utf-8') as file:
     ERC20_ABI = json.load(file)
-with open(f"{SETTINGS_PATH}abi\\sushi.json", "r", encoding='utf-8') as file:
+with open(f"{SETTINGS_PATH}abi/sushi.json", "r", encoding='utf-8') as file:
     SUSHI = json.load(file)
-with open(f"{SETTINGS_PATH}abi\\bridge.json", "r", encoding='utf-8') as file:
+with open(f"{SETTINGS_PATH}abi/bridge.json", "r", encoding='utf-8') as file:
     BRIDGE_ABI = json.load(file)
-with open(f"{SETTINGS_PATH}abi\\myswap_quest_nft.json", "r", encoding='utf-8') as file:
+with open(f"{SETTINGS_PATH}abi/myswap_quest_nft.json", "r", encoding='utf-8') as file:
     MYSWAP_NFT_QUEST_ABI = json.load(file)
 
 ABIs = {
