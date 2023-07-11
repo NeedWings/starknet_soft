@@ -387,6 +387,7 @@ async def bridge_to_arb_from_stark(account: Account, delay: int):
 
     
     amount = get_random_value(SETTINGS["EtherToWithdraw"])
+
     while True:
             try:
                 balance = await account.get_balance()/1e18

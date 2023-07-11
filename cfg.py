@@ -92,7 +92,7 @@ def override_where():
 
 
 # is the program compiled?
-if hasattr(sys, "frozen"):
+if True:
     import certifi.core
 
     os.environ["REQUESTS_CA_BUNDLE"] = override_where()

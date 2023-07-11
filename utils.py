@@ -71,7 +71,24 @@ async def sleeping(address, error = False):
         logger.info(f'[{address}] sleeping {rand_time} s')
         await asyncio.sleep(rand_time)
 
+async def get_gas_price_evm(address: str, net_name: str):
+        w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER[net_name])))
+        max_gas = Web3.to_wei(SETTINGS.get("GWEI").get(net_name), 'gwei')
 
+        while True:
+            try:
+                gas_price = w3.eth.gas_price
+                if gas_price > max_gas:
+                    h_gas, h_max = Web3.from_wei(gas_price, 'gwei'), Web3.from_wei(max_gas, 'gwei')
+                    logger.error(f'[{address}] Sender net: {net_name}. Current gasPrice: {h_gas} | Max gas price: {h_max}')
+                    await sleeping(f'[{address}] Waiting best gwei. Update after ')
+                else:
+                    return round(gas_price)
+                
+            except Exception as error:
+                logger.error(f'[{address}] Error: {error}')
+                await sleeping(f'[{address}] Error fault. Update after ')
+                
 async def get_native_balance_evm(net_name: str, address: str):
         while True:
             try:

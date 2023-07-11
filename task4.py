@@ -42,18 +42,15 @@ def myswap_liq_call(amount: float, amount_out:float, sender: int, token1: int, t
             int(amount*(10**token1_dec)),
             int(amount*(10**token1_dec) - slippage*amount*(10**token1_dec)),
             token2,
-            int(amount_out - amount_out*slippage),
-            int(amount_out- 2*amount_out*slippage),
+            int(amount_out),
+            int(amount_out- amount_out*slippage),
             )
     return call
 
 async def myswap_liq(amount: float, amount_out: float, token1: int, token2: int, provider: Account):
     token1_dec = DECIMALS[token1]
     token2_dec = DECIMALS[token2]
-    if token1_dec == 18:
-        amount_out = amount*(get_eth_price()-40)
-    elif token1_dec == 6:
-        amount_out =  amount/(get_eth_price()+40)
+
 
     myswap_contract = Contract(MYSWAP_CONTRACT, MYSWAP_ABI, provider)
     token1_contract = Contract(token1, ABIs[token1], provider)

@@ -20,12 +20,13 @@ async def starkgate(amount: float, private_key: str, recepient: str):
         rpc = random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])
 
         web3 = Web3(Web3.HTTPProvider(rpc))
-        fee = await get_fee_for_starkgate(recepient.lower(), int(amount*1e18))
+        fee = await get_fee_for_starkgate(recepient.lower(), int(amount*1e18))/1e18
         wallet = web3.eth.account.from_key(private_key).address
+        gas_price = await get_gas_price_evm(wallet, "ETHEREUM_MAINNET")
 
-        balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)
+        balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)/1e18
         amount = amount-fee
-        if balance < amount*1e18+fee:
+        if balance < amount+fee:
             logger.error(f"[{wallet}] not enough ETH for bridge ")
             return NOT_ENOUGH_NATIVE, ""
         
@@ -35,16 +36,17 @@ async def starkgate(amount: float, private_key: str, recepient: str):
 
         dict_transaction = {
             'chainId': web3.eth.chain_id,
-            'value' : int(amount * 1e18 + fee),
-            'gas': Web3.to_wei(SETTINGS.get("GWEI").get("ETHEREUM_MAINNET"), 'gwei'),
-            'gasPrice': web3.eth.gas_price,
+            'value' : int((amount + fee)*1e18),
+            'gasPrice': gas_price,
             'nonce': web3.eth.get_transaction_count(wallet),
         }
 
         txn = contract.functions.deposit(
             int(amount*1e18), int(recepient, 16)
         ).build_transaction(dict_transaction)
+        gasEstimate = web3.eth.estimate_gas(txn)
 
+        txn['gas'] = round(gasEstimate)*2
         signed_txn = web3.eth.account.sign_transaction(txn, private_key)
         txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         logger.success(f"[{wallet}] txn has sent, hash: { Web3.to_hex(txn_hash)}")
@@ -80,7 +82,6 @@ async def eth_bridge_official(private_key: str, recepient: str, delay: int):
     if value < amount:
         amount = value
     
-    amount = amount - get_random_value(SETTINGS["SaveOnWallet"])
     logger.info(f"[{wallet}] going to bridge {amount} ETH in starkgate to {recepient}")
     await starkgate(amount, private_key, recepient)
     await sleeping(wallet)
