@@ -1,0 +1,96 @@
+{
+    
+    "===============  RPC  ===============": "",
+        "RPC": {
+            "ETHEREUM_MAINNET"  : ["https://eth.llamarpc.com"],
+            "BSC_MAINNET"       : ["https://bsc.publicnode.com"],
+            "POLYGON_MAINNET"   : ["https://polygon.llamarpc.com"],
+            "ARBITRUM_MAINNET"  : ["https://endpoints.omniatech.io/v1/arbitrum/one/public"],
+            "AVALANCHE_MAINNET" : ["https://avax.meowrpc.com"],
+            "OPTIMISM_MAINNET"  : ["https://optimism.meowrpc.com"]
+        },
+     
+    "===== Download Settings =====":"",
+        "LoaderDisk"  : "E:",
+        "DecryptType" : "Password", 
+    
+    "===== SOFT MODE ===== ": "",
+        "TaskNumber" : 10, //check all task numbers in guide
+        "TaskSleep": [5, 10], // delay between tasks
+        "ErrorSleepeng" : [5, 10], // delay if an error occurs
+        "Slippage": 0.05, // slippage 0.02 = 2%
+        "RetriesLimit": 50, // how many times soft will try to resend transaction in starknet
+
+    
+
+    "======== BRIDGE =========": "",
+        "BridgeType"                  : ["orbiter", "layerswap"], // bridge to deposit in starknet
+        "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
+        "SaveOnWallet"                : [0.025, 0.026], // how many eth save on wallet
+        "USDAmountToBridge"           : [28, 34], // amount in usd to bridge
+
+    
+    "======== WITHDRAW  =========": "",
+        "WithdrawSaving"              : [0.001, 0.002], // how many eth save on starknet wallet
+        "EtherToWithdraw"             : [0.05, 0.8], // how many eth to withdraw
+
+
+    "====== PARSER ======": "",
+        "ParsingSleep" : 30, // delay between parsing ballance for bridge to starknet
+        "minUSDamount" : 30, // minimal usd value for module 9
+        
+
+    "====== SWAPS =====": "",
+        "SwapAmounts"           : [5, 7], // amount of swaps
+        "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
+
+        "WorkPercent"           : [0.25, 0.35], // percent of balance to swap (0.5 = 50%)
+        "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
+        "TokensToSwapOnAcc"      : [0.90, 0.95], // percent of Tokens to swap back to eth (0.5 = 50%)
+        "MINIMAL_SWAP_AMOUNTS": { 
+            "USDC": 1, // minimal amount to swap for every token
+            "USDT": 1
+        },
+
+
+
+    "===== LIQUIDITY =====": "",
+        "LiqWorkPercent"          : [0.03, 0.05], // percent of balance to add liquidity (0.5 = 50%)
+        "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
+        "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
+        "RemoveOnFullMode"        : [false], // remove liquidity from DEXes on the end of FULL module
+        "AddLiqAmount"            : [1, 2], // how many times add liquidity
+
+    
+    "====== GENERATOR ======": "", 
+        "AmountToCreate"          : 20, // how many wallets to generate
+        "OutFile"                 : "generated_wallets.txt", // the name of the file where the soft will save the generated wallets
+
+    "======= MAX GWEI =======": "",
+        "GWEI": {
+            "ARBITRUM_MAINNET"  : 0.25,
+            "AVALANCHE_MAINNET" : 50,
+            "POLYGON_MAINNET"   : 700,
+            "ETHEREUM_MAINNET"  : 25,
+            "BSC_MAINNET"       : 10,
+            "OPTIMISM_MAINNET"  : 0.3
+        },
+
+    "======= Max L0 Fees Settings =======": "",
+        "FEES": {
+            "BSC_MAINNET"       : 0.005,
+            "POLYGON_MAINNET"   : 1.3,
+            "ARBITRUM_MAINNET"  : 0.00095,
+            "AVALANCHE_MAINNET" : 0.11,
+            "OPTIMISM_MAINNET"  : 0.00095,
+            "ETHEREUM_MAINNET"  : 0.00095
+        },
+
+    "======= Max Starknet Fee Settings =======": "",
+        "MaxFee" : 0.001, // Max gas soft can spend on starknet transaction
+        "MaxETHGwei": 40, // Max gwei value in Etherium net
+
+
+    "========= END =========": ""
+    
+}
