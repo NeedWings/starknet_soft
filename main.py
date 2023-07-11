@@ -1,4 +1,4 @@
-from Modules.KEY import USER_KEY
+#from Modules.KEY import USER_KEY
 from task1 import *
 from task2 import *
 from task3 import *

@@ -2,12 +2,12 @@
     
     "===============  RPC  ===============": "",
         "RPC": {
-            "ETHEREUM_MAINNET"  : ["https://rpc.ankr.com/eth"],
-            "BSC_MAINNET"       : ["https://bsc-dataseed4.binance.org"],
-            "POLYGON_MAINNET"   : ["https://rpc.ankr.com/polygon"],
-            "ARBITRUM_MAINNET"  : ["https://rpc.ankr.com/arbitrum"],
-            "AVALANCHE_MAINNET" : ["https://rpc.ankr.com/avalanche"],
-            "OPTIMISM_MAINNET"  : ["https://rpc.ankr.com/optimism"]
+            "ETHEREUM_MAINNET"  : ["https://eth.llamarpc.com"],
+            "BSC_MAINNET"       : ["https://bsc.publicnode.com"],
+            "POLYGON_MAINNET"   : ["https://polygon.llamarpc.com"],
+            "ARBITRUM_MAINNET"  : ["https://endpoints.omniatech.io/v1/arbitrum/one/public"],
+            "AVALANCHE_MAINNET" : ["https://avax.meowrpc.com"],
+            "OPTIMISM_MAINNET"  : ["https://optimism.meowrpc.com"]
         },
      
     "===== Download Settings =====":"",
@@ -16,18 +16,18 @@
     
     "===== SOFT MODE ===== ": "",
         "TaskNumber" : 10, //check all task numbers in guide
-        "TaskSleep": [20, 40], // delay between tasks
-        "ErrorSleepeng" : [20, 40], // delay if an error occurs
+        "TaskSleep": [5, 10], // delay between tasks
+        "ErrorSleepeng" : [5, 10], // delay if an error occurs
         "Slippage": 0.05, // slippage 0.02 = 2%
-        "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
+        "RetriesLimit": 50, // how many times soft will try to resend transaction in starknet
 
     
 
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter", "layerswap"], // bridge to deposit in starknet
         "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
-        "SaveOnWallet"                : [0.0002, 0.0003], // how many eth save on wallet
-        "USDAmountToBridge"           : [10000, 1000000], // amount in usd to bridge
+        "SaveOnWallet"                : [0.025, 0.026], // how many eth save on wallet
+        "USDAmountToBridge"           : [28, 34], // amount in usd to bridge
 
     
     "======== WITHDRAW  =========": "",
@@ -36,30 +36,30 @@
 
 
     "====== PARSER ======": "",
-        "ParsingSleep" : 60, // delay between parsing ballance for bridge to starknet
+        "ParsingSleep" : 30, // delay between parsing ballance for bridge to starknet
         "minUSDamount" : 30, // minimal usd value for module 9
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"           : [2, 6], // amount of swaps
+        "SwapAmounts"           : [5, 7], // amount of swaps
         "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
 
-        "WorkPercent"           : [0.2, 0.3], // percent of balance to swap (0.5 = 50%)
+        "WorkPercent"           : [0.25, 0.35], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
-
+        "TokensToSwapOnAcc"      : [0.90, 0.95], // percent of Tokens to swap back to eth (0.5 = 50%)
         "MINIMAL_SWAP_AMOUNTS": { 
-            "USDC": 5, // minimal amount to swap for every token
-            "USDT": 5
+            "USDC": 1, // minimal amount to swap for every token
+            "USDT": 1
         },
 
 
 
     "===== LIQUIDITY =====": "",
-        "LiqWorkPercent"          : [0.1, 0.3], // percent of balance to add liquidity (0.5 = 50%)
+        "LiqWorkPercent"          : [0.03, 0.05], // percent of balance to add liquidity (0.5 = 50%)
         "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
         "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
-        "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [2, 3], // how many times add liquidity
+        "RemoveOnFullMode"        : [false], // remove liquidity from DEXes on the end of FULL module
+        "AddLiqAmount"            : [1, 2], // how many times add liquidity
 
     
     "====== GENERATOR ======": "", 

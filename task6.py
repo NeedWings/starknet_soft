@@ -20,32 +20,32 @@ async def starkgate(amount: float, eth_key: str, recepient: str):
 		rpc = random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])
 
 		web3 = Web3(Web3.HTTPProvider(rpc))
-		fee = await get_fee_for_starkgate(recepient.lower(), int(amount*1e18))
+		fee = await get_fee_for_starkgate(recepient.lower(), int(amount*1e18))/1e18
 		#wallet = web3.eth.account.from_key(eth_key).address
 		wallet = eth_account.from_key(eth_key).address #less network footprint
+		gas_price = await get_gas_price_evm(wallet, "ETHEREUM_MAINNET")
 
-
-		balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)
-		if balance < amount*1e18+fee:
+		balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)/1e18
+		amount = amount-fee
+		if balance < amount+fee:
 			logger.error(f"[{wallet}] not enough ETH for bridge ")
 			return NOT_ENOUGH_NATIVE, ""
 
 		contract = web3.eth.contract(STARKGATE_CONTRACT, abi=STARKGATE_ABI)
 
-
-
 		dict_transaction = {
 			'chainId': web3.eth.chain_id,
-			'value' : int(amount * 1e18 + fee),
-			'gas': 300000,
-			'gasPrice': web3.eth.gas_price,
+			'value' : int((amount + fee)*1e18),
+			'gasPrice': gas_price,
 			'nonce': web3.eth.get_transaction_count(wallet),
 		}
 
 		txn = contract.functions.deposit(
 			int(amount*1e18), int(recepient, 16)
 		).build_transaction(dict_transaction)
+		gasEstimate = web3.eth.estimate_gas(txn)
 
+		txn['gas'] = round(gasEstimate)*2
 		signed_txn = web3.eth.account.sign_transaction(txn, eth_key)
 		txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
 		logger.success(f"[{wallet}] txn has sent, hash: { Web3.to_hex(txn_hash)}")
@@ -56,14 +56,20 @@ async def starkgate(amount: float, eth_key: str, recepient: str):
 		await sleeping(wallet, True)
 		return UNEXPECTED_ERROR, ""
 
-
-
 async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: int):
+	#private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
 	await asyncio.sleep(delay)
 	#web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])))
-	#wallet = web3.eth.account.from_key(eth_key).address
+	#wallet = web3.eth.account.from_key(private_key).address
 	wallet = eth_account.from_key(eth_key).address #less network footprint
-	value = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)
+	while True:
+		value = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)/1e18
+		value = value - get_random_value(SETTINGS["SaveOnWallet"])
+		if value >= SETTINGS["MinEthValue"]:
+			break
+		else:
+			logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
+			await sleeping(wallet, True)
 
 	amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
 	ETH_price = get_eth_price()
@@ -78,8 +84,6 @@ async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: 
 	await starkgate(amount, eth_key, recepient)
 	await sleeping(wallet)
 
-
-
 def task_6(stark_keys, eth_keys):
 	loop = asyncio.new_event_loop()
 	tasks = []
@@ -88,7 +92,7 @@ def task_6(stark_keys, eth_keys):
 	#for key in stark_keys:
 	for i in range(number):
 		account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
-		tasks.append(loop.create_task(eth_bridge_official(hex(key), hex(account.address), eth_keys[i], delay)))
+		tasks.append(loop.create_task(eth_bridge_official(hex(stark_keys[i]), hex(account.address), eth_keys[i], delay)))
 		delay += get_random_value_int(SETTINGS["TaskSleep"])
 
 	loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
