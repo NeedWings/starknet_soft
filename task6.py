@@ -56,7 +56,7 @@ async def starkgate(amount: float, eth_key: str, recepient: str):
 		await sleeping(wallet, True)
 		return UNEXPECTED_ERROR, ""
 
-async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: int):
+async def eth_bridge_officialOld(private_key: str, recepient: str, eth_key, delay: int):
 	#private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
 	await asyncio.sleep(delay)
 	#web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])))
@@ -78,8 +78,24 @@ async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: 
 
 	if value < amount:
 		amount = value
+	logger.info(f"[{wallet}] going to bridge {amount} ETH in starkgate to {recepient}")
+	await starkgate(amount, eth_key, recepient)
+	await sleeping(wallet)
 
-	amount = amount - get_random_value(SETTINGS["SaveOnWallet"])
+async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: int):
+	await asyncio.sleep(delay)
+	wallet = eth_account.from_key(eth_key).address #less network footprint
+	while True:
+		balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)/1e18
+		amount = balance * get_random_value(SETTINGS["EthShareToBridge"])
+		value = balance - get_random_value(SETTINGS["SaveOnWallet"])
+		if value >= SETTINGS["MinEthValue"]:
+			break
+		else:
+			logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
+			await sleeping(wallet, True)
+	if value < amount:
+		amount = value
 	logger.info(f"[{wallet}] going to bridge {amount} ETH in starkgate to {recepient}")
 	await starkgate(amount, eth_key, recepient)
 	await sleeping(wallet)
