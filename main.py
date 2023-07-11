@@ -446,8 +446,8 @@ def main():
 	input("Soft successfully end work. Press Enter to quit")
 
 
-
-main()
+if __name__ == "__main__":
+	main()
 
 
 
