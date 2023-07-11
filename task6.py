@@ -93,6 +93,7 @@ async def eth_bridge_official(private_key: str, recepient: str, eth_key, delay: 
 			break
 		else:
 			logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
+			return
 			await sleeping(wallet, True)
 	if value < amount:
 		amount = value
