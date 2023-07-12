@@ -32,3 +32,4 @@ if __name__ == "__main__":
 	print(f'Loaded {i} chunks')
 	with multiprocessing.Pool(processes=poolnum) as s:
 		s.starmap(runner, args)
+	input("Finished\n")
