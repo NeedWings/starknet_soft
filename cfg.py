@@ -6,6 +6,8 @@ from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.contract import Contract, PreparedFunctionCall
+from random import shuffle
+import multiprocessing
 try:
     import Crypto.Hash._keccak
     import cytoolz._signatures
@@ -79,6 +81,8 @@ import hashlib
 import sys
 import socket
 import wmi
+from aiohttp import ClientSession
+
 
 client = GatewayClient(net=MAINNET)
 chain = StarknetChainId.MAINNET
@@ -397,5 +401,7 @@ ABIs = {
 }
 
 
+client = GatewayClient(net=MAINNET)
+chain = StarknetChainId.MAINNET
 
 slippage = SETTINGS["Slippage"]

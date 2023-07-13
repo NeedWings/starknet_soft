@@ -88,7 +88,7 @@ async def get_gas_price_evm(address: str, net_name: str):
             except Exception as error:
                 logger.error(f'[{address}] Error: {error}')
                 await sleeping(f'[{address}] Error fault. Update after ')
-                
+
 async def get_native_balance_evm(net_name: str, address: str):
         while True:
             try:
@@ -107,7 +107,7 @@ def get_random_value_int(param):
 def get_random_value(param):
     return random.uniform(param[0], param[1])
 
-def import_argent_account(private_key: int):
+def import_argent_account(private_key: int, client):
     class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
     
     key_pair = KeyPair.from_private_key(private_key)

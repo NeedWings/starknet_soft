@@ -184,7 +184,7 @@ def task_1(stark_keys):
     delay = 0
 
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(eth_bridge_no_off(hex(key), hex(account.address), delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 

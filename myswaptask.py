@@ -94,6 +94,7 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
     limit = int((int(0.05/(eth_balacne*0.6))+1) / 2 ) + 1
     if SETTINGS["SwapAmounts"] == [-1, -1]:
         limit = 0
+        token_contract = TOKENS["wstETH"]
         while True:
             try:
                 wsteth_balacne = await account.get_balance(token_contract)
@@ -204,7 +205,7 @@ def myswap_task(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(random_swaps_myswap_quest(account, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
@@ -224,7 +225,7 @@ def myswap_task_mint(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(myswap_mint_only(account, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 

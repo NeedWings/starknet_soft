@@ -373,7 +373,7 @@ def task_9(stark_keys):
     tasks = []
 
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(collector(account)))
 
     

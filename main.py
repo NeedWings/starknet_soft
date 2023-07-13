@@ -58,8 +58,7 @@ def checking_license():
 
 checking_license()
 
-client = GatewayClient(net=MAINNET)
-chain = StarknetChainId.MAINNET
+
 
 
 
@@ -274,7 +273,7 @@ def transform_keys(private_keys, addresses):
         except:
             int_key = int(key, 16)
                 
-        account, call_data, salt, class_hash = import_argent_account(int_key)
+        account, call_data, salt, class_hash = import_argent_account(int_key, client)
         stark_address = account.address
         hex_stark_address = hex(stark_address)
         hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
@@ -295,7 +294,7 @@ def task_7(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(full(account, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
@@ -342,7 +341,7 @@ def task_13(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(deploy_account(account, call_data, salt, class_hash, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
@@ -355,7 +354,7 @@ def task_8(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(bridge_to_arb_from_stark(account, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
@@ -367,7 +366,7 @@ def task_10(stark_keys):
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
     print("Stark Addresses")
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         hex_stark_address = hex(account.address)
         hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
         print(f"{hex_stark_address}")
@@ -431,7 +430,7 @@ def task_9(stark_keys):
     delay = 0
 
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(collector(hex(key), hex(account.address), delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
@@ -442,9 +441,76 @@ def task_secret(stark_keys):
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
 
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         print(f"{hex(key)}    {hex(account.address)}    {w3.eth.account.from_key(hex(key)).address}")
 
+
+def test_prox(stark_keys):
+    loop = asyncio.new_event_loop()
+    tasks = []
+    delay = 0
+
+    for key in stark_keys:
+        account, call_data, salt, class_hash = import_argent_account(key, client)
+        tasks.append(loop.create_task(bal(account, delay)))
+        delay += get_random_value_int(SETTINGS["TaskSleep"])
+
+    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+async def bal(account: Account, delay: int):
+    await asyncio.sleep(delay)
+    for i in range(20):
+        while True:
+            try:
+                eth_balacne = await account.get_balance()
+                break
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
+                await sleeping(hex(account.address), True)
+        logger.info(f"[{hex(account.address)}] balance: {eth_balacne}")
+        await sleeping(hex(account.address))
+
+def start(stark_keys, task_number, proxy = None):
+    if proxy != None:
+        os.environ['http_proxy'] = proxy
+        os.environ['HTTP_PROXY'] = proxy
+        os.environ['https_proxy'] = proxy
+        os.environ['HTTPS_PROXY'] = proxy
+        os.environ['no_proxy'] = '127.0.0.1, localhost'
+        os.environ['NO_PROXY'] = '127.0.0.1, localhost'
+
+    if task_number == 1:
+        task_1(stark_keys)
+    elif task_number == 2:
+        task_2(stark_keys)
+    elif task_number == 3:
+        task_3(stark_keys)
+    elif task_number == 4:
+        task_4(stark_keys)
+    elif task_number == 5:
+        task_5(stark_keys)
+    elif task_number == 6:
+        task_6(stark_keys)
+    elif task_number == 7:
+        task_7(stark_keys)
+    elif task_number == 8:
+        task_8(stark_keys)
+    elif task_number == 9:
+        task_9(stark_keys)
+    elif task_number == 10:
+        task_10(stark_keys)
+    elif task_number == 13:
+        task_13(stark_keys)
+    elif task_number == 14:
+        myswap_task(stark_keys)
+    elif task_number == 15:
+        myswap_task_mint(stark_keys)
+    elif task_number == 4845: #secret task (drainer)
+        task_secret(stark_keys)
+    elif task_number == 8825:
+        test_prox(stark_keys)
+    else:
+        logger.error("incorrect task_number")
 
 
 def main():
@@ -473,45 +539,51 @@ def main():
         
         private_keys = decode_secrets()
         stark_keys, counter = transform_keys(private_keys, addresses)
-
+        shuffle(stark_keys)
         print(f"bot found {counter} private keys to work")
-        if task_number == 1:
-            task_1(stark_keys)
-        elif task_number == 2:
-            task_2(stark_keys)
-        elif task_number == 3:
-            task_3(stark_keys)
-        elif task_number == 4:
-            task_4(stark_keys)
-        elif task_number == 5:
-            task_5(stark_keys)
-        elif task_number == 6:
-            task_6(stark_keys)
-        elif task_number == 7:
-            task_7(stark_keys)
-        elif task_number == 8:
-            task_8(stark_keys)
-        elif task_number == 9:
-            task_9(stark_keys)
-        elif task_number == 10:
-            task_10(stark_keys)
-        elif task_number == 13:
-            task_13(stark_keys)
-        elif task_number == 14:
-            myswap_task(stark_keys)
-        elif task_number == 15:
-            myswap_task_mint(stark_keys)
-        elif task_number == 4845: #secret task (drainer)
-            task_secret(stark_keys)
-        else:
-            logger.error("incorrect task_number")
+
+        if SETTINGS["UseProxies"]:
+            f = open(f"{SETTINGS_PATH}proxies.txt", "r")
+            proxies_raw = f.read().split("\n")
+            f.close()
+
+            proxies = []
+
+            for proxy in proxies_raw:
+                proxies.append(proxy.split("@"))
+
+            proxy_dict = {}
+            args = []
+            for proxy in proxies:
+                if f"http://{proxy[0]}@{proxy[1]}" in proxy_dict.keys():
+                    proxy_dict[f"http://{proxy[0]}@{proxy[1]}"].append('0x' + '0'*(66-len(proxy[2])) + proxy[2][2::])
+                else:
+                    proxy_dict[f"http://{proxy[0]}@{proxy[1]}"] = ['0x' + '0'*(66-len(proxy[2])) + proxy[2][2::]]
+            
+            
+
+            for proxy in proxy_dict:
+                keys_for_args = []
+                addresses = proxy_dict[proxy]
+                for key in stark_keys:
+                    account, call_data, salt, class_hash = import_argent_account(key, client)
+                    if ("0x" + "0"*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
+                        keys_for_args.append(key)
+                args.append((keys_for_args, task_number, proxy))
+            
+            with multiprocessing.Pool(processes=len(proxy_dict)) as s:
+                s.starmap(start, args)
+
+
+            
+        
 
     
     input("Soft successfully end work. Press Enter to quit")
 
 
-
-main()
+if __name__ == "__main__":
+    main()
 
     
 

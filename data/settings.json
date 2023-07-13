@@ -15,23 +15,24 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 10, //check all task numbers in guide
+        "TaskNumber" : 11, //check all task numbers in guide
         "TaskSleep": [20, 40], // delay between tasks
         "ErrorSleepeng" : [20, 40], // delay if an error occurs
-        "Slippage": 0.05, // slippage 0.02 = 2%
+        "Slippage": 0.1, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
+        "UseProxies": true, //Use or not proxies
 
     
 
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter", "layerswap"], // bridge to deposit in starknet
         "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
-        "SaveOnWallet"                : [0.0002, 0.0003], // how many eth save on wallet
+        "SaveOnWallet"                : [0.004, 0.007], // how many eth save on wallet
         "USDAmountToBridge"           : [10000, 1000000], // amount in usd to bridge
 
     
     "======== WITHDRAW  =========": "",
-        "WithdrawSaving"              : [0.001, 0.002], // how many eth save on starknet wallet
+        "WithdrawSaving"              : [0.0001, 0.0002], // how many eth save on starknet wallet
         "EtherToWithdraw"             : [0.05, 0.8], // how many eth to withdraw
 
 
@@ -41,15 +42,15 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"           : [2, 6], // amount of swaps
+        "SwapAmounts"           : [-1, -1], // amount of swaps
         "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
 
         "WorkPercent"           : [0.2, 0.3], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
 
         "MINIMAL_SWAP_AMOUNTS": { 
-            "USDC": 5, // minimal amount to swap for every token
-            "USDT": 5
+            "USDC": 2, // minimal amount to swap for every token
+            "USDT": 2
         },
 
 
@@ -71,7 +72,7 @@
             "ARBITRUM_MAINNET"  : 0.25,
             "AVALANCHE_MAINNET" : 50,
             "POLYGON_MAINNET"   : 700,
-            "ETHEREUM_MAINNET"  : 25,
+            "ETHEREUM_MAINNET"  : 40,
             "BSC_MAINNET"       : 10,
             "OPTIMISM_MAINNET"  : 0.3
         },
@@ -88,7 +89,7 @@
 
     "======= Max Starknet Fee Settings =======": "",
         "MaxFee" : 0.001, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 40, // Max gwei value in Etherium net
+        "MaxETHGwei": 4099, // Max gwei value in Etherium net
 
 
     "========= END =========": ""

@@ -204,7 +204,7 @@ def task_4(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(add_liq_task(account, delay)))
         delay += get_random_value_int(SETTINGS["TaskSleep"])
 
