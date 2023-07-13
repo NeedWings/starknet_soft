@@ -35,7 +35,7 @@ async def swap_to_eth(account: Account, delay: int):
             continue
         dex = random.choice(SETTINGS["SwapDEXs"])
         logger.info(f'{token_balance} multiplying by 0.95')
-        token_balance = token_balance * 0.95
+        token_balance = token_balance * get_random_value(SETTINGS["TokensToSwapOnAcc"])
         if dex not in SUPPORTED_FOR_SWAPS:
             logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
             input("Please restart soft with correct settings")
