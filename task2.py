@@ -168,8 +168,8 @@ async def swap(amount: float, dex: str, token1: int, token2: int, provider: Acco
         try:
             token1_balance = await provider.get_balance(token1)/10**DECIMALS[token1]
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
+        except Exception as e:
+            logger.error(f"[{hex(provider.address)}] can't get balance. {e} ")
             await sleeping(hex(provider.address), True)
     if token1_balance < amount:
         logger.error(f"[{hex(provider.address)}] not enough token for swap: balance {token1_balance}, required {amount}")
@@ -201,38 +201,84 @@ async def random_swaps(account: Account, delay: int):
         eth_price = get_eth_price()
         while True:
             try:
-                eth_balacne = await account.get_balance()
+                eth_balacne = await account.get_balance()/1e18
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
                 await sleeping(hex(account.address), True)
-        swap_amount_eth = (eth_balacne * get_random_value(SETTINGS["WorkPercent"]))/1e18
-        
-        usd_value = swap_amount_eth * eth_price
-        
-        token = random.choice(SETTINGS["Supported_tokens"])
-        try:
-            token_contract = TOKENS[token]
-        except:
-            logger.error(f"Selected unsupported token ({token}), please choose one from this (USDT, USDC)")
-            input("Please restart soft with correct settings")
-        
-        
+        while True:
+            try:
+                usdt_balacne = await account.get_balance(USDT_TOKEN_CONTRACT)/1e6
+                break
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
+                await sleeping(hex(account.address), True)
+        while True:
+            try:
+                usdc_balacne = await account.get_balance(USDC_TOKEN_CONTRACT)/1e6
+                break
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
+                await sleeping(hex(account.address), True)
+        logger.info(f"[{hex(account.address)}] got ETH balance: {eth_balacne}")
+        logger.info(f"[{hex(account.address)}] got USDC balance: {usdc_balacne}")
+        logger.info(f"[{hex(account.address)}] got USDT balance: {usdt_balacne}")
+        eth_usd_value = eth_balacne * eth_price
+        to_choose = {
+            eth_usd_value : ETH_TOKEN_CONTRACT,
+            usdt_balacne : USDT_TOKEN_CONTRACT,
+            usdc_balacne : USDC_TOKEN_CONTRACT
+        }
+        balances = [
+            eth_usd_value, usdt_balacne, usdc_balacne
+        ]
 
-        if usd_value < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token]:
-            logger.error(f"[{hex(account.address)}] Error while trying to swap: want to swap {usd_value} {token}, which is below minimum {SETTINGS['MINIMAL_SWAP_AMOUNTS'][token]}")
-            await sleeping(hex(account.address), True)
-            continue
+        token_contract = to_choose[max(balances)]
+        if token_contract == ETH_TOKEN_CONTRACT:
+            swap_amount_eth = eth_balacne * get_random_value(SETTINGS["WorkPercent"])
 
-        if dex not in SUPPORTED_FOR_SWAPS:
-            logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
-            input("Please restart soft with correct settings")
-        
-        logger.info(f"[{hex(account.address)}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
+            usd_value = swap_amount_eth * eth_price
 
-        await swap(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
-        
+            token = random.choice(SETTINGS["Supported_tokens"])
+            try:
+                token_contract = TOKENS[token]
+            except:
+                logger.error(f"Selected unsupported token ({token}), please choose one from this (USDT, USDC)")
+                input("Please restart soft with correct settings")
+
+
+
+            if usd_value < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token]:
+                logger.error(f"[{hex(account.address)}] Error while trying to swap: want to swap {usd_value} {token}, which is below minimum {SETTINGS['MINIMAL_SWAP_AMOUNTS'][token]}")
+                await sleeping(hex(account.address), True)
+                continue
+
+            if dex not in SUPPORTED_FOR_SWAPS:
+                logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
+                input("Please restart soft with correct settings")
+
+            logger.info(f"[{hex(account.address)}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
+
+            await swap(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
+        else:
+            dex = random.choice(SETTINGS["SwapDEXs"])
+            if token_contract == USDT_TOKEN_CONTRACT:
+                token = "USDT"
+            else:
+                token = "USDC"
+            token_balance = max(balances) * get_random_value(SETTINGS["WorkPercent"])
+            if dex not in SUPPORTED_FOR_SWAPS:
+                logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
+                input("Please restart soft with correct settings")
+            await wait_for_better_eth_gwei(hex(account.address))
+
+            logger.info(f"[{hex(account.address)}] going to swap {token_balance} {token} for ETH on {dex}swap")
+
+
+            await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+
         await sleeping(hex(account.address))
+        
 
 
 def task_2(stark_keys):
@@ -242,7 +288,7 @@ def task_2(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(random_swaps(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))

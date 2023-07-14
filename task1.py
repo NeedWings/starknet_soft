@@ -142,6 +142,7 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     way = random.choice(SETTINGS["BridgeType"])
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
     wallet = web3.eth.account.from_key(private_key).address
+    i = 0
     while True:
         value, net = await check_net_assets(wallet)
         value = value - get_random_value(SETTINGS["SaveOnWallet"])
@@ -150,6 +151,10 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
         else:
             logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
             await sleeping(wallet, True)
+        if i >= retries_limit:
+            logger.error(f"[{wallet}] max retries limit reached, stop searching")
+            return
+        i+=1
     
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
     ETH_price = get_eth_price()
@@ -186,7 +191,7 @@ def task_1(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(eth_bridge_no_off(hex(key), hex(account.address), delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))

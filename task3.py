@@ -10,7 +10,7 @@ def task_3(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(swap_to_eth(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
@@ -28,10 +28,11 @@ async def swap_to_eth(account: Account, delay: int):
             try:
                 token_balance = await account.get_balance(token_contract) / 1e6
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
                 await sleeping(hex(account.address), True)
         if token_balance == 0:
+            logger.info(f"[{hex(account.address)}] {token} balance is 0, skip")
             continue
         dex = random.choice(SETTINGS["SwapDEXs"])
         

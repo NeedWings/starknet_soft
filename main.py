@@ -55,8 +55,9 @@ def checking_license():
         exit()
     else:
         return check_license_elig(sha)
-
-checking_license()
+    
+if __name__ == "__main__":
+    checking_license()
 
 
 
@@ -221,8 +222,8 @@ async def deploy_account(account: Account, call_data: list, salt: int, class_has
             logger.info(f"[{hex(account.address)}] got balance: {balance/1e18} ETH")
             if balance >= 1e15:
                 break
-        except:
-            logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+        except Exception as e:
+            logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
         await sleeping(hex(account.address))
     logger.success(f"[{hex(account.address)}] found balance. Going to deploy")
     i = 0
@@ -296,7 +297,7 @@ def task_7(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(full(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     
@@ -343,7 +344,7 @@ def task_13(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(deploy_account(account, call_data, salt, class_hash, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     
@@ -356,7 +357,7 @@ def task_8(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(bridge_to_arb_from_stark(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     
@@ -391,8 +392,8 @@ async def bridge_to_arb_from_stark(account: Account, delay: int):
             try:
                 balance = await account.get_balance()/1e18
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
                 await sleeping(hex(account.address), True)
     
     balance = balance - get_random_value(SETTINGS["WithdrawSaving"])
@@ -432,7 +433,7 @@ def task_9(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(collector(hex(key), hex(account.address), delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
@@ -452,8 +453,9 @@ def test_prox(stark_keys):
 
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
+        print(hex(account.address))
         tasks.append(loop.create_task(bal(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
@@ -470,7 +472,8 @@ async def bal(account: Account, delay: int):
         logger.info(f"[{hex(account.address)}] balance: {eth_balacne}")
         await sleeping(hex(account.address))
 
-def start(stark_keys, task_number, proxy = None):
+def start(stark_keys, task_number, delay, proxy = None):
+    time.sleep(delay)
     if proxy != None:
         os.environ['http_proxy'] = proxy
         os.environ['HTTP_PROXY'] = proxy
@@ -478,7 +481,6 @@ def start(stark_keys, task_number, proxy = None):
         os.environ['HTTPS_PROXY'] = proxy
         os.environ['no_proxy'] = '127.0.0.1, localhost'
         os.environ['NO_PROXY'] = '127.0.0.1, localhost'
-
     if task_number == 1:
         task_1(stark_keys)
     elif task_number == 2:
@@ -551,7 +553,7 @@ def main():
 
             for proxy in proxies_raw:
                 proxies.append(proxy.split("@"))
-
+            shuffle(proxies)
             proxy_dict = {}
             args = []
             for proxy in proxies:
@@ -560,8 +562,12 @@ def main():
                 else:
                     proxy_dict[f"http://{proxy[0]}@{proxy[1]}"] = ['0x' + '0'*(66-len(proxy[2])) + proxy[2][2::]]
             
-            
+            sum_threads = len(proxy_dict)
 
+            max_threads = int(multiprocessing.cpu_count() * 1.5)
+
+            delay = 0
+            counter = 1
             for proxy in proxy_dict:
                 keys_for_args = []
                 addresses = proxy_dict[proxy]
@@ -569,21 +575,32 @@ def main():
                     account, call_data, salt, class_hash = import_argent_account(key, client)
                     if ("0x" + "0"*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
                         keys_for_args.append(key)
-                args.append((keys_for_args, task_number, proxy))
+                args.append((keys_for_args, task_number, delay, proxy))
+                delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+                if counter == max_threads:
+                    counter = 1
+                    delay = 0
+                counter += 1
             
-            with multiprocessing.Pool(processes=len(proxy_dict)) as s:
-                s.starmap(start, args)
-
+            shuffle(args)
+            
+            while args:
+                args_for_this_pack = args[:max_threads]
+                args = args[max_threads:]
+                with multiprocessing.Pool(processes=len(proxy_dict)) as s:
+                    s.starmap(start, args_for_this_pack)
+        else:
+            start(stark_keys, task_number, 0)
 
             
         
 
     
-    input("Soft successfully end work. Press Enter to quit")
+    
 
 
 if __name__ == "__main__":
     main()
-
+    input("Soft successfully end work. Press Enter to quit")
     
 

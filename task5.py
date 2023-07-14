@@ -21,8 +21,8 @@ async def jediswap_remove_liq(token: int, provider: Account):
         try:
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["jedi"][token])
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
+        except Exception as e:
+            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
             await sleeping(hex(provider.address), True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
@@ -56,8 +56,8 @@ async def myswap_remove_liq(token: int, provider: Account):
         try:
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["my"][token])
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
+        except Exception as e:
+            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
             await sleeping(hex(provider.address), True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
@@ -94,8 +94,8 @@ async def ten_k_swap_remove_liq(token: int, provider: Account):
         try:
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["10k"][token])
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
+        except Exception as e:
+            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
             await sleeping(hex(provider.address), True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
@@ -133,8 +133,8 @@ async def sithswap_remove_liq(token: int, provider: Account):
         try:
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["sith"][token])
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
+        except Exception as e:
+            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
             await sleeping(hex(provider.address), True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
@@ -176,7 +176,7 @@ def task_5(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(remove_liq_task(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
     
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
@@ -199,8 +199,8 @@ async def remove_liq_task(account: Account, delay: int):
                 try:
                     liq_balance = await account.get_balance(LIQ_CONTRACTS[dex][token_contract])
                     break
-                except:
-                    logger.error(f"[{hex(account.address)}] can't get balance. Too many attempts ")
+                except Exception as e:
+                    logger.error(f"[{hex(account.address)}] can't get balance. {e}")
                     await sleeping(hex(account.address), True)
             if liq_balance <= 0:
                 continue

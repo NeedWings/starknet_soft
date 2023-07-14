@@ -15,9 +15,10 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 11, //check all task numbers in guide
-        "TaskSleep": [20, 40], // delay between tasks
-        "ErrorSleepeng" : [20, 40], // delay if an error occurs
+        "TaskNumber" : 13, //check all task numbers in guide
+        "TaskSleep": [1, 2], // delay between tasks
+        "ErrorSleepeng" : [40, 60], // delay if an error occurs
+        "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.1, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": true, //Use or not proxies
@@ -42,7 +43,7 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"           : [-1, -1], // amount of swaps
+        "SwapAmounts"           : [1, 4], // amount of swaps
         "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
 
         "WorkPercent"           : [0.2, 0.3], // percent of balance to swap (0.5 = 50%)
@@ -88,7 +89,7 @@
         },
 
     "======= Max Starknet Fee Settings =======": "",
-        "MaxFee" : 0.001, // Max gas soft can spend on starknet transaction
+        "MaxFee" : 0.0015, // Max gas soft can spend on starknet transaction
         "MaxETHGwei": 4099, // Max gwei value in Etherium net
 
 

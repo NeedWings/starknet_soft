@@ -157,8 +157,8 @@ async def add_liq_task(account: Account, delay: int):
             try:
                 eth_balacne = await account.get_balance()
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
                 await sleeping(hex(account.address), True)
         swap_amount_eth = ((eth_balacne * get_random_value(SETTINGS["LiqWorkPercent"]))/1e18)/2
         
@@ -177,8 +177,8 @@ async def add_liq_task(account: Account, delay: int):
             try:
                 token_balance = await account.get_balance(token_contract)/1e6
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+            except Exception as e:
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
                 await sleeping(hex(account.address), True)
         if dex not in SUPPORTED_FOR_LIQ:
             logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith)")
@@ -206,7 +206,7 @@ def task_4(stark_keys):
     for key in stark_keys:
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(add_liq_task(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
