@@ -617,7 +617,7 @@ def main():
             while args:
                 args_for_this_pack = args[:max_threads]
                 args = args[max_threads:]
-                with multiprocessing.Pool(processes=len(proxy_dict)) as s:
+                with multiprocessing.Pool(processes=len(max_threads)) as s:
                     s.starmap(start, args_for_this_pack)
         else:
             start(stark_keys, task_number, 0)
