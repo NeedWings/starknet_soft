@@ -182,22 +182,36 @@ def decode_secrets():
 
 def generate_argent_account():
     private_key = random.randint(0, 2**256)
-    class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-    
-    key_pair = KeyPair.from_private_key(private_key)
-    salt = key_pair.public_key
+    if SETTINGS["Provider"].lower() == "argent":
+        class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+
+        key_pair = KeyPair.from_private_key(private_key)
+        salt = key_pair.public_key
 
 
-    account_initialize_call_data = [key_pair.public_key, 0]
+        account_initialize_call_data = [key_pair.public_key, 0]
 
-    call_data = [
-        0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-        0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-        len(account_initialize_call_data),
-        *account_initialize_call_data
-    ]
+        call_data = [
+            0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
+            0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+    elif SETTINGS["Provider"].lower() == "braavos":
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+        key_pair = KeyPair.from_private_key(private_key)
+        salt = key_pair.public_key
+        account_initialize_call_data = [key_pair.public_key]
 
-
+        call_data = [
+            0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
+            0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+    else:
+        logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
+        return
     address = compute_address(
         salt=salt,
         class_hash=class_hash,  
@@ -220,7 +234,7 @@ async def deploy_account(account: Account, call_data: list, salt: int, class_has
         try:
             balance = await account.get_balance()
             logger.info(f"[{hex(account.address)}] got balance: {balance/1e18} ETH")
-            if balance >= 1e15:
+            if balance >= 1e14:
                 break
         except Exception as e:
             logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
@@ -230,16 +244,31 @@ async def deploy_account(account: Account, call_data: list, salt: int, class_has
     while i < retries_limit:
         i += 1
         try:
-            account_deployment_result = await Account.deploy_account(
-                address=account.address,
-                class_hash=class_hash,
-                salt=salt,
-                key_pair=account.signer.key_pair,
-                client=client,
-                chain=chain,
-                constructor_calldata=call_data,
-                max_fee=int(1e15),
-            )
+            if SETTINGS["Provider"].lower() == "argent":
+                account_deployment_result = await Account.deploy_account(
+                    address=account.address,
+                    class_hash=class_hash,
+                    salt=salt,
+                    key_pair=account.signer.key_pair,
+                    client=client,
+                    chain=chain,
+                    constructor_calldata=call_data,
+                    max_fee=int(99e13),
+                )
+            elif SETTINGS["Provider"].lower() == "braavos":
+                account_deployment_result = await deploy_account_braavos(
+                    address=account.address,
+                    class_hash=class_hash,
+                    salt=salt,
+                    key_pair=account.signer.key_pair,
+                    client=client,
+                    chain=chain,
+                    constructor_calldata=call_data,
+                    max_fee=int(99e13),
+                )
+            else:
+                logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
+                return
 
             # Wait for deployment transaction to be accepted
 
@@ -249,8 +278,8 @@ async def deploy_account(account: Account, call_data: list, salt: int, class_has
             logger.success(f"[{hex(account.address)}] deployed successfully, txn hash: {hex(account_deployment_result.hash)}")
             return SUCCESS
 
-        except:
-            logger.error(f"[{hex(account.address)}] got error, while deploying account, trying again")
+        except Exception as e:
+            logger.error(f"[{hex(account.address)}] got error, while deploying account, {e}")
             await sleeping(hex(account.address), True)
     logger.error(f"[{hex(account.address)}] already deploying")
     return DEPLOY_ERROR
@@ -330,9 +359,10 @@ def task_12():
         account, call_data, salt, class_hash = generate_argent_account()
         web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))    
         private_key = "0x" + "0"*(66-len(hex(account.signer.private_key))) + hex(account.signer.private_key)[2::]
-
+        hex_stark_address = hex(account.address)
+        hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
         wallet = web3.eth.account.from_key(private_key).address
-        res += f"{hex(account.signer.private_key)}  {hex(account.address)}  {wallet}\n"
+        res += f"{private_key}  {hex_stark_address}  {wallet}\n"
     f = open(f"{SETTINGS_PATH}{SETTINGS['OutFile']}", "w")
     f.write(res)
     f.close()
