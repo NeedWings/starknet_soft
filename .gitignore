@@ -2,3 +2,4 @@ data/*.txt
 data/settings.json
 venv/
 __pycache__/
+Modules/
