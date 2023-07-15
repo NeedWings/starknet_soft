@@ -15,13 +15,14 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 13, //check all task numbers in guide
-        "TaskSleep": [1, 2], // delay between tasks
-        "ErrorSleepeng" : [40, 60], // delay if an error occurs
-        "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
+        "TaskNumber" : 7, //check all task numbers in guide
+        "TaskSleep": [20, 30], // delay between tasks
+        "ErrorSleepeng" : [20, 30], // delay if an error occurs
+        "ThreadRunnerSleep" : [20, 30], // delay between two accounts starts work
         "Slippage": 0.1, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
-        "UseProxies": true, //Use or not proxies
+        "UseProxies": false, // Use or not proxies
+        "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos)
 
     
 
@@ -46,18 +47,18 @@
         "SwapAmounts"           : [1, 4], // amount of swaps
         "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
 
-        "WorkPercent"           : [0.2, 0.3], // percent of balance to swap (0.5 = 50%)
+        "WorkPercent"           : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
 
         "MINIMAL_SWAP_AMOUNTS": { 
-            "USDC": 2, // minimal amount to swap for every token
-            "USDT": 2
+            "USDC": 1, // minimal amount to swap for every token
+            "USDT": 1
         },
 
 
 
     "===== LIQUIDITY =====": "",
-        "LiqWorkPercent"          : [0.1, 0.3], // percent of balance to add liquidity (0.5 = 50%)
+        "LiqWorkPercent"          : [0.6, 0.7], // percent of balance to add liquidity (0.5 = 50%)
         "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
         "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
         "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
@@ -89,7 +90,7 @@
         },
 
     "======= Max Starknet Fee Settings =======": "",
-        "MaxFee" : 0.0015, // Max gas soft can spend on starknet transaction
+        "MaxFee" : 0.001, // Max gas soft can spend on starknet transaction
         "MaxETHGwei": 4099, // Max gwei value in Etherium net
 
 
