@@ -346,17 +346,15 @@ try:
         way = random.randint(1, 2)
         if way == 1:
             await random_swaps(account, 0)
-            await swap_to_eth(account, 0)
             await add_liq_task(account, 0)
             if random.choice(SETTINGS["RemoveOnFullMode"]):
                 await remove_liq_task(account, 0)
-            await swap_to_eth(account, 0)
         else:
             await add_liq_task(account, 0)
             if random.choice(SETTINGS["RemoveOnFullMode"]):
                 await remove_liq_task(account, 0)
-            await swap_to_eth(account, 0)
             await random_swaps(account, 0)
+        if random.choice(SETTINGS["SwapAtTheEnd"]):
             await swap_to_eth(account, 0)
         await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
@@ -570,7 +568,7 @@ try:
 
     def main():
 
-
+        
         task_number = SETTINGS["TaskNumber"]
 
         print(f"TaskNumber : [{task_number}]")
@@ -645,4 +643,4 @@ try:
 
 
 except Exception as e:
-    logger.error("Got unexpected error: {e}")
+    logger.error(f"Got unexpected error: {e}")
