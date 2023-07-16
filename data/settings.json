@@ -23,6 +23,9 @@
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
         "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos)
+        "SwapAtTheEnd" : [true, false], // Swap or no to chosen token in toSaveFunds at the end
+        "toSaveFunds" : ["USDT"], // To which token soft will swap after full module
+        "SaveEthOnBalance" : [0.003, 0.005], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
 
     
 
@@ -44,7 +47,7 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"           : [1, 4], // amount of swaps
+        "SwapAmounts"           : [0, 0], // amount of swaps
         "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
 
         "WorkPercent"           : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
@@ -62,7 +65,7 @@
         "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
         "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
         "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [2, 3], // how many times add liquidity
+        "AddLiqAmount"            : [0, 0], // how many times add liquidity
 
     
     "====== GENERATOR ======": "", 
