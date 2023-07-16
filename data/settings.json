@@ -16,9 +16,9 @@
     
     "===== SOFT MODE ===== ": "",
         "TaskNumber" : 7, //check all task numbers in guide
-        "TaskSleep": [20, 30], // delay between tasks
+        "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [20, 30], // delay if an error occurs
-        "ThreadRunnerSleep" : [20, 30], // delay between two accounts starts work
+        "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.1, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
@@ -49,7 +49,7 @@
 
         "WorkPercent"           : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
-
+        "MinwstEthBalanceToReturn" : 0.001, // minimal balance of wstEth to swap to eth if SwapAmounts [-1, -1]
         "MINIMAL_SWAP_AMOUNTS": { 
             "USDC": 1, // minimal amount to swap for every token
             "USDT": 1
