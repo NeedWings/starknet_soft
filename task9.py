@@ -371,10 +371,15 @@ async def collector(private_key: str, recepient: str, delay: int):
 def task_9(stark_keys):
     loop = asyncio.new_event_loop()
     tasks = []
-
+    delay = 0
     for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
-        tasks.append(loop.create_task(collector(account)))
+        tasks.append(loop.create_task(collector(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))

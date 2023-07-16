@@ -158,18 +158,18 @@ async def execute_function(provider: Account,  calls: list):
     while retries_limit > i:
         resp = await get_invocation(provider, 0, calls, retries_limit)
         if resp == MAX_RETRIES_LIMIT_REACHED:
-            logger.error(f"[{hex(provider.address)}] max retries limit reached!")
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached!")
             return MAX_RETRIES_LIMIT_REACHED
         try:
-            logger.success(f"[{hex(provider.address)}] sending transaction with hash: {hex(resp.transaction_hash)}")
+            logger.success(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] sending transaction with hash: {hex(resp.transaction_hash)}")
             await provider.client.wait_for_tx(resp.transaction_hash)
-            logger.success(f"[{hex(provider.address)}] txn has sent! hash of txn: "+hex(resp.transaction_hash))
+            logger.success(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] txn has sent! hash of txn: "+hex(resp.transaction_hash))
             return SUCCESS, hex(resp.transaction_hash)
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] got error while sending txn: {hex(resp.transaction_hash)}, trying again")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] got error while sending txn: {hex(resp.transaction_hash)}, trying again")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         i += 1
-    logger.error(f"[{hex(provider.address)}] max retries limit reached")
+    logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached")
     return CAIRO_ERROR
 
 
@@ -300,83 +300,7 @@ def get_braavos_addr_from_private_key(private_key):
     )
     return address
 
-async def invocation_braavos(
-        calls: Calls,
-        private_key,
-        *,
-        nonce: Optional[int] = None,
-        max_fee: Optional[int] = None,
-        auto_estimate: bool = False,
-    ) -> SentTransactionResponse:
-    execute_transaction = await sign_invoke_transaction_braavos(
-        calls, private_key, nonce=nonce, max_fee=max_fee, auto_estimate=auto_estimate
-    )
-    return await client.send_transaction(execute_transaction)
 
-async def get_nonce(
-        address,
-        *,
-        block_hash: Optional[Union[Hash, Tag]] = None,
-        block_number: Optional[Union[int, Tag]] = None,
-    ) -> int:
-    """
-    Get the current nonce of the account.
-    :param block_hash: Block's hash or literals `"pending"` or `"latest"`
-    :param block_number: Block's number or literals `"pending"` or `"latest"`
-    :return: nonce.
-    """
-    return await client.get_contract_nonce(
-        address, block_hash=block_hash, block_number=block_number
-    )
-
-async def _prepare_invoke_braavos(
-        calls: Calls,
-        address,
-        *,
-        nonce: Optional[int] = None,
-        max_fee: Optional[int] = None,
-        auto_estimate: bool = False,
-    ) -> Invoke:
-        """
-        Takes calls and creates Invoke from them.
-
-        :param calls: Single call or list of calls.
-        :param max_fee: Max amount of Wei to be paid when executing transaction.
-        :param auto_estimate: Use automatic fee estimation, not recommend as it may lead to high costs.
-        :return: Invoke created from the calls (without the signature).
-        """
-        if nonce is None:
-            nonce = await get_nonce(address)
-
-        call_descriptions, calldata = _merge_calls(ensure_iterable(calls))
-        wrapped_calldata = _execute_payload_serializer.serialize(
-            {"call_array": call_descriptions, "calldata": calldata}
-        )
-
-        transaction = Invoke(
-            calldata=wrapped_calldata,
-            signature=[],
-            max_fee=0,
-            version=1,
-            nonce=nonce,
-            sender_address=address,
-        )
-
-        return _add_max_fee_to_transaction(transaction, max_fee)
-
-async def sign_invoke_transaction_braavos(
-        calls: Calls,
-        private_key,
-        *,
-        nonce: Optional[int] = None,
-        max_fee: Optional[int] = None,
-        auto_estimate: bool = False,
-    ) -> Invoke:
-    execute_tx = await _prepare_invoke_braavos(
-        calls, get_braavos_addr_from_private_key(private_key), nonce=nonce, max_fee=max_fee, auto_estimate=auto_estimate
-    )
-    signature = sign_transaction_braavos(execute_tx, private_key)
-    return _add_signature_to_transaction(execute_tx, signature)
 
 async def get_invocation(provider: Account, i: int, calls, limit: int):
 
@@ -387,9 +311,9 @@ async def get_invocation(provider: Account, i: int, calls, limit: int):
         return invocation
     except Exception as e:
         i+=1
-        logger.error(f"[{hex(provider.address)}] got error while trying to execute a function: {e}")
-        logger.info(f"[{hex(provider.address)}] trying again")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] got error while trying to execute a function: {e}")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] trying again")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         
         return await get_invocation(provider, i, calls, limit)
     

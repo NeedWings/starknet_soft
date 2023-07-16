@@ -7,7 +7,7 @@ from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.contract import Contract, PreparedFunctionCall
-from starknet_py.hash.utils import message_signature, private_to_stark_key, verify_message_signature
+from starknet_py.hash.utils import message_signature, private_to_stark_key, verify_message_signature, compute_hash_on_elements
 from starknet_py.net.models import AddressRepresentation, StarknetChainId, parse_address
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
 from starknet_py.net.account.account import _add_max_fee_to_transaction
@@ -113,10 +113,6 @@ import sys
 import socket
 import wmi
 from aiohttp import ClientSession
-
-
-client = GatewayClient(net=MAINNET)
-chain = StarknetChainId.MAINNET
 import sys, os
 
 
@@ -431,8 +427,13 @@ ABIs = {
     wstETH_TOKEN_CONTRACT: ETH_STARK_ABI
 }
 
+proxy_dict_cfg = {
 
-client = GatewayClient(net=MAINNET)
+}
+
+
+
+
 chain = StarknetChainId.MAINNET
 
 slippage = SETTINGS["Slippage"]

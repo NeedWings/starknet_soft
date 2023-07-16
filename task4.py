@@ -108,11 +108,11 @@ async def add_liq(amount: float, dex: str, token1: int, token2: int, provider: A
             token1_balance = await provider.get_balance(token1)/10**token1_dec
             break
         except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. Too many attempts ")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if token1_balance < amount:
-        logger.error(f"[{hex(provider.address)}] not enough token for adding to pool: balance {token1_balance}, required {amount}")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] not enough token for adding to pool: balance {token1_balance}, required {amount}")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return NOT_ENOUGH_NATIVE, ""
     
     
@@ -121,16 +121,16 @@ async def add_liq(amount: float, dex: str, token1: int, token2: int, provider: A
             token2_balance = await provider.get_balance(token2)/10**token2_dec
             break
         except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. Too many attempts ")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if token1_dec == 18:
         amount_out = amount*(get_eth_price())
     elif token1_dec == 6:
         amount_out =  (amount/(get_eth_price()))
 
     if amount_out > token2_balance:
-        logger.error(f"[{hex(provider.address)}] not enough token for adding to pool: balance {token2_balance}, required {amount_out}")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] not enough token for adding to pool: balance {token2_balance}, required {amount_out}")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return NOT_ENOUGH_NATIVE, ""
     
     
@@ -141,8 +141,8 @@ async def add_liq(amount: float, dex: str, token1: int, token2: int, provider: A
     elif dex == "10k":
         res = await ten_k_swap_liq(amount, amount_out, token1, token2, provider)
     else:
-        logger.error(f"[{hex(provider.address)}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return WRONG_CHOICE, ""
     return res
 
@@ -158,8 +158,8 @@ async def add_liq_task(account: Account, delay: int):
                 eth_balacne = await account.get_balance()
                 break
             except Exception as e:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
-                await sleeping(hex(account.address), True)
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         swap_amount_eth = ((eth_balacne * get_random_value(SETTINGS["LiqWorkPercent"]))/1e18)/2
         
         
@@ -178,25 +178,25 @@ async def add_liq_task(account: Account, delay: int):
                 token_balance = await account.get_balance(token_contract)/1e6
                 break
             except Exception as e:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
-                await sleeping(hex(account.address), True)
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         if dex not in SUPPORTED_FOR_LIQ:
             logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith)")
             input("Please restart soft with correct settings")
         
-        logger.info(f"[{hex(account.address)}] going to add liquidity in ETH/{token} pair on {dex}swap for {swap_amount_eth} ETH and {token_amount} {token}")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to add liquidity in ETH/{token} pair on {dex}swap for {swap_amount_eth} ETH and {token_amount} {token}")
         
         if token_amount > token_balance:
             need_usd = (token_amount-token_balance) + 0.1*(token_amount-token_balance)
             need_eth = need_usd/get_eth_price()
-            logger.info(f"[{hex(account.address)}] not enough stables for adding liquidity, going to make swap")
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] not enough stables for adding liquidity, going to make swap")
             await swap(need_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
-            await sleeping(hex(account.address))
-        await wait_for_better_eth_gwei(hex(account.address))
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
         await add_liq(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
         
-        await sleeping(hex(account.address))
+        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
 
 def task_4(stark_keys):
@@ -204,6 +204,10 @@ def task_4(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(add_liq_task(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])

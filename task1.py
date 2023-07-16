@@ -189,8 +189,12 @@ def task_1(stark_keys):
     delay = 0
 
     for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
-        tasks.append(loop.create_task(eth_bridge_no_off(hex(key), hex(account.address), delay)))
+        tasks.append(loop.create_task(eth_bridge_no_off(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     

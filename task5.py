@@ -22,8 +22,8 @@ async def jediswap_remove_liq(token: int, provider: Account):
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["jedi"][token])
             break
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e}")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
     usd_bal = liq_balance/LIQ_PRICES["jedi"]
@@ -57,8 +57,8 @@ async def myswap_remove_liq(token: int, provider: Account):
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["my"][token])
             break
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e}")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
     usd_bal = liq_balance/LIQ_PRICES["my"]
@@ -95,8 +95,8 @@ async def ten_k_swap_remove_liq(token: int, provider: Account):
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["10k"][token])
             break
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e}")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
     usd_bal = liq_balance/LIQ_PRICES["10k"]
@@ -134,8 +134,8 @@ async def sithswap_remove_liq(token: int, provider: Account):
             liq_balance = await provider.get_balance(LIQ_CONTRACTS["sith"][token])
             break
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] can't get balance. {e}")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e}")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if liq_balance <= 0:
         return NOT_ENOUGH_NATIVE, ""
     usd_bal = liq_balance/LIQ_PRICES["sith"]
@@ -162,8 +162,8 @@ async def remove_liq(dex: str, token2: int, provider: Account):
         res = await ten_k_swap_remove_liq(token2, provider)
 
     else:
-        logger.error(f"[{hex(provider.address)}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return WRONG_CHOICE, ""
     return res 
 
@@ -174,6 +174,10 @@ def task_5(stark_keys):
     tasks = []  
     delay = 0
     for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(remove_liq_task(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
@@ -200,14 +204,14 @@ async def remove_liq_task(account: Account, delay: int):
                     liq_balance = await account.get_balance(LIQ_CONTRACTS[dex][token_contract])
                     break
                 except Exception as e:
-                    logger.error(f"[{hex(account.address)}] can't get balance. {e}")
-                    await sleeping(hex(account.address), True)
+                    logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance. {e}")
+                    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
             if liq_balance <= 0:
                 continue
             
-            await wait_for_better_eth_gwei(hex(account.address))
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
             
-            logger.info(f"[{hex(account.address)}] going to remove liquidity in ETH/{token} pair on {dex}swap")
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to remove liquidity in ETH/{token} pair on {dex}swap")
 
             await remove_liq(dex, token_contract, account)
-            await sleeping(hex(account.address))
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])

@@ -169,11 +169,11 @@ async def swap(amount: float, dex: str, token1: int, token2: int, provider: Acco
             token1_balance = await provider.get_balance(token1)/10**DECIMALS[token1]
             break
         except Exception as e:
-            logger.error(f"[{hex(provider.address)}] can't get balance. {e} ")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e} ")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if token1_balance < amount:
-        logger.error(f"[{hex(provider.address)}] not enough token for swap: balance {token1_balance}, required {amount}")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] not enough token for swap: balance {token1_balance}, required {amount}")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return NOT_ENOUGH_NATIVE, ""
     if dex == "jedi":
         res = await jediswap(amount, token1, token2, provider)
@@ -186,8 +186,8 @@ async def swap(amount: float, dex: str, token1: int, token2: int, provider: Acco
     elif dex == "anvu":
         res = await anvu(amount, token1, token2, provider)
     else:
-        logger.error(f"[{hex(provider.address)}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k, sith")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k, sith")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return WRONG_CHOICE, ""
     return res
 
@@ -195,7 +195,7 @@ async def random_swaps(account: Account, delay: int):
     await asyncio.sleep(delay)
     limit = get_random_value_int(SETTINGS["SwapAmounts"])
     while limit > 0:
-        await wait_for_better_eth_gwei(hex(account.address))
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         limit -= 1
         dex = random.choice(SETTINGS["SwapDEXs"])
         eth_price = get_eth_price()
@@ -204,25 +204,25 @@ async def random_swaps(account: Account, delay: int):
                 eth_balacne = await account.get_balance()/1e18
                 break
             except Exception as e:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
-                await sleeping(hex(account.address), True)
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         while True:
             try:
                 usdt_balacne = await account.get_balance(USDT_TOKEN_CONTRACT)/1e6
                 break
             except Exception as e:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
-                await sleeping(hex(account.address), True)
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         while True:
             try:
                 usdc_balacne = await account.get_balance(USDC_TOKEN_CONTRACT)/1e6
                 break
             except Exception as e:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: {e}")
-                await sleeping(hex(account.address), True)
-        logger.info(f"[{hex(account.address)}] got ETH balance: {eth_balacne}")
-        logger.info(f"[{hex(account.address)}] got USDC balance: {usdc_balacne}")
-        logger.info(f"[{hex(account.address)}] got USDT balance: {usdt_balacne}")
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got ETH balance: {eth_balacne}")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got USDC balance: {usdc_balacne}")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got USDT balance: {usdt_balacne}")
         eth_usd_value = eth_balacne * eth_price
         to_choose = {
             eth_usd_value : ETH_TOKEN_CONTRACT,
@@ -249,15 +249,15 @@ async def random_swaps(account: Account, delay: int):
 
 
             if usd_value < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token]:
-                logger.error(f"[{hex(account.address)}] Error while trying to swap: want to swap {usd_value} {token}, which is below minimum {SETTINGS['MINIMAL_SWAP_AMOUNTS'][token]}")
-                await sleeping(hex(account.address), True)
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] Error while trying to swap: want to swap {usd_value} {token}, which is below minimum {SETTINGS['MINIMAL_SWAP_AMOUNTS'][token]}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
                 continue
 
             if dex not in SUPPORTED_FOR_SWAPS:
                 logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
                 input("Please restart soft with correct settings")
 
-            logger.info(f"[{hex(account.address)}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
 
             await swap(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
         else:
@@ -270,14 +270,14 @@ async def random_swaps(account: Account, delay: int):
             if dex not in SUPPORTED_FOR_SWAPS:
                 logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
                 input("Please restart soft with correct settings")
-            await wait_for_better_eth_gwei(hex(account.address))
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-            logger.info(f"[{hex(account.address)}] going to swap {token_balance} {token} for ETH on {dex}swap")
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {token_balance} {token} for ETH on {dex}swap")
 
 
             await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account)
 
-        await sleeping(hex(account.address))
+        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         
 
 
@@ -286,6 +286,10 @@ def task_2(stark_keys):
     tasks = []
     delay = 0
     for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(random_swaps(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
