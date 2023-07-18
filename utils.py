@@ -339,7 +339,7 @@ def _sign_deploy_account_transaction_braavos(transaction: DeployAccount, private
             salt=transaction.contract_address_salt,
             max_fee=transaction.max_fee,
             version=transaction.version,
-            chain_id=StarknetChainId.MAINNET,
+            chain_id=23448594291968334,
             nonce=transaction.nonce,
         )
         
@@ -357,7 +357,7 @@ def _sign_transaction_braavos(transaction: Invoke, private_key: int):
         entry_point_selector=DEFAULT_ENTRY_POINT_SELECTOR,
         calldata=transaction.calldata,
         max_fee=transaction.max_fee,
-        chain_id=StarknetChainId.MAINNET,
+        chain_id=23448594291968334,
         additional_data=[transaction.nonce],
     )
     # pylint: disable=invalid-name
@@ -367,7 +367,7 @@ def _sign_transaction_braavos(transaction: Invoke, private_key: int):
 def _sign_declare_transaction_braavos(transaction: Declare, private_key: int):
     tx_hash = compute_declare_transaction_hash(
         contract_class=transaction.contract_class,
-        chain_id=StarknetChainId.MAINNET,
+        chain_id=23448594291968334,
         sender_address=get_braavos_addr_from_private_key(private_key),
         max_fee=transaction.max_fee,
         version=transaction.version,
@@ -380,7 +380,7 @@ def _sign_declare_v2_transaction_braavos(transaction: DeclareV2, private_key: in
     tx_hash = compute_declare_v2_transaction_hash(
         contract_class=transaction.contract_class,
         compiled_class_hash=transaction.compiled_class_hash,
-        chain_id=StarknetChainId.MAINNET,
+        chain_id=23448594291968334,
         sender_address=get_braavos_addr_from_private_key(private_key),
         max_fee=transaction.max_fee,
         version=transaction.version,

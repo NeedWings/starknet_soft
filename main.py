@@ -644,3 +644,4 @@ try:
 
 except Exception as e:
     logger.error(f"Got unexpected error: {e}")
+    input("Soft successfully end work. Press Enter to quit")
