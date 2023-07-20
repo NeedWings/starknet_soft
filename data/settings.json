@@ -15,14 +15,14 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 7, //check all task numbers in guide
+        "TaskNumber" : 10, //check all task numbers in guide
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [20, 30], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.1, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
-        "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos)
+        "Provider" : "Braavos", // Which wallet provider to use (Argent/Braavos)
         "SwapAtTheEnd" : [true, false], // Swap or no to chosen token in toSaveFunds at the end
         "toSaveFunds" : ["USDT"], // To which token soft will swap after full module
         "SaveEthOnBalance" : [0.003, 0.005], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
@@ -47,12 +47,13 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"           : [0, 0], // amount of swaps
-        "SwapDEXs"              : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
-
-        "WorkPercent"           : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
-        "Supported_tokens"      : ["USDC", "USDT"], // tokens for swap
-        "MinwstEthBalanceToReturn" : 0.001, // minimal balance of wstEth to swap to eth if SwapAmounts [-1, -1]
+        "SwapAmounts"               : [0, 0], // amount of swaps
+        "SwapDEXs"                  : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
+        "MySwapQuestValue"          : 0.09, // Which value soft woll use to make Myswap Quest
+        "MintAtTheEndOfMyswapQuest" : true, // will soft mint NFT at the end of 14 task or not
+        "WorkPercent"               : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
+        "Supported_tokens"          : ["USDC", "USDT"], // tokens for swap
+        "MinwstEthBalanceToReturn"  : 0.001, // minimal balance of wstEth to swap to eth if SwapAmounts [-1, -1]
         "MINIMAL_SWAP_AMOUNTS": { 
             "USDC": 1, // minimal amount to swap for every token
             "USDT": 1
