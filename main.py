@@ -471,24 +471,23 @@ try:
         calldata = [approve_call, call]
         return await execute_function(account, calldata)
 
-
-
     def task_9(stark_keys):
-        loop = asyncio.new_event_loop()
         tasks = []
         delay = 0
-
         for key in stark_keys:
             if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
                 client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
             else:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
-            tasks.append(loop.create_task(collector(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+
+            tasks.append(Thread(target=start_collector, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+
             delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
-
-        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
-
+        for i in tasks:
+            i.start()
+        for k in tasks:
+            k.join()
 
     def task_secret(stark_keys):
         w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
@@ -592,7 +591,8 @@ try:
 
             private_keys = decode_secrets()
             stark_keys, counter = transform_keys(private_keys, addresses)
-            shuffle(stark_keys)
+            if task_number != 10:
+                shuffle(stark_keys)
             print(f"bot found {counter} private keys to work")
 
             if SETTINGS["UseProxies"]:
@@ -604,7 +604,8 @@ try:
 
                 for proxy in proxies_raw:
                     proxies.append(proxy.split("@"))
-                shuffle(proxies)
+                if task_number != 10:
+                    shuffle(proxies)
                 proxy_dict = {}
                 args = []
                 for proxy in proxies:

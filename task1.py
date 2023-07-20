@@ -181,10 +181,14 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
         logger.success(f"[{wallet}] txn has sent, hash: {res[1]}")
         await sleeping(wallet)
 
-
+def start_eth_bridge_no_off(private_key: str, recepient: str, delay: int):
+    loop = asyncio.new_event_loop()
+    tasks = []
+    tasks.append(loop.create_task(eth_bridge_no_off(private_key, recepient, delay)))
+    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 def task_1(stark_keys):
-    loop = asyncio.new_event_loop()
+
     tasks = []
     delay = 0
 
@@ -194,8 +198,12 @@ def task_1(stark_keys):
         else:
             client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
-        tasks.append(loop.create_task(eth_bridge_no_off(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
-        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
-    
-    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+        tasks.append(Thread(target=start_eth_bridge_no_off, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+        
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+    for i in tasks:
+        i.start()
+    for k in tasks:
+        k.join()
+

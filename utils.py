@@ -403,8 +403,17 @@ def sign_transaction_braavos(
 
 async def wait_for_better_eth_gwei(address: str):
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
-    limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
+    
     while True:
+        try:
+            f = open(f"{SETTINGS_PATH}settings.json", "r")
+            a = json_remove_comments(f.read())
+            SETTINGS = json.loads(a)
+            f.close()
+        except Exception as e:
+            input("Error with settings.json")
+            exit()
+        limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
         try:
             price = w3.eth.gas_price
         except:

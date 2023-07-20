@@ -58,7 +58,7 @@ async def mint_myswap_quest_nft(provider: Account):
     mint_contract = Contract(0x07c351118b538157458aebedb92212624027f4813ab39cd7971df9f1720f7633, MYSWAP_NFT_QUEST_ABI, provider)
     i = 0
     while retries_limit > i:
-        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}&coin=102")
+        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}&coin=103")
         try:
             a = resp['sig']
             break
@@ -70,7 +70,7 @@ async def mint_myswap_quest_nft(provider: Account):
         logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached")
         return MAX_RETRIES_LIMIT_REACHED
     call = mint_contract.functions["signed_mint"].prepare(
-            102,
+            103,
             int(resp["sig"]["r"], 16),
             int(resp["sig"]["s"], 16) 
             )
@@ -116,7 +116,7 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
         
         await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         return
-    while val < 0.07:
+    while val < SETTINGS["MySwapQuestValue"]:
         dex = "my"
         eth_price = get_eth_price()
         wstEth_price = get_wsteth_price()
@@ -172,8 +172,8 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
         await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
     logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint nft")
-
-    await mint_myswap_quest_nft(account)
+    if SETTINGS["MintAtTheEndOfMyswapQuest"]:
+        await mint_myswap_quest_nft(account)
 
     await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
     
