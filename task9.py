@@ -69,37 +69,7 @@ async def check_main_asset(address: str):
 
 
 
-async def get_tx_data_evm(address, w3: Web3, net_name: str, value=0) -> dict:
 
-        gas_price = await get_gas_price_evm(address, net_name)
-
-
-        data = {
-            'chainId': w3.eth.chain_id, 
-            'nonce': w3.eth.get_transaction_count(address),  
-            'from': address, 
-            "value": value
-        }
-
-
-        if net_name in ["AVALANCHE_MAINNET", "POLYGON_MAINNET", "ARBITRUM_MAINNET"]:
-            data["type"] = "0x2"
-
-
-        if net_name not in ['ARBITRUM_MAINNET', "AVALANCHE_MAINNET", "POLYGON_MAINNET"]:
-            data["gasPrice"] = gas_price
-            
-        else:
-            data["maxFeePerGas"] = gas_price
-            if net_name == "POLYGON_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(30, "gwei")
-            elif net_name == "AVALANCHE_MAINNET":
-                data["maxPriorityFeePerGas"] = gas_price
-            elif net_name == "ETHEREUM_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(0.05, "gwei")
-            elif net_name == "ARBITRUM_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(0.01, "gwei")
-        return data
 
 def send_transaction_evm(private_key: str, tx: dict, net_name: str, approve=False) -> str: 
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER[net_name])))

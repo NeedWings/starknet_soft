@@ -12,12 +12,21 @@ def task_3(stark_keys):
             client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
         else:
             client = GatewayClient(net=MAINNET)
+        out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(swap_to_eth(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    res = ""
+
+    for i in out_wallets_result:
+        res += f"{i}:\n{out_wallets_result[i]}\n"
+        
+    with open("log.txt", "w") as f:
+        f.write(res)
 
 
 async def swap_to_eth(account: Account, delay: int):
@@ -50,7 +59,9 @@ async def swap_to_eth(account: Account, delay: int):
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {token_balance} {token} for ETH on {dex}swap")
 
 
-            await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+            if (await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account))[0] == SUCCESS:
+                out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {token_balance} {token} for ETH on {dex}swap\n"
+
             await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
     else:
         dist_token = random.choice(SETTINGS["toSaveFunds"])
@@ -82,7 +93,9 @@ async def swap_to_eth(account: Account, delay: int):
 
                 logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {token1_balance} {token1} for ETH on {dex}swap")
 
-                await swap(token1_balance, dex, token1_contract, ETH_TOKEN_CONTRACT, account)
+                if (await swap(token1_balance, dex, token1_contract, ETH_TOKEN_CONTRACT, account))[0] == SUCCESS:
+                    out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {token1_balance} {token1} for ETH on {dex}swap\n"
+
 
                 await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
@@ -112,7 +125,9 @@ async def swap_to_eth(account: Account, delay: int):
 
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {to_swap} ETH for {dist_token} on {dex}swap")
 
-            await swap(to_swap, dex, eth_contract, TOKENS[dist_token], account)
+            if (await swap(to_swap, dex, eth_contract, TOKENS[dist_token], account))[0] == SUCCESS:
+                out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {to_swap} ETH for {dist_token} on {dex}swap\n"
+
             await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         elif dist_token == "ETH":
             for token in SETTINGS["Supported_tokens"]:
@@ -141,7 +156,9 @@ async def swap_to_eth(account: Account, delay: int):
                 logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {token_balance} {token} for ETH on {dex}swap")
 
 
-                await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+                if (await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account))[0] == SUCCESS:
+                    out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {token_balance} {token} for ETH on {dex}swap\n"
+
                 await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         else:
             logger.error(f"Selected unsupported token for save({dist_token}). Please select one of this: USDT, USDC, ETH")

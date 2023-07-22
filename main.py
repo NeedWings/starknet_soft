@@ -50,12 +50,7 @@ try:
     def checking_license():
         text = wmi.WMI().Win32_ComputerSystemProduct()[0].UUID + ':SOFT'
         sha = hashlib.sha1(text.encode()).hexdigest()
-        if sha != USER_KEY:
-            logger.error(f'Cant validate your pc. Write to dev')
-            input("Press any key to exit")
-            exit()
-        else:
-            return check_license_elig(sha)
+        return check_license_elig(sha)
 
     if __name__ == "__main__":
         checking_license()
@@ -84,14 +79,20 @@ try:
                 input("Create file and try again. Press any key to try again: ")
         logical_disks = get_disks()
         json_wallets = {}
+        w3 = Web3(Web3.HTTPProvider(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"]))
         for k in data:
             try:
-                address = k.replace("\n", "").replace(" ", "")
+                try:
+                    k = int(k)
+                except:
+                    k = int(k, 16)
+                k = "0x" + (66-len(hex(k)))*"0" + hex(k)[2::]
+                address = w3.eth.account.from_key(k).address
                 json_wallets.update({
                 address.lower(): k.replace("\n", "").replace(" ", "")
                 })
             except Exception as error:
-                logger.error(f'Cant add line: {k}')
+                logger.error(f'Cant add line: {k}; {error}')
 
         with open(SETTINGS_PATH + "data.txt", 'w') as file:
             json.dump(json_wallets, file)
@@ -183,54 +184,22 @@ try:
 
     def generate_argent_account():
         private_key = random.randint(0, 2**256)
-        if SETTINGS["Provider"].lower() == "argent":
-            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-
-
-            account_initialize_call_data = [key_pair.public_key, 0]
-
-            call_data = [
-                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        elif SETTINGS["Provider"].lower() == "braavos":
-            class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-            account_initialize_call_data = [key_pair.public_key]
-
-            call_data = [
-                0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
-                0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        else:
-            logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
-            return
-        address = compute_address(
-            salt=salt,
-            class_hash=class_hash,  
-            constructor_calldata=call_data,
-            deployer_address=0,
-        )
-
-
-        client = GatewayClient(net=MAINNET)
-        account = Account(
-                address=address, client=client, key_pair=key_pair, chain=chain
-            )
-
-        return account, call_data, salt, class_hash
+        return import_argent_account(private_key, client=GatewayClient(net=MAINNET))
 
     async def deploy_account(account: Account, call_data: list, salt: int, class_hash: int, delay: int):
         await asyncio.sleep(delay)
         balance = 0
+        while True:
+            try:
+                nonce = await account.get_nonce()
+                if nonce > 0:
+                    logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] already deployed. Skip")
+                    return
+                else:
+                    break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get nonce: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         while True:
             
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] checking balance.")
@@ -239,14 +208,17 @@ try:
                 logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got balance: {balance/1e18} ETH")
                 if balance >= 1e14:
                     break
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+
             except Exception as e:
                 logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
-            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         logger.success(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] found balance. Going to deploy")
         i = 0
         while i < retries_limit:
             i += 1
             try:
+                
                 if SETTINGS["Provider"].lower() == "argent":
                     account_deployment_result = await Account.deploy_account(
                         address=account.address,
@@ -333,17 +305,26 @@ try:
             else:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
+            out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
             tasks.append(loop.create_task(full(account, delay)))
             delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
 
 
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+        res = ""
+
+        for i in out_wallets_result:
+            res += f"{i}:\n{out_wallets_result[i]}\n\n"
+
+        with open(f"{SETTINGS_PATH}log.txt", "w") as f:
+            f.write(res)
 
 
     async def full(account: Account, delay: int):
         await asyncio.sleep(delay)
         way = random.randint(1, 2)
+        
         if way == 1:
             await random_swaps(account, 0)
             await add_liq_task(account, 0)
@@ -453,8 +434,10 @@ try:
             logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] amount to bridge less than minimal amount")
             return
 
-
-        amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
+        if SETTINGS["DistNet"].lower() == "arbitrum":
+            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
+        elif SETTINGS["DistNet"].lower() == "zksync":
+            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
         contract = Contract(ETH_TOKEN_CONTRACT, ETH_STARK_ABI, account)
         approve_call = contract.functions["approve"].prepare(
             ORBITER_STARK_CONTRACT, int(amount)
@@ -498,6 +481,62 @@ try:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
             print(f"{hex(key)}    {'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}    {w3.eth.account.from_key(hex(key)).address}")
+
+    def task_stats(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            
+            tasks.append(loop.create_task(stark_stats(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+        with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+            f.write(starkstats)
+
+    async def stark_stats(account: Account, delay: int):
+        await asyncio.sleep(delay)
+        global starkstats
+        while True:
+            try:
+                eth_balance = await account.get_balance()/1e18
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance of ETH. Error: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        while True:
+            try:
+                usdc_balance = await account.get_balance(USDC_TOKEN_CONTRACT)/1e6
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance of USDC. Error: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        while True:
+            try:
+                usdt_balance = await account.get_balance(USDT_TOKEN_CONTRACT)/1e6
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance of USDT. Error: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        while True:
+            try:
+                txn_count = await account.get_nonce()
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get nonce. Error: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        
+
+        data = f"{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]};{txn_count};{eth_balance};{usdc_balance};{usdt_balance}\n"
+        starkstats += data
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
 
 
     def test_prox(stark_keys):
@@ -557,6 +596,8 @@ try:
             myswap_task(stark_keys)
         elif task_number == 15:
             myswap_task_mint(stark_keys)
+        elif task_number == 16:
+            task_stats(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -588,10 +629,9 @@ try:
         elif task_number == 12:
             task_12()
         else:
-
             private_keys = decode_secrets()
             stark_keys, counter = transform_keys(private_keys, addresses)
-            if task_number != 10:
+            if task_number != 10 and task_number != 16:
                 shuffle(stark_keys)
             print(f"bot found {counter} private keys to work")
 
@@ -604,7 +644,7 @@ try:
 
                 for proxy in proxies_raw:
                     proxies.append(proxy.split("@"))
-                if task_number != 10:
+                if task_number != 10 and task_number != 16:
                     shuffle(proxies)
                 proxy_dict = {}
                 args = []

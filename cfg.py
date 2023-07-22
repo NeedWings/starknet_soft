@@ -440,3 +440,10 @@ chain = StarknetChainId.MAINNET
 slippage = SETTINGS["Slippage"]
 
 ACTUAL_IMPL = 0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a3ae3a054a4ec5254e4
+
+
+out_wallets_result = {
+    
+}
+
+starkstats = "address;txn count;ETH balance;USDC balance;USDT balance\n"

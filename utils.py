@@ -152,6 +152,37 @@ def import_argent_account(private_key: int, client):
 
     return account, call_data, salt, class_hash
 
+async def get_tx_data_evm(address, w3: Web3, net_name: str, value=0) -> dict:
+
+        gas_price = await get_gas_price_evm(address, net_name)
+
+
+        data = {
+            'chainId': w3.eth.chain_id, 
+            'nonce': w3.eth.get_transaction_count(address),  
+            'from': address, 
+            "value": value
+        }
+
+
+        if net_name in ["AVALANCHE_MAINNET", "POLYGON_MAINNET", "ARBITRUM_MAINNET"]:
+            data["type"] = "0x2"
+
+
+        if net_name not in ['ARBITRUM_MAINNET', "AVALANCHE_MAINNET", "POLYGON_MAINNET"]:
+            data["gasPrice"] = gas_price
+            
+        else:
+            data["maxFeePerGas"] = gas_price
+            if net_name == "POLYGON_MAINNET":
+                data["maxPriorityFeePerGas"] = Web3.to_wei(30, "gwei")
+            elif net_name == "AVALANCHE_MAINNET":
+                data["maxPriorityFeePerGas"] = gas_price
+            elif net_name == "ETHEREUM_MAINNET":
+                data["maxPriorityFeePerGas"] = Web3.to_wei(0.05, "gwei")
+            elif net_name == "ARBITRUM_MAINNET":
+                data["maxPriorityFeePerGas"] = Web3.to_wei(0.01, "gwei")
+        return data
 
 async def execute_function(provider: Account,  calls: list):
     i = 0
@@ -159,7 +190,7 @@ async def execute_function(provider: Account,  calls: list):
         resp = await get_invocation(provider, 0, calls, retries_limit)
         if resp == MAX_RETRIES_LIMIT_REACHED:
             logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached!")
-            return MAX_RETRIES_LIMIT_REACHED
+            return MAX_RETRIES_LIMIT_REACHED, ""
         try:
             logger.success(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] sending transaction with hash: {hex(resp.transaction_hash)}")
             await provider.client.wait_for_tx(resp.transaction_hash)
@@ -170,7 +201,7 @@ async def execute_function(provider: Account,  calls: list):
             await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         i += 1
     logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached")
-    return CAIRO_ERROR
+    return CAIRO_ERROR, ""
 
 
 async def sign_deploy_account_transaction_braavos(

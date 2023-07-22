@@ -31,15 +31,9 @@ async def orbiter(amount: float, source: str, private_key: str, recepient: str):
             logger.error(f"[{wallet}] not enough ETH for bridge ")
             return NOT_ENOUGH_NATIVE, ""
         contract = web3.eth.contract(ORBITER_CONTRACT, abi=ORBITER_ABI)
-        dict_transaction = {
-            'chainId': web3.eth.chain_id,
-            'value' : int(amount * decimal.Decimal(1e18)),
-            'gasPrice': web3.eth.gas_price,
-            'nonce': web3.eth.get_transaction_count(wallet),
-        }
-        gasEstimate = web3.eth.estimate_gas(dict_transaction)
 
-        dict_transaction["gas"] = gasEstimate*2
+        dict_transaction = await get_tx_data_evm(wallet, web3, source, int(amount * decimal.Decimal(1e18)))
+
         txn = contract.functions.transfer(
             ORBITER_CONTRACTS_REC, recepient
         ).build_transaction(dict_transaction)
@@ -112,17 +106,8 @@ async def layerswap(amount: float, source: str, private_key: str, recepient: str
             return LAYERSWAP_BAD_DATA, ""
 
 
-        tx = {
-            'nonce': web3.eth.get_transaction_count(wallet),
-            'to': Web3.to_checksum_address(address),
-            'value': Web3.to_wei(amount, 'ether'),
-            'gasPrice': web3.eth.gas_price,
-            'chainId': web3.eth.chain_id
-        }
-        gasEstimate = web3.eth.estimate_gas(tx)
-
-        tx["gas"] = gasEstimate*2
-
+        
+        tx = await get_tx_data_evm(wallet, web3, source, Web3.to_wei(amount, 'ether'))
         signed_tx = web3.eth.account.sign_transaction(tx, private_key)
         
         #send transaction

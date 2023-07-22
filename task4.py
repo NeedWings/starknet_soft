@@ -190,11 +190,15 @@ async def add_liq_task(account: Account, delay: int):
             need_usd = (token_amount-token_balance) + 0.1*(token_amount-token_balance)
             need_eth = need_usd/get_eth_price()
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] not enough stables for adding liquidity, going to make swap")
-            await swap(need_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
+            if (await swap(need_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account))[0] == SUCCESS:
+                out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {need_eth} ETH for {token} on {dex}swap\n"
+                
             await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-        await add_liq(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
+        if (await add_liq(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account))[0] == SUCCESS:
+            out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"add liquidity in ETH/{token} pair on {dex}swap for {swap_amount_eth} ETH and {token_amount} {token}\n"
+
         
         await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
@@ -209,9 +213,18 @@ def task_4(stark_keys):
         else:
             client = GatewayClient(net=MAINNET)
         account, call_data, salt, class_hash = import_argent_account(key, client)
+        out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
         tasks.append(loop.create_task(add_liq_task(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    res = ""
+
+    for i in out_wallets_result:
+        res += f"{i}:\n{out_wallets_result[i]}\n"
+        
+    with open("log.txt", "w") as f:
+        f.write(res)
 

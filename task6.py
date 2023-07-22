@@ -32,21 +32,12 @@ async def starkgate(amount: float, private_key: str, recepient: str):
         
         contract = web3.eth.contract(STARKGATE_CONTRACT, abi=STARKGATE_ABI)
 
-        
 
-        dict_transaction = {
-            'chainId': web3.eth.chain_id,
-            'value' : int((amount + fee)*1e18),
-            'gasPrice': gas_price,
-            'nonce': web3.eth.get_transaction_count(wallet),
-        }
-
+        dict_transaction = await get_tx_data_evm(wallet, web3, "ETHEREUM_MAINNET", int((amount + fee)*1e18))
         txn = contract.functions.deposit(
             int(amount*1e18), int(recepient, 16)
         ).build_transaction(dict_transaction)
-        gasEstimate = web3.eth.estimate_gas(txn)
 
-        txn['gas'] = round(gasEstimate)*2
         signed_txn = web3.eth.account.sign_transaction(txn, private_key)
         txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         logger.success(f"[{wallet}] txn has sent, hash: { Web3.to_hex(txn_hash)}")
