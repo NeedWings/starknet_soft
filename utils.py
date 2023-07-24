@@ -54,11 +54,14 @@ def get_ticker_price(ticker) -> float:
             print(f'Cant get response from binance, tring again...')
             time.sleep(5)
 
-def get_wsteth_price():
+async def get_wsteth_price(address):
     while True:
         response = req("https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=wrapped-steth")
         if type(response) is dict:
             return float(response["wrapped-steth"]["usd"])
+        else:
+            logger.error(f"[{address}] can't get wsteth price, will try again")
+            await sleeping(address, True)
 
 def get_eth_price():
     return get_ticker_price('eth')
@@ -165,11 +168,11 @@ async def get_tx_data_evm(address, w3: Web3, net_name: str, value=0) -> dict:
         }
 
 
-        if net_name in ["AVALANCHE_MAINNET", "POLYGON_MAINNET", "ARBITRUM_MAINNET"]:
+        if net_name in ["AVALANCHE_MAINNET", "POLYGON_MAINNET", "ARBITRUM_MAINNET", "ETHEREUM_MAINNET"]:
             data["type"] = "0x2"
 
 
-        if net_name not in ['ARBITRUM_MAINNET', "AVALANCHE_MAINNET", "POLYGON_MAINNET"]:
+        if net_name not in ['ARBITRUM_MAINNET', "AVALANCHE_MAINNET", "POLYGON_MAINNET", "ETHEREUM_MAINNET"]:
             data["gasPrice"] = gas_price
             
         else:

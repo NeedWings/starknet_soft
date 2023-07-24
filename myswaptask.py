@@ -3,11 +3,11 @@ from task4 import add_liq_task
 from task5 import remove_liq_task
 
 
-def myswap_call_quest(amount: float, token1: int, token2: int, contract: Contract):
+async def myswap_call_quest(amount: float, token1: int, token2: int, contract: Contract):
     token1_dec = DECIMALS[token1]
     token2_dec = DECIMALS[token2]
     eth_price = get_eth_price()
-    wstEth_price = get_wsteth_price()
+    wstEth_price = await get_wsteth_price("")
     if token1 == ETH_TOKEN_CONTRACT:
         amount_out = amount * (eth_price/wstEth_price)
     else:
@@ -26,7 +26,7 @@ async def myswap_quest(amount: float, token1: int, token2: int, provider: Accoun
     token_contract = Contract(token1, ABIs[token1], provider)
     calldata = [
         approve_token_call(amount, MYSWAP_CONTRACT, token_contract),
-        myswap_call_quest(amount, token1, token2, myswap_contract)
+        await myswap_call_quest(amount, token1, token2, myswap_contract)
     ]
 
     return await execute_function(provider, calldata)
@@ -119,7 +119,7 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
     while val < SETTINGS["MySwapQuestValue"]:
         dex = "my"
         eth_price = get_eth_price()
-        wstEth_price = get_wsteth_price()
+        wstEth_price = await get_wsteth_price("0x" + "0"*(66 - len(hex(account.address)) + hex(account.address)[2::]))
         while True:
             try:
                 eth_balacne = await account.get_balance()
