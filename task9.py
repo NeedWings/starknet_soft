@@ -30,7 +30,7 @@ async def get_evm_token_balance(address, token_address=None, net_name=None, cont
             return balance, float(from_wei_balance)
         except Exception as error:
             logger.error(f'[{address}] Cant get balance of: {token_address}! Error: {error}')
-            sleeping(address, True)
+            await sleeping(address, True)
 
 async def check_main_asset(address: str):
         main_asset = (None, 0, None, None)

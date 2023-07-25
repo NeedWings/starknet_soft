@@ -335,13 +335,34 @@ def get_braavos_addr_from_private_key(private_key):
     return address
 
 
-
 async def get_invocation(provider: Account, i: int, calls, limit: int):
 
     if i >= limit:
         return MAX_RETRIES_LIMIT_REACHED
     try:
-        invocation = await provider.execute(calls=calls, max_fee=int(SETTINGS["MaxFee"] * 1e18))
+        nonce = await provider.get_nonce()
+        call_descriptions, calldata = _merge_calls(ensure_iterable(calls))
+        wrapped_calldata = _execute_payload_serializer.serialize(
+            {"call_array": call_descriptions, "calldata": calldata}
+        )
+
+        transaction = Invoke(
+            calldata=wrapped_calldata,
+            signature=[],
+            max_fee=0,
+            version=1,
+            nonce=nonce,
+            sender_address=provider.address,
+        )
+
+        max_fee = await provider._get_max_fee(transaction, auto_estimate=True)/1e18
+
+        if max_fee > SETTINGS["MaxFee"]:
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] countd fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
+        
+            return await get_invocation(provider, i, calls, limit)
+        invocation = await provider.execute(calls=calls, auto_estimate=True)
         return invocation
     except Exception as e:
         i+=1

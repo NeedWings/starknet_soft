@@ -119,7 +119,7 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
     while val < SETTINGS["MySwapQuestValue"]:
         dex = "my"
         eth_price = get_eth_price()
-        wstEth_price = await get_wsteth_price("0x" + "0"*(66 - len(hex(account.address)) + hex(account.address)[2::]))
+        wstEth_price = await get_wsteth_price('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         while True:
             try:
                 eth_balacne = await account.get_balance()
