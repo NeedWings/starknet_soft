@@ -12,8 +12,8 @@ def task_3(stark_keys):
             client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
         else:
             client = GatewayClient(net=MAINNET)
-        out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
         account, call_data, salt, class_hash = import_argent_account(key, client)
+        out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
         tasks.append(loop.create_task(swap_to_eth(account, delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
