@@ -203,6 +203,7 @@ TEN_K_SWAP_CONTRACT = 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27
 SITHSWAP_CONTRACT = 0x028c858a586fa12123a1ccb337a0a3b369281f91ea00544d0c086524b759f627
 ORBITER_STARK_CONTRACT = 0x0173f81c529191726c6e7287e24626fe24760ac44dae2a1f7e02080230f8458b
 ANVU_CONTRACT = 0x4270219d365d6b017231b52e92b3fb5d7c8378b05e9abc97724537a80e93b0f
+ARGENT_NFT_CONTRACT = 0x07606cac9053e9b8b573a4b0a0ce608880f64869e24b8a605210d7a85bb6e5f1
 wstETH_TOKEN_CONTRACT = 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
 
 LIQ_PRICES = {
@@ -285,6 +286,11 @@ TOKENS = {
     "wstETH": wstETH_TOKEN_CONTRACT
 }
 
+TOKENS_REVERCE = {
+    USDT_TOKEN_CONTRACT: "usdt",
+    USDC_TOKEN_CONTRACT: "usdc",
+}
+
 ETH_RPC = SETTINGS["RPC"]["ETHEREUM_MAINNET"]
 OPTI_RPC = SETTINGS["RPC"]["OPTIMISM_MAINNET"]
 ARB_RPC = SETTINGS["RPC"]["ARBITRUM_MAINNET"]
@@ -362,6 +368,13 @@ MYSWAP_POOLS = {
     f"{ETH_TOKEN_CONTRACT}:{wstETH_TOKEN_CONTRACT}": 7,
     f"{wstETH_TOKEN_CONTRACT}:{ETH_TOKEN_CONTRACT}": 7,
 }
+
+SECOND_TOKEN_FROM_POOL_ID_MYSWAP = {
+    7: "wsteth",
+    1: "usdc",
+    4: "usdt" 
+}
+
 DECIMALS = {
     ETH_TOKEN_CONTRACT: 18,
     wstETH_TOKEN_CONTRACT: 18,
@@ -412,6 +425,9 @@ f.close()
 f = open(f"{SETTINGS_PATH}abi/anvu.json", "r")
 ANVU_ABI = json.loads(f.read())
 f.close()
+f = open(f"{SETTINGS_PATH}abi/argent_nft.json", "r")
+ARGENT_NFT_ABI = json.loads(f.read())
+f.close()
 with open(f"{SETTINGS_PATH}abi\\erc20.json", "r", encoding='utf-8') as file:
     ERC20_ABI = json.load(file)
 with open(f"{SETTINGS_PATH}abi\\sushi.json", "r", encoding='utf-8') as file:
@@ -446,4 +462,4 @@ out_wallets_result = {
     
 }
 
-starkstats = "address;txn count;ETH balance;USDC balance;USDT balance\n"
+starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;myswap wstETH;myswap USDC; myswap USDT;jediswap USDC;jediswap USDT;sithswap USDC;sithswap USDT;10kswap USDC;10kswap USDT;avnu USDC;avnu USDT\n"

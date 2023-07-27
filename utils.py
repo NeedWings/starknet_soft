@@ -314,6 +314,140 @@ async def deploy_account_braavos(
         hash=result.transaction_hash, account=account, _client=account.client
     )
 
+async def get_contract_txns(address):
+    address = ("0x" + "0"*(66 - len(hex(address))) + hex(address)[2::]).lower()
+    while True:
+        try:
+            resp = req(f"https://api.viewblock.io/starknet/contracts/{address}?network=mainnet", headers={"Origin":"https://viewblock.io","Referer":"https://viewblock.io/"})
+            break
+        except:
+            logger.error(f"[{address}] can't get transactions, trying again")
+            await sleeping(address, True)
+    txns_raw = []
+    pages_amount = int(resp["txs"]["pages"])
+    first_txns = resp["txs"]["docs"]
+    txns_raw += first_txns
+    for i in range(pages_amount-1):
+        while True:
+            try:
+                resp = req(f"https://api.viewblock.io/starknet/contracts/{address}/txs?page={i+2}&network=mainnet", headers={"Origin":"https://viewblock.io","Referer":"https://viewblock.io/"})
+                txns_raw += resp["docs"]
+                break
+            except:
+                logger.error(f"[{address}] can't get transactions, trying again")
+                await sleeping(address, True)
+        
+        await sleeping(address)
+
+    txns = []
+    for txn in txns_raw:
+        txns.append(txn["hash"])
+
+    return remove_same_elements_from_list(txns)
+    
+def remove_same_elements_from_list(data: List):
+    end_data = []
+
+    for element in data:
+        if element not in end_data:
+            end_data.append(element)
+    return end_data
+
+async def get_total_swap_value(txns, client: GatewayClient):
+    result = {
+        "myswap":{
+            "usdt": 0,
+            "usdc": 0,
+            "wsteth": 0
+        },
+        "10kswap":{
+            "usdt": 0,
+            "usdc": 0
+        },
+        "sithswap":{
+            "usdt": 0,
+            "usdc": 0
+        },
+        "jediswap":{
+            "usdt": 0,
+            "usdc": 0
+        },
+        "avnu":{
+            "usdt": 0,
+            "usdc": 0
+        }
+    }
+    for txn in txns:
+        try:
+            while True:
+                try:
+                    tx_data = await client.get_transaction(txn)
+                    break
+                except Exception as e:
+                    logger.error("can't get transaction, trying again")
+                    await sleeping("", True)
+            calldata = tx_data.calldata
+            if calldata[0] == 2:
+                dex = calldata[5]
+                first_token = calldata[1]
+                if dex == MYSWAP_CONTRACT:
+                    pool_id = calldata[13]
+                    if first_token == ETH_TOKEN_CONTRACT:
+                        second_token = SECOND_TOKEN_FROM_POOL_ID_MYSWAP[pool_id]
+                        eth_value = calldata[15]/1e18
+                        result["myswap"][second_token] += eth_value
+
+                    else:
+                        second_token = SECOND_TOKEN_FROM_POOL_ID_MYSWAP[pool_id]
+                        eth_value = calldata[17]/1e18
+                        result["myswap"][second_token] += eth_value
+
+                elif dex == JEDISWAP_CONTRACT:
+                    if first_token == ETH_TOKEN_CONTRACT:
+                        second_token = TOKENS_REVERCE[calldata[19]]
+                        eth_value = calldata[13]/1e18
+                        result["jediswap"][second_token] += eth_value
+
+                    else:
+                        second_token = TOKENS_REVERCE[calldata[18]]
+                        eth_value = calldata[15]/1e18
+                        result["jediswap"][second_token] += eth_value
+
+                elif dex == TEN_K_SWAP_CONTRACT:
+                    if first_token == ETH_TOKEN_CONTRACT:
+                        second_token = TOKENS_REVERCE[calldata[19]]
+                        eth_value = calldata[13]/1e18
+                        result["10kswap"][second_token] += eth_value
+
+                    else:
+                        second_token = TOKENS_REVERCE[calldata[18]]
+                        eth_value = calldata[15]/1e18
+                        result["10kswap"][second_token] += eth_value
+                
+                elif dex == SITHSWAP_CONTRACT:
+                    if first_token == ETH_TOKEN_CONTRACT:
+                        second_token = TOKENS_REVERCE[calldata[19]]
+                        eth_value = calldata[13]/1e18
+                        result["sithswap"][second_token] += eth_value
+
+                    else:
+                        second_token = TOKENS_REVERCE[calldata[18]]
+                        eth_value = calldata[15]/1e18
+                        result["sithswap"][second_token] += eth_value
+                
+                elif dex == ANVU_CONTRACT:
+                    if first_token == ETH_TOKEN_CONTRACT:
+                        second_token = TOKENS_REVERCE[calldata[26]]
+                        eth_value = calldata[14]/1e18
+                        result["avnu"][second_token] += eth_value
+
+                    else:
+                        second_token = TOKENS_REVERCE[calldata[25]]
+                        eth_value = calldata[19]/1e18
+                        result["avnu"][second_token] += eth_value
+        except Exception as e:
+            pass
+    return result
 
 def get_braavos_addr_from_private_key(private_key):
     class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e

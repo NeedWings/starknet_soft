@@ -270,6 +270,7 @@ try:
         counter = 0
         client = GatewayClient(net=MAINNET)
         stark_keys = []
+        stark_dict = {}
         for key_i in private_keys:
             key = private_keys[key_i]
 
@@ -287,7 +288,10 @@ try:
             mm_address = w3.eth.account.from_key(hex_key).address.lower()
             if mm_address in addresses or str(stark_address) in addresses or hex_stark_address in addresses:
                 counter += 1
-                stark_keys.append(int_key)
+                stark_dict[stark_address] = int_key
+
+        for addr in stark_dict:
+            stark_keys.append(stark_dict[addr]) 
 
         return stark_keys, counter
 
@@ -501,9 +505,57 @@ try:
         with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
             f.write(starkstats)
 
+    def mint_argent_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            
+            tasks.append(loop.create_task(mint_argent_nft(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def mint_argent_nft(account: Account, delay: int):
+        await asyncio.sleep(delay)
+        address = ("0x" + "0"*(66 - len(hex(account.address))) + hex(account.address)[2::]).lower()
+        while True:
+            mint_data = req_post(f"https://cloud.argent-api.com/v1/moments/8cbc801c-7ef7-4815-8a5e-512b22a808e7/claim?recipientAddress={address}")
+            if type(mint_data) == type({"a":"b"}):
+                break
+            else:
+                logger.error(f"[{address}] argent sent bad data, trying again")
+                await sleeping(address, True)
+        
+        mint_contract = Contract(ARGENT_NFT_CONTRACT, ARGENT_NFT_ABI, account)
+
+        call = mint_contract.functions["mint"].prepare(
+            account.address,
+            int(mint_data["claimParameters"]["tokenId"]),
+            int(mint_data["claimParameters"]["momentId"]),
+            int(mint_data["claimParameters"]["maxSupply"]),
+            int(mint_data["claimParameters"]["expiry"]),
+            int(mint_data["signature"]["r"], 16),
+            int(mint_data["signature"]["s"], 16),
+            )
+        calldata = [
+            call
+        ]
+    
+        return await execute_function(account, calldata)
+
+
+
     async def stark_stats(account: Account, delay: int):
         await asyncio.sleep(delay)
         global starkstats
+        txns = await get_contract_txns(account.address)
+        swap_value = await get_total_swap_value(txns, account.client)
         while True:
             try:
                 eth_balance = await account.get_balance()/1e18
@@ -534,8 +586,8 @@ try:
                 await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         
 
-        data = f"{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]};{txn_count};{eth_balance};{usdc_balance};{usdt_balance}\n"
-        starkstats += data
+        data = f"{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]};{txn_count};{eth_balance};{usdc_balance};{usdt_balance};{swap_value['myswap']['wsteth']};{swap_value['myswap']['usdc']};{swap_value['myswap']['usdt']};{swap_value['jediswap']['usdc']};{swap_value['jediswap']['usdt']};{swap_value['sithswap']['usdc']};{swap_value['sithswap']['usdt']};{swap_value['10kswap']['usdc']};{swap_value['10kswap']['usdt']};{swap_value['avnu']['usdc']};{swap_value['avnu']['usdt']}\n"
+        starkstats += data.replace(".",",")
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
 
 
@@ -598,6 +650,8 @@ try:
             myswap_task_mint(stark_keys)
         elif task_number == 16:
             task_stats(stark_keys)
+        elif task_number == 17:
+            mint_argent_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
