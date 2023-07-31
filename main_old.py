@@ -303,7 +303,9 @@ def task_10(stark_keys, eth_keys):
 		hex_stark_address = hex(account.address)
 		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
 		#print(f"{hex(stark_keys[i])} {eth_keys[i]} : {hex(account.address)} {w3.eth.account.from_key(eth_keys[i]).address}")
-		addresses.append([hex_stark_address, eth_account.from_key(eth_keys[i]).address])
+		item = [hex_stark_address, eth_account.from_key(eth_keys[i]).address]
+		print(item)
+		addresses.append(item)
 		#print(f"{hex_stark_address}\t{eth_account.from_key(eth_keys[i]).address}")
 	print(tabulate(addresses, headers=head))
 
