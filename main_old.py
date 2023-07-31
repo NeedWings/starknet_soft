@@ -311,6 +311,8 @@ async def get_balance2(account):
 	hex_stark_address = hex(account.address)
 	hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
 	balance = (await account.get_balance() / 1e18)
+	if balance > 0:
+		return
 	print(f'{hex_stark_address} {balance}')
 
 def task_90(stark_keys):
