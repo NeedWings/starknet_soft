@@ -2,32 +2,32 @@ import os
 import multiprocessing
 import main_old
 
-from peewee import *
+#from peewee import *
 
-if __name__ == "__main__":
-	i = 0
-	options = []
-	print('Choose your database\n')
-	for file in os.listdir('data'):
-		if file.endswith(".db"):
-			print(f'{i} {file}')
-			options.append(file)
-			i += 1
-	option = int(input('Enter number\n'))
-	db = SqliteDatabase(f'data/{option}')
+#if __name__ == "__main__":
+#	i = 0
+#	options = []
+#	print('Choose your database\n')
+#	for file in os.listdir('data'):
+#		if file.endswith(".db"):
+#			print(f'{i} {file}')
+#			options.append(file)
+#			i += 1
+#	option = int(input('Enter number\n'))
+#	db = SqliteDatabase(f'data/{option}')
 
-class Wallet(Model):
-	walletId =   AutoField()
-	#seedEncrypted = TextField()
-	seed = TextField()
-	walletAddress = TextField()
-	walletKey = TextField()
-	ethAddress = TextField()
-	ethKey = TextField()
-	class Meta:
-		database = db
+#class Wallet(Model):
+#	walletId =   AutoField()
+#	#seedEncrypted = TextField()
+#	seed = TextField()
+#	walletAddress = TextField()
+#	walletKey = TextField()
+#	ethAddress = TextField()
+#	ethKey = TextField()
+#	class Meta:
+#		database = db
 
-db.connect()
+#db.connect()
 
 message = """
 Enter task number
