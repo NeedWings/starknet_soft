@@ -307,7 +307,16 @@ def task_10(stark_keys, eth_keys):
 		#print(f"{hex_stark_address}\t{eth_account.from_key(eth_keys[i]).address}")
 	print(tabulate(addresses, headers=head))
 
-
+async def task_90(stark_keys):
+	head = ['Stark Addresses', 'Balance']
+	addresses = []
+	for key in stark_keys:
+		account, call_data, salt, class_hash = import_argent_account(key)
+		hex_stark_address = hex(account.address)
+		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
+		balance = (await account.get_balance()) / 1e18
+		addresses.append([str(hex_stark_address), str(balance)])
+	print(tabulate(addresses, headers=head))
 
 async def bridge_to_arb_from_stark(account: Account, eth_key, delay: int):
 	await asyncio.sleep(delay)
@@ -474,6 +483,8 @@ def runner(stark_keys, eth_keys, task_number):
 			myswap_task(stark_keys)
 		case  15:
 			myswap_task_mint(stark_keys)
+		case 90:
+			task_90(stark_keys)
 		case _:
 			logger.error("incorrect task_number")
 	pass

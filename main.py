@@ -59,6 +59,8 @@ Enter task number
 13 - Деплоер кошельков, будет ждать, пока на кошельке не появится ETH
 
 14 - Квест от MySwap. Будет свапать ETH на wstETH и обратно, пока не будет 0.03 объем, дальше заминтит NFT\n
+
+90 - выводит адреса starknet и балансы
 """
 
 def runner(stark_keys, eth_keys, task_number, proxy):
