@@ -319,6 +319,7 @@ def task_90(stark_keys):
 	for key in stark_keys:
 		account, call_data, salt, class_hash = import_argent_account(key)
 		tasks.append(loop.create_task(get_balance2(account)))
+	loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 async def bridge_to_arb_from_stark(account: Account, eth_key, delay: int):
 	await asyncio.sleep(delay)
