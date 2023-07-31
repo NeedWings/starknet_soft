@@ -205,6 +205,7 @@ ORBITER_STARK_CONTRACT = 0x0173f81c529191726c6e7287e24626fe24760ac44dae2a1f7e020
 ANVU_CONTRACT = 0x4270219d365d6b017231b52e92b3fb5d7c8378b05e9abc97724537a80e93b0f
 ARGENT_NFT_CONTRACT = 0x07606cac9053e9b8b573a4b0a0ce608880f64869e24b8a605210d7a85bb6e5f1
 wstETH_TOKEN_CONTRACT = 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
+ZKLEND_CONTRACT = 0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05
 
 LIQ_PRICES = {
     "my" : 8136191259,
@@ -425,8 +426,8 @@ f.close()
 f = open(f"{SETTINGS_PATH}abi/anvu.json", "r")
 ANVU_ABI = json.loads(f.read())
 f.close()
-f = open(f"{SETTINGS_PATH}abi/argent_nft.json", "r")
-ARGENT_NFT_ABI = json.loads(f.read())
+f = open(f"{SETTINGS_PATH}abi/zk_lend.json", "r")
+ZKLEND_ABI = json.loads(f.read())
 f.close()
 with open(f"{SETTINGS_PATH}abi\\erc20.json", "r", encoding='utf-8') as file:
     ERC20_ABI = json.load(file)

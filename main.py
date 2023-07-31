@@ -228,7 +228,7 @@ try:
                         client=account.client,
                         chain=chain,
                         constructor_calldata=call_data,
-                        max_fee=int(99e13),
+                        auto_estimate=True,
                     )
                 elif SETTINGS["Provider"].lower() == "braavos":
                     account_deployment_result = await deploy_account_braavos(
@@ -239,7 +239,7 @@ try:
                         client=account.client,
                         chain=chain,
                         constructor_calldata=call_data,
-                        max_fee=int(99e13),
+                        max_fee=int(55e13),
                     )
                 else:
                     logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
@@ -516,37 +516,48 @@ try:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
             
-            tasks.append(loop.create_task(mint_argent_nft(account, delay)))
+            tasks.append(loop.create_task(lend(account, delay)))
             delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
-    async def mint_argent_nft(account: Account, delay: int):
+    async def lend(account: Account, delay: int):
         await asyncio.sleep(delay)
         address = ("0x" + "0"*(66 - len(hex(account.address))) + hex(account.address)[2::]).lower()
-        while True:
-            mint_data = req_post(f"https://cloud.argent-api.com/v1/moments/8cbc801c-7ef7-4815-8a5e-512b22a808e7/claim?recipientAddress={address}")
-            if type(mint_data) == type({"a":"b"}):
-                break
-            else:
-                logger.error(f"[{address}] argent sent bad data, trying again")
-                await sleeping(address, True)
-        
-        mint_contract = Contract(ARGENT_NFT_CONTRACT, ARGENT_NFT_ABI, account)
+        lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
+        eth_contract = Contract(ETH_TOKEN_CONTRACT, ETH_STARK_ABI, account)
 
-        call = mint_contract.functions["mint"].prepare(
-            account.address,
-            int(mint_data["claimParameters"]["tokenId"]),
-            int(mint_data["claimParameters"]["momentId"]),
-            int(mint_data["claimParameters"]["maxSupply"]),
-            int(mint_data["claimParameters"]["expiry"]),
-            int(mint_data["signature"]["r"], 16),
-            int(mint_data["signature"]["s"], 16),
+        amount = get_random_value(SETTINGS["LendAddAmount"])
+        
+        while True:
+            try:
+                eth_balance = await account.get_balance()/1e18
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance of ETH. Error: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        if amount > eth_balance:
+            logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] not enough eth to add to lend")
+            return
+
+        calldata = []
+        call1 = approve_token_call(amount, ZKLEND_CONTRACT, eth_contract)
+        calldata.append(call1)
+
+        call2 = lend_contract.functions["deposit"].prepare(
+                ETH_TOKEN_CONTRACT,
+                int(amount*1e18)
             )
-        calldata = [
-            call
-        ]
-    
+        calldata.append(call2)
+        
+        call3 = lend_contract.functions["enable_collateral"].prepare(
+            ETH_TOKEN_CONTRACT
+        )
+
+        
+        calldata.append(call3)
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to add {amount} ETH to lend")
         return await execute_function(account, calldata)
 
 

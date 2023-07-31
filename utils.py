@@ -319,13 +319,14 @@ async def get_contract_txns(address):
     while True:
         try:
             resp = req(f"https://api.viewblock.io/starknet/contracts/{address}?network=mainnet", headers={"Origin":"https://viewblock.io","Referer":"https://viewblock.io/"})
+            pages_amount = int(resp["txs"]["pages"])
+            first_txns = resp["txs"]["docs"]
             break
         except:
             logger.error(f"[{address}] can't get transactions, trying again")
             await sleeping(address, True)
     txns_raw = []
-    pages_amount = int(resp["txs"]["pages"])
-    first_txns = resp["txs"]["docs"]
+    
     txns_raw += first_txns
     for i in range(pages_amount-1):
         while True:
@@ -490,7 +491,6 @@ async def get_invocation(provider: Account, i: int, calls, limit: int):
         )
 
         max_fee = await provider._get_max_fee(transaction, auto_estimate=True)/1e18
-
         if max_fee > SETTINGS["MaxFee"]:
             logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] countd fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
             await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
