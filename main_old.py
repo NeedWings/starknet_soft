@@ -303,24 +303,22 @@ def task_10(stark_keys, eth_keys):
 		hex_stark_address = hex(account.address)
 		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
 		#print(f"{hex(stark_keys[i])} {eth_keys[i]} : {hex(account.address)} {w3.eth.account.from_key(eth_keys[i]).address}")
-		item = [hex_stark_address, eth_account.from_key(eth_keys[i]).address]
-		print(item)
-		addresses.append(item)
+		addresses.append([hex_stark_address, eth_account.from_key(eth_keys[i]).address])
 		#print(f"{hex_stark_address}\t{eth_account.from_key(eth_keys[i]).address}")
 	print(tabulate(addresses, headers=head))
 
+async def get_balance2(account):
+	hex_stark_address = hex(account.address)
+	hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
+	balance = (await account.get_balance() / 1e18)
+	print(f'{hex_stark_address} {balance}')
+
 def task_90(stark_keys):
-	loop = asyncio.get_event_loop()
-	head = ['Stark Addresses', 'Balance']
-	addresses = []
+	loop = asyncio.new_event_loop()
+	tasks = []
 	for key in stark_keys:
 		account, call_data, salt, class_hash = import_argent_account(key)
-		hex_stark_address = hex(account.address)
-		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
-		balance = loop.run_until_complete(account.get_balance()) / 1e18
-		addresses.append([str(hex_stark_address), str(balance)])
-	loop.close()
-	print(tabulate(addresses, headers=head))
+		tasks.append(loop.create_task(get_balance2(account)))
 
 async def bridge_to_arb_from_stark(account: Account, eth_key, delay: int):
 	await asyncio.sleep(delay)
