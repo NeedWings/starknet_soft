@@ -308,14 +308,16 @@ def task_10(stark_keys, eth_keys):
 	print(tabulate(addresses, headers=head))
 
 async def task_90(stark_keys):
+	loop = asyncio.get_event_loop()
 	head = ['Stark Addresses', 'Balance']
 	addresses = []
 	for key in stark_keys:
 		account, call_data, salt, class_hash = import_argent_account(key)
 		hex_stark_address = hex(account.address)
 		hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
-		balance = (await account.get_balance()) / 1e18
+		balance = loop.run_until_complete(account.get_balance()) / 1e18
 		addresses.append([str(hex_stark_address), str(balance)])
+	loop.close()
 	print(tabulate(addresses, headers=head))
 
 async def bridge_to_arb_from_stark(account: Account, eth_key, delay: int):
