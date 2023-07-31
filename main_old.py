@@ -307,7 +307,7 @@ def task_10(stark_keys, eth_keys):
 		#print(f"{hex_stark_address}\t{eth_account.from_key(eth_keys[i]).address}")
 	print(tabulate(addresses, headers=head))
 
-async def task_90(stark_keys):
+def task_90(stark_keys):
 	loop = asyncio.get_event_loop()
 	head = ['Stark Addresses', 'Balance']
 	addresses = []
