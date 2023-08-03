@@ -190,6 +190,7 @@ async def add_liq_task(account: Account, delay: int):
             need_usd = (token_amount-token_balance) + 0.1*(token_amount-token_balance)
             need_eth = need_usd/get_eth_price()
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] not enough stables for adding liquidity, going to make swap")
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
             if (await swap(need_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account))[0] == SUCCESS:
                 out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] + f"swap {need_eth} ETH for {token} on {dex}swap\n"
                 

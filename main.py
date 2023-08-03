@@ -442,6 +442,14 @@ try:
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
         elif SETTINGS["DistNet"].lower() == "zksync":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
+        elif SETTINGS["DistNet"].lower() == "ethereum":
+            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 3)
+        elif SETTINGS["DistNet"].lower() == "linea":
+            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
+        else:
+            logger.error("wrong value in DistNet")
+            input()
+            exit()
         contract = Contract(ETH_TOKEN_CONTRACT, ETH_STARK_ABI, account)
         approve_call = contract.functions["approve"].prepare(
             ORBITER_STARK_CONTRACT, int(amount)
@@ -524,7 +532,6 @@ try:
     async def lend(account: Account, delay: int):
         await asyncio.sleep(delay)
         address = ("0x" + "0"*(66 - len(hex(account.address))) + hex(account.address)[2::]).lower()
-        lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
         eth_contract = Contract(ETH_TOKEN_CONTRACT, ETH_STARK_ABI, account)
 
         amount = get_random_value(SETTINGS["LendAddAmount"])
@@ -540,22 +547,37 @@ try:
             logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] not enough eth to add to lend")
             return
 
-        calldata = []
-        call1 = approve_token_call(amount, ZKLEND_CONTRACT, eth_contract)
-        calldata.append(call1)
 
-        call2 = lend_contract.functions["deposit"].prepare(
-                ETH_TOKEN_CONTRACT,
+
+        if SETTINGS["Lend"] == "zklend":
+
+            lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
+
+            call1 = approve_token_call(amount, ZKLEND_CONTRACT, eth_contract)
+
+
+            call2 = lend_contract.functions["deposit"].prepare(
+                    ETH_TOKEN_CONTRACT,
+                    int(amount*1e18)
+                )
+
+            
+            call3 = lend_contract.functions["enable_collateral"].prepare(
+                ETH_TOKEN_CONTRACT
+            )
+            calldata = [call1, call2, call3]
+        elif SETTINGS["Lend"].lower() == "nostra":
+            lend_contract = Contract(0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6, NOSTRA_ABI, account)
+            call1 = approve_token_call(amount, 0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6, eth_contract)
+            call2 = lend_contract.functions["mint"].prepare(
+                account.address,
                 int(amount*1e18)
             )
-        calldata.append(call2)
-        
-        call3 = lend_contract.functions["enable_collateral"].prepare(
-            ETH_TOKEN_CONTRACT
-        )
-
-        
-        calldata.append(call3)
+            calldata = [call1, call2]
+        else:
+            logger.error(f"selected usupported lend({SETTINGS['Lend']})")
+            input()
+            exit()
         await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to add {amount} ETH to lend")
         return await execute_function(account, calldata)
@@ -600,6 +622,58 @@ try:
         data = f"{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]};{txn_count};{eth_balance};{usdc_balance};{usdt_balance};{swap_value['myswap']['wsteth']};{swap_value['myswap']['usdc']};{swap_value['myswap']['usdt']};{swap_value['jediswap']['usdc']};{swap_value['jediswap']['usdt']};{swap_value['sithswap']['usdc']};{swap_value['sithswap']['usdt']};{swap_value['10kswap']['usdc']};{swap_value['10kswap']['usdt']};{swap_value['avnu']['usdc']};{swap_value['avnu']['usdt']}\n"
         starkstats += data.replace(".",",")
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
+
+    def remove_from_lend_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(remove_from_lends(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def remove_from_lends(account: Account, delay: int):
+        if SETTINGS["Lend"] == "zklend":
+
+            lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
+
+
+
+            call2 = lend_contract.functions["withdraw_all"].prepare(
+                    ETH_TOKEN_CONTRACT
+                )
+
+            
+            calldata = [call2]
+        elif SETTINGS["Lend"].lower() == "nostra":
+            lend_contract = Contract(0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6, NOSTRA_ABI, account)
+            while True:
+                try:
+                    amount = await account.get_balance(0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6)
+                    break
+                except Exception as e:
+                    logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance of lend token. Error: {e}")
+                    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+            call = lend_contract.functions["burn"].prepare(
+                account.address,
+                account.address,
+                amount
+            )
+            calldata = [call]
+        else:
+            logger.error(f"selected usupported lend({SETTINGS['Lend']})")
+            input()
+            exit()
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to remove ETH from lend")
+        return await execute_function(account, calldata)
 
 
     def test_prox(stark_keys):
@@ -663,6 +737,8 @@ try:
             task_stats(stark_keys)
         elif task_number == 17:
             mint_argent_task(stark_keys)
+        elif task_number == 18:
+            remove_from_lend_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:

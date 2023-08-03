@@ -55,10 +55,10 @@ async def swap_myswap_task(amount: float, dex: str, token1: int, token2: int, pr
     return res
 
 async def mint_myswap_quest_nft(provider: Account):
-    mint_contract = Contract(0x07c351118b538157458aebedb92212624027f4813ab39cd7971df9f1720f7633, MYSWAP_NFT_QUEST_ABI, provider)
+    mint_contract = Contract(0x06b1826599e9637eb16e11605ae5df008b7c043bfed0f1009ce99bd87b723fe7, MYSWAP_NFT_QUEST_ABI, provider)
     i = 0
     while retries_limit > i:
-        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}&coin=103")
+        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}&coin={SETTINGS['MySwapQuestNFTNumber']}")
         try:
             a = resp['sig']
             break
@@ -70,14 +70,13 @@ async def mint_myswap_quest_nft(provider: Account):
         logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached")
         return MAX_RETRIES_LIMIT_REACHED
     call = mint_contract.functions["signed_mint"].prepare(
-            103,
+            SETTINGS["MySwapQuestNFTNumber"],
             int(resp["sig"]["r"], 16),
             int(resp["sig"]["s"], 16) 
             )
     calldata = [
         call
     ]
-
     return await execute_function(provider, calldata)
 
 
