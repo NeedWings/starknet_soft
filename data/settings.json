@@ -15,7 +15,7 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 18, //check all task numbers in guide
+        "TaskNumber" : 19, //check all task numbers in guide
         "TaskSleep": [60, 120], // delay between tasks
         "ErrorSleepeng" : [60, 120], // delay if an error occurs
         "ThreadRunnerSleep" : [62, 122], // delay between two accounts starts work
@@ -73,6 +73,7 @@
     "======= LENDS =======": "",
         "LendAddAmount"    : [0.00006, 0.00007], // How many eth add to lend
         "Lend"             : "nostra", //which lending to use
+        "NFTNumbTurkey"    : 1,
 
 
     "====== GENERATOR ======": "", 
