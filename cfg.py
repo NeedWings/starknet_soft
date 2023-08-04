@@ -439,6 +439,8 @@ with open(f"{SETTINGS_PATH}abi\\myswap_quest_nft.json", "r", encoding='utf-8') a
     MYSWAP_NFT_QUEST_ABI = json.load(file)
 with open(f"{SETTINGS_PATH}abi\\nostra_abi.json", "r", encoding='utf-8') as file:
     NOSTRA_ABI = json.load(file)
+with open(f"{SETTINGS_PATH}abi\\starknetturkey.json", "r", encoding='utf-8') as file:
+    STARKNET_TURKEY_ABI = json.load(file)
 
 ABIs = {
     ETH_TOKEN_CONTRACT: ETH_STARK_ABI,

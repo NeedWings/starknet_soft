@@ -640,6 +640,7 @@ try:
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
     async def remove_from_lends(account: Account, delay: int):
+        await asyncio.sleep(delay)
         if SETTINGS["Lend"] == "zklend":
 
             lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
@@ -675,6 +676,68 @@ try:
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to remove ETH from lend")
         return await execute_function(account, calldata)
 
+
+    def mint_turkey_nft_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(mint_turkey_nft(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def mint_turkey_nft(account: Account, delay):
+        await asyncio.sleep(delay)
+
+        nft_numb = SETTINGS["NFTNumbTurkey"]
+        i = 0
+        while retries_limit > i:
+            resp = req(f"https://api.starknetturkiye.org/eligibility?address={hex(account.address)}&campaign_id={nft_numb}")
+            try:
+                a = resp['eligible']
+                if a:
+                    break
+                else:
+                    logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] starknetturkiye sent bad data :( trying again")
+                    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+            except:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] starknetturkiye sent bad data :( trying again")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+            i+=1
+        if retries_limit <= i:
+            logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] max retries limit reached")
+            return MAX_RETRIES_LIMIT_REACHED
+
+        mint_contract = Contract(0x0106c94dc954944b3893e2102d9ad5065d04a0ec9b08910891d8eedb75965334, STARKNET_TURKEY_ABI, account)
+
+        call = mint_contract.functions["mint"].prepare(
+            nft_numb,
+
+            {
+                "wallet_address": account.address,
+                "signer": 0x26128e6c0821347d2eea17548431dee2c66d9654cd3b9637447e2a91505d1df,
+                "campaign_id": nft_numb,
+                "amount": 1,
+                "expiry": 1691596800,
+                "strategy": 0x4f7e61fa8adab9e958f8c832868f77b149803834daa00491a1f2fbcd5dc5fb4,
+                "collection": 0x106c94dc954944b3893e2102d9ad5065d04a0ec9b08910891d8eedb75965334
+            },
+            0x16ed14bf62427f6a87189a1855df2c6a467b93bf94cb8cf405482e4a670e982,
+            [int(resp["sig_r"]),
+            int(resp["sig_s"])]
+        )
+
+        calldata = [call]
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint nft")
+        return await execute_function(account, calldata)
 
     def test_prox(stark_keys):
         loop = asyncio.new_event_loop()
@@ -739,6 +802,8 @@ try:
             mint_argent_task(stark_keys)
         elif task_number == 18:
             remove_from_lend_task(stark_keys)
+        elif task_number == 19:
+            mint_turkey_nft_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
