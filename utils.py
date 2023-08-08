@@ -138,6 +138,18 @@ def import_argent_account(private_key: int, client):
             len(account_initialize_call_data),
             *account_initialize_call_data
         ]
+    elif SETTINGS["Provider"].lower() == "braavos_old":
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+        key_pair = KeyPair.from_private_key(private_key)
+        salt = key_pair.public_key
+        account_initialize_call_data = [key_pair.public_key]
+
+        call_data = [
+            0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a,
+            0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
     else:
         logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
         return
