@@ -55,6 +55,7 @@ async def swap_myswap_task(amount: float, dex: str, token1: int, token2: int, pr
     return res
 
 async def mint_myswap_quest_nft(provider: Account):
+    await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::])
     mint_contract = Contract(0x06b1826599e9637eb16e11605ae5df008b7c043bfed0f1009ce99bd87b723fe7, MYSWAP_NFT_QUEST_ABI, provider)
     i = 0
     while retries_limit > i:
