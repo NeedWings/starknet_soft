@@ -8,7 +8,7 @@ try:
     from task6 import *
     from task9 import *
     from myswaptask import *
-
+    from fibroustask import *
     Endianness = Literal["big", "little"]
 
 
@@ -273,7 +273,7 @@ try:
         stark_dict = {}
         for key_i in private_keys:
             key = private_keys[key_i]
-
+            
             try:
                 int_key = int(key)
             except:
@@ -284,6 +284,7 @@ try:
             stark_address = account.address
             hex_stark_address = hex(stark_address)
             hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
+            
             hex_key = "0x" + "0"*(66-len(hex(int_key))) + hex(int_key)[2::]
             mm_address = w3.eth.account.from_key(hex_key).address.lower()
             if mm_address in addresses or str(stark_address) in addresses or hex_stark_address in addresses:
@@ -804,6 +805,8 @@ try:
             remove_from_lend_task(stark_keys)
         elif task_number == 19:
             mint_turkey_nft_task(stark_keys)
+        elif task_number == 20:
+            fibrous_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:

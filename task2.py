@@ -110,6 +110,42 @@ def anvu_call(amount: float, sender: int, token1: int, token2: int, contract: Co
             )
     return call
 
+def fibrous_call(amount: float, sender: int, token1: int, token2: int, contract: Contract):
+    token1_dec = DECIMALS[token1]
+    token2_dec = DECIMALS[token2]
+    if token1_dec == 18:
+        amount_out = int(amount*(get_eth_price()-40)*(10**token2_dec))
+    elif token1_dec == 6:
+        amount_out =  int((amount/(get_eth_price()+40))*(10**token2_dec))
+    else:
+        return INVALID_DECIMALS
+    call = contract.functions["swap"].prepare(
+            [
+                {"token_in":token1,
+                "token_out":token2,
+                "rate": 1000000,
+                "protocol":2,
+                "pool_address": 0x45e7131d776dddc137e30bdd490b431c7144677e97bf9369f629ed8d3fb7dd6}
+            ],
+            
+                {"token_in":token1,
+                "token_out":token2,
+                "amount":  int(amount*(10**token1_dec)),
+                "min_received": int(amount_out - amount_out*slippage),
+                "destination": sender}
+                  
+            )
+    return call
+
+async def fibrous(amount: float, token1: int, token2: int, provider: Account):
+    fibrous_contract = Contract(0x01b23ed400b210766111ba5b1e63e33922c6ba0c45e6ad56ce112e5f4c578e62, FIBROUS_ABI, provider)
+    token_contract = Contract(token1, ABIs[token1], provider)
+    calldata = [
+        approve_token_call(amount, 0x01b23ed400b210766111ba5b1e63e33922c6ba0c45e6ad56ce112e5f4c578e62, token_contract),
+        fibrous_call(amount, provider.address, token1, token2, fibrous_contract)
+    ]
+
+    return await execute_function(provider, calldata)
 
 async def jediswap(amount: float, token1: int, token2: int, provider: Account):
     jediswap_contract = Contract(JEDISWAP_CONTRACT, JEDISWAP_ABI, provider)
@@ -185,6 +221,8 @@ async def swap(amount: float, dex: str, token1: int, token2: int, provider: Acco
         res = await sithswap(amount, token1, token2, provider)
     elif dex == "anvu":
         res = await anvu(amount, token1, token2, provider)
+    elif dex == "fibrous":
+        res = await fibrous(amount, token1, token2, provider)
     else:
         logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] chosen wrong dex for swap: {dex}; supported: jedi, my, 10k, sith")
         await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
@@ -254,7 +292,7 @@ async def random_swaps(account: Account, delay: int):
                 continue
 
             if dex not in SUPPORTED_FOR_SWAPS:
-                logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
+                logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu, fibrous)")
                 input("Please restart soft with correct settings")
 
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")

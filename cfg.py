@@ -219,7 +219,8 @@ SUPPORTED_FOR_SWAPS = [
     "my",
     "10k",
     "sith",
-    "anvu"
+    "anvu",
+    "fibrous"
 ]
 
 SUPPORTED_FOR_LIQ = [
@@ -441,6 +442,8 @@ with open(f"{SETTINGS_PATH}abi\\nostra_abi.json", "r", encoding='utf-8') as file
     NOSTRA_ABI = json.load(file)
 with open(f"{SETTINGS_PATH}abi\\starknetturkey.json", "r", encoding='utf-8') as file:
     STARKNET_TURKEY_ABI = json.load(file)
+with open(f"{SETTINGS_PATH}abi\\fibrous.json", "r", encoding='utf-8') as file:
+    FIBROUS_ABI = json.load(file)
 
 ABIs = {
     ETH_TOKEN_CONTRACT: ETH_STARK_ABI,
