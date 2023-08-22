@@ -108,7 +108,7 @@
 
     "======= Max Starknet Fee Settings =======": "",
         "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 200, // Max gwei value in Etherium net
+        "MaxETHGwei": 20, // Max gwei value in Etherium net
 
 
     "========= END =========": ""
