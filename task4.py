@@ -8,9 +8,9 @@ def jediswap_liq_call(amount: float, amount_out:float, sender: int, token1: int,
             token1,
             token2,
             int(amount*(10**token1_dec)),
-            int(amount_out),
+            int(amount_out - slippage*amount_out),
             int(amount*(10**token1_dec)- slippage*amount*(10**token1_dec)),
-            int(amount_out - amount_out*slippage),
+            int(amount_out - 2*amount_out*slippage),
             sender,
             int(time.time())+3600
             )
@@ -70,9 +70,9 @@ def ten_k_swap_liq_call(amount: float, amount_out: float, sender: int, token1: i
             token1,
             token2,
             int(amount*(10**token1_dec)),
-            int(amount_out),
-            int(amount*(10**token1_dec) - slippage*amount*(10**token1_dec)),
             int(amount_out - amount_out*slippage),
+            int(amount*(10**token1_dec) - slippage*amount*(10**token1_dec)),
+            int(amount_out - 2*amount_out*slippage),
             sender,
             int(time.time())+3600
             )
@@ -137,7 +137,7 @@ async def add_liq(amount: float, dex: str, token1: int, token2: int, provider: A
     if dex == "jedi":
         res = await jediswap_liq(amount, amount_out, token1, token2, provider)
     elif dex == "my":
-        res = await myswap_liq(amount, amount_out, token1, token2, provider)
+        res = await myswap_liq(amount, amount_out-amount_out*0.05, token1, token2, provider)
     elif dex == "10k":
         res = await ten_k_swap_liq(amount, amount_out, token1, token2, provider)
     else:

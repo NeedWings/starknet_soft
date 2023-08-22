@@ -115,7 +115,6 @@ import socket
 import wmi
 from aiohttp import ClientSession
 import sys, os
-from selectmenu import SelectMenu
 
 
 def override_where():

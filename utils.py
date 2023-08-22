@@ -111,78 +111,48 @@ def get_random_value(param):
     return random.uniform(param[0], param[1])
 
 def import_argent_account(private_key: int, client):
-    if SETTINGS["useAdvanced"]:
+    if SETTINGS["Provider"].lower() == "argent":
+        class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
+
         key_pair = KeyPair.from_private_key(private_key)
         salt = key_pair.public_key
-        if SETTINGS["Provider"].lower() == "argent":
-            account_initialize_call_data = [key_pair.public_key, 0]
-        elif SETTINGS["Provider"].lower() == "braavos":
-            account_initialize_call_data = [key_pair.public_key]
-        else:
-            logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
-            return
-        class_hash = int(SETTINGS["class_hash"], 16)
+
+
+        account_initialize_call_data = [key_pair.public_key, 0]
+
         call_data = [
-                int(SETTINGS["implementation"], 16),
-                int(SETTINGS["selector"], 16),
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
+            0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
+            0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+    elif SETTINGS["Provider"].lower() == "braavos":
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+        key_pair = KeyPair.from_private_key(private_key)
+        salt = key_pair.public_key
+        account_initialize_call_data = [key_pair.public_key]
+
+        call_data = [
+            0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
+            0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
+    elif SETTINGS["Provider"].lower() == "braavos_old":
+        class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
+        key_pair = KeyPair.from_private_key(private_key)
+        salt = key_pair.public_key
+        account_initialize_call_data = [key_pair.public_key]
+
+        call_data = [
+            0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a,
+            0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
+            len(account_initialize_call_data),
+            *account_initialize_call_data
+        ]
     else:
-        if SETTINGS["Provider"].lower() == "argent":
-            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-
-
-            account_initialize_call_data = [key_pair.public_key, 0]
-
-            call_data = [
-                0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2,
-                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        elif SETTINGS["Provider"].lower() == "braavos":
-            class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-            account_initialize_call_data = [key_pair.public_key]
-
-            call_data = [
-                0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570,
-                0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        elif SETTINGS["Provider"].lower() == "braavos_old":
-            class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-            account_initialize_call_data = [key_pair.public_key]
-
-            call_data = [
-                0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a,
-                0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        elif SETTINGS["Provider"].lower() == "argent_old":
-            class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
-            key_pair = KeyPair.from_private_key(private_key)
-            salt = key_pair.public_key
-            account_initialize_call_data = [key_pair.public_key]
-
-            call_data = [
-                0x1a7820094feaf82d53f53f214b81292d717e7bb9a92bb2488092cd306f3993f,
-                0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463,
-                len(account_initialize_call_data),
-                *account_initialize_call_data
-            ]
-        else:
-            logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
-            return
+        logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
+        return
     address = compute_address(
         salt=salt,
         class_hash=class_hash,  

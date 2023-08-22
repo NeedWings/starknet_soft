@@ -53,7 +53,8 @@ try:
         return check_license_elig(sha)
 
     if __name__ == "__main__":
-        checking_license()
+        #checking_license()
+        pass
 
 
 
@@ -328,6 +329,16 @@ try:
 
     async def full(account: Account, delay: int):
         await asyncio.sleep(delay)
+        while True:
+            try:
+                nonce = await account.get_nonce()
+                if nonce > 0:
+                    break
+                else:
+                    await asyncio.sleep(100)
+            except:
+                await asyncio.sleep(100)
+        
         way = random.randint(1, 2)
         
         if way == 1:
@@ -588,7 +599,8 @@ try:
     async def stark_stats(account: Account, delay: int):
         await asyncio.sleep(delay)
         global starkstats
-        txns = await get_contract_txns(account.address)
+        #txns = await get_contract_txns(account.address)
+        txns = []
         swap_value = await get_total_swap_value(txns, account.client)
         while True:
             try:
@@ -820,39 +832,11 @@ try:
         
         task_number = SETTINGS["TaskNumber"]
 
+        print(f"TaskNumber : [{task_number}]")
 
         print(autosoft)
         print(subs_text)
         print("\n")
-        menu = SelectMenu()
-
-        tasks = {
-            "bridge from arb/opti/eth to start(orbiter/layerswap)" : 1,
-            "random swaps": 2,
-            "swap to eth" : 3,
-            "add liquidity": 4,
-            "remove liquidity": 5,
-            "starkgate": 6,
-            "full module": 7,
-            "withdraw from stark": 8,
-            "swap stables from chains and bridge to stark": 9,
-            "show addresses": 10,
-            "encrypt_secrets": 11,
-            "generator": 12,
-            "deploy accounts": 13,
-            "myswap quest": 14,
-            "myswap mint nft": 15,
-            "stats": 16,
-            "add to lending": 17,
-            "remove from lend": 18,
-            "mint nft from turkey campain": 19,
-            "swaps on fibrous": 20
-        }
-        menu.add_choices(
-            list(tasks.keys()))
-        result = menu.select("Select task")
-        print(f"selected: {result}")
-        task_number = tasks[result]
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")
         addresses = f.read().lower().split("\n")
         f.close()
