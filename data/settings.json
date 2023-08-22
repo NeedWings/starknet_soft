@@ -15,10 +15,10 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 19, //check all task numbers in guide
-        "TaskSleep": [60, 120], // delay between tasks
-        "ErrorSleepeng" : [60, 120], // delay if an error occurs
-        "ThreadRunnerSleep" : [62, 122], // delay between two accounts starts work
+        "TaskNumber" : 12, //check all task numbers in guide
+        "TaskSleep": [1, 2], // delay between tasks
+        "ErrorSleepeng" : [1, 2], // delay if an error occurs
+        "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.05, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": true, // Use or not proxies
@@ -30,11 +30,17 @@
         "MySwapQuestNFTNumber" : 200,
     
 
+    "===== ADVANCED PROVIDER =====": "",
+        "useAdvanced"                 : true,
+        "class_hash"                  : "0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918",
+        "implementation"              : "0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2",
+        "selector"                    : "0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463",
+
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter"], // bridge to deposit in starknet
         "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
         "SaveOnWallet"                : [0.004, 0.007], // how many eth save on wallet
-        "USDAmountToBridge"           : [10, 10], // amount in usd to bridge
+        "USDAmountToBridge"           : [10000, 10000], // amount in usd to bridge
 
     
     "======== WITHDRAW  =========": "",
@@ -49,11 +55,11 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"               : [0, 0], // amount of swaps
-        "SwapDEXs"                  : ["anvu", "my", "jedi", "10k", "sith"], // DEX where will be swaps
+        "SwapAmounts"               : [6, 9], // amount of swaps
+        "SwapDEXs"                  : ["my", "jedi", "10k", "sith", "anvu"], // DEX where will be swaps
         "MySwapQuestValue"          : 0.09, // Which value soft woll use to make Myswap Quest
         "MintAtTheEndOfMyswapQuest" : true, // will soft mint NFT at the end of 14 task or not
-        "WorkPercent"               : [0.6, 0.7], // percent of balance to swap (0.5 = 50%)
+        "WorkPercent"               : [0.1, 0.5], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"          : ["USDC", "USDT"], // tokens for swap
         "MinwstEthBalanceToReturn"  : 0.001, // minimal balance of wstEth to swap to eth if SwapAmounts [-1, -1]
         "MINIMAL_SWAP_AMOUNTS": { 
@@ -64,11 +70,11 @@
 
 
     "===== LIQUIDITY =====": "",
-        "LiqWorkPercent"          : [0.44, 0.64], // percent of balance to add liquidity (0.5 = 50%)
+        "LiqWorkPercent"          : [0.1, 0.5], // percent of balance to add liquidity (0.5 = 50%)
         "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
         "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
         "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [0, 0], // how many times add liquidity
+        "AddLiqAmount"            : [3, 5], // how many times add liquidity
 
     "======= LENDS =======": "",
         "LendAddAmount"    : [0.00006, 0.00007], // How many eth add to lend
@@ -102,7 +108,7 @@
 
     "======= Max Starknet Fee Settings =======": "",
         "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 2121, // Max gwei value in Etherium net
+        "MaxETHGwei": 200, // Max gwei value in Etherium net
 
 
     "========= END =========": ""
