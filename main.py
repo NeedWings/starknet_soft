@@ -53,8 +53,7 @@ try:
         return check_license_elig(sha)
 
     if __name__ == "__main__":
-        #checking_license()
-        pass
+        checking_license()
 
 
 
@@ -329,16 +328,6 @@ try:
 
     async def full(account: Account, delay: int):
         await asyncio.sleep(delay)
-        while True:
-            try:
-                nonce = await account.get_nonce()
-                if nonce > 0:
-                    break
-                else:
-                    await asyncio.sleep(100)
-            except:
-                await asyncio.sleep(100)
-        
         way = random.randint(1, 2)
         
         if way == 1:
@@ -421,14 +410,14 @@ try:
             hex_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
             print(f"{w3.eth.account.from_key(hex_key).address}")
 
-    async def bridge_to_arb_from_stark(account: Account, delay: int):
+    async def bridge_to_arb_from_stark(account: Account, delay: int, wallet: str = None):
         await asyncio.sleep(delay)
         await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
         web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
         private_key = "0x" + "0"*(66-len(hex(account.signer.private_key))) + hex(account.signer.private_key)[2::]
-
-        wallet = web3.eth.account.from_key(private_key).address
+        if wallet == None:
+            wallet = web3.eth.account.from_key(private_key).address
 
 
         amount = get_random_value(SETTINGS["EtherToWithdraw"])
@@ -599,8 +588,7 @@ try:
     async def stark_stats(account: Account, delay: int):
         await asyncio.sleep(delay)
         global starkstats
-        #txns = await get_contract_txns(account.address)
-        txns = []
+        txns = await get_contract_txns(account.address)
         swap_value = await get_total_swap_value(txns, account.client)
         while True:
             try:
@@ -782,6 +770,54 @@ try:
             logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] balance: {eth_balacne}")
             await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
+    def bridge_to_stark_from_different_address(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        with open(f"{SETTINGS_PATH}EVM_stark_pairs.txt", "r") as f:
+            addresses = f.read().split("\n")
+        addresses2 = {}
+        for address in addresses:
+            stark_int = int(address.split(";")[0], 16)
+            addresses2[address.split(";")[1]] = '0x' + '0'*(66-len(hex(stark_int))) + hex(stark_int)[2::]
+        
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
+            wallet = web3.eth.account.from_key('0x' + '0'*(66-len(hex(key))) + hex(key)[2::]).address
+            tasks.append(Thread(target=start_collector, args=(hex(key), addresses2[wallet], delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        for i in tasks:
+            i.start()
+        for k in tasks:
+            k.join()
+
+    def bridge_from_stark_to_different_wallet(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        with open(f"{SETTINGS_PATH}EVM_stark_pairs.txt", "r") as f:
+            addresses = f.read().split("\n")
+        addresses2 = {} 
+        for address in addresses:
+            stark_int = int(address.split(";")[0], 16)
+            addresses2['0x' + '0'*(66-len(hex(stark_int))) + hex(stark_int)[2::]] = address.split(";")[1]
+        
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(bridge_to_arb_from_stark(account, delay, wallet = addresses2['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]])))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
     def start(stark_keys, task_number):
         if task_number == 1:
             task_1(stark_keys)
@@ -819,6 +855,10 @@ try:
             mint_turkey_nft_task(stark_keys)
         elif task_number == 20:
             fibrous_task(stark_keys)
+        elif task_number == 21:
+            bridge_to_stark_from_different_address(stark_keys)
+        elif task_number == 22:
+            bridge_from_stark_to_different_wallet(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -830,13 +870,43 @@ try:
     def main():
 
         
-        task_number = SETTINGS["TaskNumber"]
 
-        print(f"TaskNumber : [{task_number}]")
+
 
         print(autosoft)
         print(subs_text)
         print("\n")
+        menu = SelectMenu()
+
+        tasks = {
+            "bridge from arb/opti/eth to start(orbiter/layerswap)" : 1,
+            "random swaps": 2,
+            "swap to eth" : 3,
+            "add liquidity": 4,
+            "remove liquidity": 5,
+            "starkgate": 6,
+            "full module": 7,
+            "withdraw from stark": 8,
+            "swap stables from chains and bridge to stark": 9,
+            "show addresses": 10,
+            "encrypt_secrets": 11,
+            "generator": 12,
+            "deploy accounts": 13,
+            "myswap quest": 14,
+            "myswap mint nft": 15,
+            "stats": 16,
+            "add to lending": 17,
+            "remove from lend": 18,
+            "mint nft from turkey campain": 19,
+            "swaps on fibrous": 20,
+            "send to stark from different wallet(EVM)": 21,
+            "send from stark to different wallet(EVM)": 22
+        }
+        menu.add_choices(
+            list(tasks.keys()))
+        result = menu.select("Select task")
+        print(f"selected: {result}")
+        task_number = tasks[result]
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")
         addresses = f.read().lower().split("\n")
         f.close()
