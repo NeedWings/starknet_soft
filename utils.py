@@ -656,4 +656,3 @@ async def wait_for_better_eth_gwei(address: str):
         logger.info(f"[{address}] Current gas price in eth is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
         await sleeping(address)
 
-

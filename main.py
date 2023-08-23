@@ -818,6 +818,88 @@ try:
 
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
+    def dmail_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(dmail(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def dmail(account, delay):
+        await asyncio.sleep(delay)
+        
+        amount = get_random_value_int(SETTINGS["dmail_messages_amount"])
+        for qawe in range(amount):
+            l = "1234567890abcdefghijklmnopqrstuvwxyz"
+            t = [random.choice(l) for i in range(get_random_value_int([3,9]))]
+            text = ""
+            for i in t:
+                text += i
+            
+            addr_raw = [random.choice(l) for i in range(get_random_value_int([3,9]))]
+            addr = ""
+            for i in addr_raw:
+                addr += i
+            
+            addr += "@gmail.com"
+
+            felt_text = str_to_felt(text)
+            felt_rec = str_to_felt(addr)
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to send message({text}) to {addr}")
+
+            dmail_contract = Contract(0x0454f0bd015e730e5adbb4f080b075fdbf55654ff41ee336203aa2e1ac4d4309, [{"data":[{"name":"from_address","type":"felt"},{"name":"to","type":"felt"},{"name":"theme","type":"felt"}],"keys":[],"name":"send","type":"event"},{"name":"transaction","type":"function","inputs":[{"name":"to","type":"felt"},{"name":"theme","type":"felt"}],"outputs":[]}], account)
+
+            call = dmail_contract.functions["transaction"].prepare(
+                felt_rec,
+                felt_text
+            )
+            calldata = [call]
+
+            await execute_function(account, calldata)
+
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+
+    def starknet_id_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(starknet_id(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+
+    async def starknet_id(account, delay):
+        await asyncio.sleep(delay)
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+
+        id_contract = Contract(0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af, [{"name":"mint","type":"function","inputs":[{"name":"starknet_id","type":"felt"}],"outputs":[]}], account)
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint starknet id")
+        call = id_contract.functions["mint"].prepare(
+            random.randint(0, 999999999999999999999999999999)
+        )
+        calldata = [call]
+
+        await execute_function(account, calldata)
+
+
     def start(stark_keys, task_number):
         if task_number == 1:
             task_1(stark_keys)
@@ -859,6 +941,10 @@ try:
             bridge_to_stark_from_different_address(stark_keys)
         elif task_number == 22:
             bridge_from_stark_to_different_wallet(stark_keys)
+        elif task_number == 23:
+            dmail_task(stark_keys)
+        elif task_number == 24:
+            starknet_id_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -900,7 +986,9 @@ try:
             "mint nft from turkey campain": 19,
             "swaps on fibrous": 20,
             "send to stark from different wallet(EVM)": 21,
-            "send from stark to different wallet(EVM)": 22
+            "send from stark to different wallet(EVM)": 22,
+            "dmail": 23,
+            "starknet_id": 24
         }
         menu.add_choices(
             list(tasks.keys()))
