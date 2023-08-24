@@ -115,7 +115,9 @@ import socket
 import wmi
 from aiohttp import ClientSession
 import sys, os
-from selectmenu import SelectMenu
+import inquirer
+from termcolor import colored
+from inquirer.themes import load_theme_from_dict as loadth
 
 
 def override_where():

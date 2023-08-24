@@ -586,6 +586,52 @@ try:
             test_prox(stark_keys)
         else:
             logger.error("incorrect task_number")
+    
+    def get_action() -> str:
+        theme = {
+            "Question": {
+                "brackets_color": "bright_yellow"
+            },
+            "List": {
+                "selection_color": "bright_blue"
+            }
+        }
+
+        question = [
+            inquirer.List(
+                "action",
+                message=colored("Choose soft work task", 'light_yellow'),
+                choices=[
+                    "bridge from arb/opti/eth to start(orbiter/layerswap)",
+                    "random swaps",
+                    "swap to eth",
+                    "add liquidity",
+                    "remove liquidity",
+                    "starkgate",
+                    "full module",
+                    "withdraw from stark",
+                    "swap stables from chains and bridge to stark",
+                    "show addresses",
+                    "encrypt_secrets",
+                    "generator",
+                    "deploy accounts",
+                    "myswap quest",
+                    "myswap mint nft",
+                    "stats",
+                    "add to lending",
+                    "remove from lend",
+                    "mint nft from turkey campain",
+                    "swaps on fibrous",
+                    "send to stark from different wallet(EVM)",
+                    "send from stark to different wallet(EVM)",
+                    "send to stark off bridge different wallet(EVM)",
+                    "dmail",
+                    "starknet_id",
+                ],
+            )
+        ]
+        action = inquirer.prompt(question, theme=loadth(theme))['action']
+        return action
 
 
     def main():
@@ -593,40 +639,58 @@ try:
         print(autosoft)
         print(subs_text)
         print("\n")
-        menu = SelectMenu()
+        action = get_action()
 
-        tasks = {
-            "bridge from arb/opti/eth to start(orbiter/layerswap)" : 1,
-            "random swaps": 2,
-            "swap to eth" : 3,
-            "add liquidity": 4,
-            "remove liquidity": 5,
-            "starkgate": 6,
-            "full module": 7,
-            "withdraw from stark": 8,
-            "swap stables from chains and bridge to stark": 9,
-            "show addresses": 10,
-            "encrypt_secrets": 11,
-            "generator": 12,
-            "deploy accounts": 13,
-            "myswap quest": 14,
-            "myswap mint nft": 15,
-            "stats": 16,
-            "add to lending": 17,
-            "remove from lend": 18,
-            "mint nft from turkey campain": 19,
-            "swaps on fibrous": 20,
-            "send to stark from different wallet(EVM)": 21,
-            "send from stark to different wallet(EVM)": 22,
-            "send to stark off bridge different wallet(EVM)": 25,
-            "dmail": 23,
-            "starknet_id": 24
-        }
-        menu.add_choices(
-            list(tasks.keys()))
-        result = menu.select("Select task")
-        print(f"selected: {result}")
-        task_number = tasks[result]
+        if action == "bridge from arb/opti/eth to start(orbiter/layerswap)":
+            task_number = 1
+        elif action == "random swaps":
+            task_number = 2
+        elif action == "swap to eth":
+            task_number = 3
+        elif action == "add liquidity":
+            task_number = 4
+        elif action == "remove liquidity":
+            task_number = 5
+        elif action == "starkgate":
+            task_number = 6
+        elif action == "full module":
+            task_number = 7
+        elif action == "withdraw from stark":
+            task_number = 8
+        elif action == "swap stables from chains and bridge to stark":
+            task_number = 9
+        elif action == "show addresses":
+            task_number = 10
+        elif action == "encrypt_secrets":
+            task_number = 11
+        elif action == "generator":
+            task_number = 12
+        elif action == "deploy accounts":
+            task_number = 13
+        elif action == "myswap quest":
+            task_number = 14
+        elif action == "myswap mint nft":
+            task_number = 15
+        elif action == "stats":
+            task_number = 16
+        elif action == "add to lending":
+            task_number = 17
+        elif action == "remove from lend":
+            task_number = 18
+        elif action == "mint nft from turkey campain":
+            task_number = 19
+        elif action == "send to stark from different wallet(EVM)":
+            task_number = 20
+        elif action == "send from stark to different wallet(EVM)":
+            task_number = 21
+        elif action == "send to stark off bridge different wallet(EVM)":
+            task_number = 22
+        elif action == "dmail":
+            task_number = 23
+        elif action == "starknet_id":
+            task_number = 24
+
+       
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")
         addresses = f.read().lower().split("\n")
         f.close()
