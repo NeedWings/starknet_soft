@@ -679,12 +679,14 @@ try:
             task_number = 18
         elif action == "mint nft from turkey campain":
             task_number = 19
-        elif action == "send to stark from different wallet(EVM)":
+        elif action == "swaps on fibrous":
             task_number = 20
-        elif action == "send from stark to different wallet(EVM)":
+        elif action == "send to stark from different wallet(EVM)":
             task_number = 21
-        elif action == "send to stark off bridge different wallet(EVM)":
+        elif action == "send from stark to different wallet(EVM)":
             task_number = 22
+        elif action == "send to stark off bridge different wallet(EVM)":
+            task_number = 25
         elif action == "dmail":
             task_number = 23
         elif action == "starknet_id":
