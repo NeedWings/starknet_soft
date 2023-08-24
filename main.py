@@ -63,6 +63,17 @@ Enter task number
 90 - выводит адреса starknet и балансы
 """
 
+def ping(proxy):
+	proxyurl = proxy.split('@')[1].split(':')[0]
+	response = os.system("ping -c 1 " + proxyurl)
+	if response == 0
+
+def checkProxy(proxy_list):
+	good_proxy = []
+	proxy = [proxy.split('@')[1].split(':')[0] for proxy in proxy_list]
+	
+
+
 def runner(stark_keys, eth_keys, task_number, proxy):
 	os.environ['http_proxy'] = proxy
 	os.environ['HTTP_PROXY'] = proxy

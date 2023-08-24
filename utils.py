@@ -50,7 +50,14 @@ def get_wsteth_price():
 			return float(response["wrapped-steth"]["usd"])
 
 def get_eth_price():
-	return get_ticker_price('eth')
+	while True:
+		try:
+			result = req(f'https://api.etherscan.io/api?module=stats&action=ethprice&apikey={SETTINGS["etherscanKey"]}')
+			return float(result['result']['ethusd'])
+		except:
+			print('failed to get eth price, sleeping 5')
+			time.sleep(5)
+	#return get_ticker_price('eth')
 
 async def sleeping(address, error = False):
 		if error:
