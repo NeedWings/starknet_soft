@@ -66,7 +66,8 @@ Enter task number
 def ping(proxy):
 	proxyurl = proxy.split('@')[1].split(':')[0]
 	response = os.system("ping -c 1 " + proxyurl)
-	if response == 0
+	if response == 0:
+		pass
 
 def checkProxy(proxy_list):
 	good_proxy = []
