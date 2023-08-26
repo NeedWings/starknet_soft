@@ -30,6 +30,7 @@
         "MySwapQuestNFTNumber" : 200,
     
         "dmail_messages_amount": [5, 7],
+        "starknet_id_amount": [5, 8],
 
     
     "===== ADVANCED PROVIDER =====": "",
@@ -57,7 +58,7 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"               : [6, 9], // amount of swaps
+        "SwapAmounts"               : [0, 0], // amount of swaps
         "SwapDEXs"                  : ["my", "jedi", "10k", "sith", "anvu"], // DEX where will be swaps
         "MySwapQuestValue"          : 0.09, // Which value soft woll use to make Myswap Quest
         "MintAtTheEndOfMyswapQuest" : true, // will soft mint NFT at the end of 14 task or not
@@ -76,7 +77,7 @@
         "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
         "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
         "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [3, 5], // how many times add liquidity
+        "AddLiqAmount"            : [0, 0], // how many times add liquidity
 
     "======= LENDS =======": "",
         "LendAddAmount"    : [0.00006, 0.00007], // How many eth add to lend
@@ -110,7 +111,7 @@
 
     "======= Max Starknet Fee Settings =======": "",
         "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 20, // Max gwei value in Etherium net
+        "MaxETHGwei": 200, // Max gwei value in Etherium net
 
 
     "========= END =========": ""
