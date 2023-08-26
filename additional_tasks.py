@@ -43,6 +43,25 @@ try:
         starkstats += data.replace(".",",")
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
 
+    def task_stats(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            
+            tasks.append(loop.create_task(stark_stats(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+        with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+            f.write(starkstats)
+
     def remove_from_lend_task(stark_keys):
         loop = asyncio.new_event_loop()
         tasks = []
@@ -389,16 +408,19 @@ try:
 
     async def starknet_id(account, delay):
         await asyncio.sleep(delay)
-        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-        id_contract = Contract(0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af, [{"name":"mint","type":"function","inputs":[{"name":"starknet_id","type":"felt"}],"outputs":[]}], account)
-        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint starknet id")
-        call = id_contract.functions["mint"].prepare(
-            random.randint(0, 999999999999999999999999999999)
-        )
-        calldata = [call]
+        amount = get_random_value_int(SETTINGS["starknet_id_amount"])
+        for i in range(amount):
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-        await execute_function(account, calldata)
+            id_contract = Contract(0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af, [{"name":"mint","type":"function","inputs":[{"name":"starknet_id","type":"felt"}],"outputs":[]}], account)
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint starknet id")
+            call = id_contract.functions["mint"].prepare(
+                random.randint(0, 999999999999)
+            )
+            calldata = [call]
+
+            await execute_function(account, calldata)
 finally:
     pass
     

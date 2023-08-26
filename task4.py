@@ -155,7 +155,7 @@ async def add_liq_task(account: Account, delay: int):
         
         while True:
             try:
-                eth_balacne = await account.get_balance()
+                eth_balacne = await account.get_balance() - get_random_value_int(SETTINGS["SaveEthOnBalance"])*1e18
                 break
             except Exception as e:
                 logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")

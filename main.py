@@ -10,6 +10,7 @@ try:
     from myswaptask import *
     from fibroustask import *
     from additional_tasks import *
+    import inquirer
     Endianness = Literal["big", "little"]
 
 
@@ -330,20 +331,22 @@ try:
     async def full(account: Account, delay: int):
         await asyncio.sleep(delay)
         way = random.randint(1, 2)
-        
-        if way == 1:
-            await random_swaps(account, 0)
-            await add_liq_task(account, 0)
-            if random.choice(SETTINGS["RemoveOnFullMode"]):
-                await remove_liq_task(account, 0)
-        else:
-            await add_liq_task(account, 0)
-            if random.choice(SETTINGS["RemoveOnFullMode"]):
-                await remove_liq_task(account, 0)
-            await random_swaps(account, 0)
+        ways = [1,2,3,4]
+        shuffle(ways)
+        for way in ways:
+            if way == 1:
+                await random_swaps(account, 0)
+            elif way == 2:
+                await add_liq_task(account, 0)
+                if random.choice(SETTINGS["RemoveOnFullMode"]):
+                    await remove_liq_task(account, 0)
+            elif way == 3:
+                await dmail(account, 0)
+            elif way == 4:
+                await starknet_id(account, 0)
+            
         if random.choice(SETTINGS["SwapAtTheEnd"]):
             await swap_to_eth(account, 0)
-        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
     def task_12():
         res = "starknet private key                                                starknet address                                                   EVM address\n"
@@ -441,24 +444,6 @@ try:
             account, call_data, salt, class_hash = import_argent_account(key, client)
             print(f"{hex(key)}    {'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}    {w3.eth.account.from_key(hex(key)).address}")
 
-    def task_stats(stark_keys):
-        loop = asyncio.new_event_loop()
-        tasks = []
-        delay = 0
-        for key in stark_keys:
-            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
-                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
-            else:
-                client = GatewayClient(net=MAINNET)
-            account, call_data, salt, class_hash = import_argent_account(key, client)
-            
-            tasks.append(loop.create_task(stark_stats(account, delay)))
-            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
-
-        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
-
-        with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
-            f.write(starkstats)
 
     def mint_argent_task(stark_keys):
         loop = asyncio.new_event_loop()
@@ -679,14 +664,12 @@ try:
             task_number = 18
         elif action == "mint nft from turkey campain":
             task_number = 19
-        elif action == "swaps on fibrous":
-            task_number = 20
         elif action == "send to stark from different wallet(EVM)":
-            task_number = 21
+            task_number = 20
         elif action == "send from stark to different wallet(EVM)":
-            task_number = 22
+            task_number = 21
         elif action == "send to stark off bridge different wallet(EVM)":
-            task_number = 25
+            task_number = 22
         elif action == "dmail":
             task_number = 23
         elif action == "starknet_id":
