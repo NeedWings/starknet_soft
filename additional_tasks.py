@@ -1,6 +1,8 @@
 from utils import *
 from task9 import *
 from task6 import *
+from task5 import *
+from task3 import *
 try:  
     
 
@@ -421,6 +423,40 @@ try:
             calldata = [call]
 
             await execute_function(account, calldata)
+
+    def withdraw_all_task(stark_keys, other):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        with open(f"{SETTINGS_PATH}EVM_stark_pairs.txt", "r") as f:
+            addresses = f.read().split("\n")
+        addresses2 = {} 
+        for address in addresses:
+            stark_int = int(address.split(";")[0], 16)
+            addresses2['0x' + '0'*(66-len(hex(stark_int))) + hex(stark_int)[2::]] = address.split(";")[1]
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            out_wallets_result['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]] = ""
+            if other:
+                tasks.append(loop.create_task(withdraw_all(account, delay, addresses2['0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]])))
+            else:
+                tasks.append(loop.create_task(withdraw_all(account, delay)))
+
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def withdraw_all(account: Account, delay, wallet = None):
+        SETTINGS["toSaveFunds"] = ["ETH"]
+        await asyncio.sleep(delay)
+        await remove_liq_task(account, 0)
+        await swap_to_eth(account, 0)
+        await bridge_to_arb_from_stark(account, 0, wallet)
+
 finally:
     pass
     

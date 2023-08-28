@@ -149,7 +149,8 @@ def get_bytes(value: str) -> str:
     i = len(value)
     return '0x' + ''.join('0' for k in range(64-i)) + value
 
-
+global task_number
+task_number = 3
 def json_remove_comments(invalid_json: str):
     comment_start = -1
     for char in range(len(invalid_json)):
