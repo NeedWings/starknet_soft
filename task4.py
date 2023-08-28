@@ -160,6 +160,8 @@ async def add_liq_task(account: Account, delay: int):
             except Exception as e:
                 logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
                 await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+        if eth_balacne < 0:
+            continue
         swap_amount_eth = ((eth_balacne * get_random_value(SETTINGS["LiqWorkPercent"]))/1e18)/2
         
         

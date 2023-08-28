@@ -59,9 +59,6 @@ try:
 
 
 
-
-
-
     def encode_secrets():
         enc_type = 0
         while enc_type != 1 and enc_type != 2:
@@ -565,6 +562,10 @@ try:
             starknet_id_task(stark_keys)
         elif task_number == 25:
             off_bridge_different_wallet(stark_keys)
+        elif task_number == 26:
+            withdraw_all_task(stark_keys, False)
+        elif task_number == 27:
+            withdraw_all_task(stark_keys, True)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -612,6 +613,8 @@ try:
                     "send to stark off bridge different wallet(EVM)",
                     "dmail",
                     "starknet_id",
+                    "full withdraw(remove liquidity, swap to eth, bridge to chain)",
+                    "full withdraw to different wallet(EVM)"
                 ],
             )
         ]
@@ -625,7 +628,7 @@ try:
         print(subs_text)
         print("\n")
         action = get_action()
-
+        global task_number
         if action == "bridge from arb/opti/eth to start(orbiter/layerswap)":
             task_number = 1
         elif action == "random swaps":
@@ -664,16 +667,22 @@ try:
             task_number = 18
         elif action == "mint nft from turkey campain":
             task_number = 19
-        elif action == "send to stark from different wallet(EVM)":
+        elif action == "swaps on fibrous":
             task_number = 20
-        elif action == "send from stark to different wallet(EVM)":
+        elif action == "send to stark from different wallet(EVM)":
             task_number = 21
-        elif action == "send to stark off bridge different wallet(EVM)":
+        elif action == "send from stark to different wallet(EVM)":
             task_number = 22
+        elif action == "send to stark off bridge different wallet(EVM)":
+            task_number = 25
         elif action == "dmail":
             task_number = 23
         elif action == "starknet_id":
             task_number = 24
+        elif action == "full withdraw(remove liquidity, swap to eth, bridge to chain)":
+            task_number = 26
+        elif action == "full withdraw to different wallet(EVM)":
+            task_number = 27
 
        
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")

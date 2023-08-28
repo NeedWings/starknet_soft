@@ -262,6 +262,7 @@ async def random_swaps(account: Account, delay: int):
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got USDC balance: {usdc_balacne}")
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got USDT balance: {usdt_balacne}")
         eth_balacne = eth_balacne - get_random_value(SETTINGS["SaveEthOnBalance"])
+        
         eth_usd_value = eth_balacne * eth_price
         to_choose = {
             eth_usd_value : ETH_TOKEN_CONTRACT,

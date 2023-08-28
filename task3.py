@@ -30,8 +30,8 @@ def task_3(stark_keys):
 
 
 async def swap_to_eth(account: Account, delay: int):
+    global task_number
     await asyncio.sleep(delay)
-    task_number = SETTINGS["TaskNumber"]
     if task_number == 3:
         for token in SETTINGS["Supported_tokens"]:
             try:
