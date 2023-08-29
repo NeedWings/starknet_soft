@@ -10,6 +10,7 @@ from myswaptask import *
 
 from eth_account import Account as eth_account
 from tabulateSt import tabulate
+import time
 
 Endianness = Literal["big", "little"]
 
@@ -310,7 +311,12 @@ def task_10(stark_keys, eth_keys):
 async def get_balance2(account):
 	hex_stark_address = hex(account.address)
 	hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
-	balance = (await account.get_balance() / 1e18)
+	while True:
+		try:
+			balance = (await account.get_balance() / 1e18)
+			break
+		except:
+			time.sleep(30)
 	#if balance > 0:
 	#	return
 	print(f'{hex_stark_address} {balance}')
