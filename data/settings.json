@@ -32,12 +32,14 @@
         "dmail_messages_amount": [5, 7],
         "starknet_id_amount": [5, 8],
 
+        "zklend_collateral_amount": [2, 4],
+
     
     "===== ADVANCED PROVIDER =====": "",
-        "useAdvanced"                 : true,
-        "class_hash"                  : "0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918",
-        "implementation"              : "0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2",
-        "selector"                    : "0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463",
+        "useAdvanced"                 : false,
+        "class_hash"                  : "0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e",
+        "implementation"              : "0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a",
+        "selector"                    : "0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a",
 
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter"], // bridge to deposit in starknet
@@ -111,7 +113,7 @@
 
     "======= Max Starknet Fee Settings =======": "",
         "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 200, // Max gwei value in Etherium net
+        "MaxETHGwei": 20, // Max gwei value in Etherium net
 
 
     "========= END =========": ""
