@@ -84,16 +84,22 @@ try:
         await asyncio.sleep(delay)
         if SETTINGS["Lend"] == "zklend":
 
+            while True:
+                try:
+                    lend_bal = await account.get_balance(0x01b5bd713e72fdc5d63ffd83762f81297f6175a5e0a4771cdadbc1dd5fe72cb1)
+                    break
+                except Exception as e:
+                    logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] can't get balance: {e}")
+                    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+            if lend_bal == 0:
+                return
             lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
-
-
-
-            call2 = lend_contract.functions["withdraw_all"].prepare(
-                    ETH_TOKEN_CONTRACT
+            call2 = lend_contract.functions["withdraw"].prepare(
+                    ETH_TOKEN_CONTRACT,
+                    lend_bal
                 )
-
-            
             calldata = [call2]
+
         elif SETTINGS["Lend"].lower() == "nostra":
             lend_contract = Contract(0x070f8a4fcd75190661ca09a7300b7c93fab93971b67ea712c664d7948a8a54c6, NOSTRA_ABI, account)
             while True:
@@ -423,6 +429,7 @@ try:
             calldata = [call]
 
             await execute_function(account, calldata)
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
     def withdraw_all_task(stark_keys, other):
         loop = asyncio.new_event_loop()
@@ -456,6 +463,45 @@ try:
         await remove_liq_task(account, 0)
         await swap_to_eth(account, 0)
         await bridge_to_arb_from_stark(account, 0, wallet)
+
+    def colateral_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+
+        for key in stark_keys:
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(colateral(account, delay)))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+    async def colateral(account: Account, delay):
+        await asyncio.sleep(delay)
+        for i in range(get_random_value_int(SETTINGS["zklend_collateral_amount"])):
+            lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
+            call3 = lend_contract.functions["enable_collateral"].prepare(
+                    ETH_TOKEN_CONTRACT
+                )
+            calldata = [call3]
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] enabling collateral")
+            await execute_function(account, calldata)
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+            lend_contract = Contract(ZKLEND_CONTRACT, ZKLEND_ABI, account)
+            call3 = lend_contract.functions["disable_collateral"].prepare(
+                    ETH_TOKEN_CONTRACT
+                )
+            calldata = [call3]
+            await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] disabling collateral")
+            await execute_function(account, calldata)
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+
 
 finally:
     pass

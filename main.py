@@ -283,7 +283,6 @@ try:
             stark_address = account.address
             hex_stark_address = hex(stark_address)
             hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
-            
             hex_key = "0x" + "0"*(66-len(hex(int_key))) + hex(int_key)[2::]
             mm_address = w3.eth.account.from_key(hex_key).address.lower()
             if mm_address in addresses or str(stark_address) in addresses or hex_stark_address in addresses:
@@ -343,7 +342,7 @@ try:
                 await starknet_id(account, 0)
             
         if random.choice(SETTINGS["SwapAtTheEnd"]):
-            await swap_to_eth(account, 0)
+            await swap_to_eth(account, 0, in_full=True)
 
     def task_12():
         res = "starknet private key                                                starknet address                                                   EVM address\n"
@@ -511,12 +510,11 @@ try:
         logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to add {amount} ETH to lend")
         return await execute_function(account, calldata)
 
-
-
-
+    
 
     def start(stark_keys, task_number):
         if task_number == 1:
+
             task_1(stark_keys)
         elif task_number == 2:
             task_2(stark_keys)
@@ -566,6 +564,8 @@ try:
             withdraw_all_task(stark_keys, False)
         elif task_number == 27:
             withdraw_all_task(stark_keys, True)
+        elif task_number == 28:
+            colateral_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -614,7 +614,8 @@ try:
                     "dmail",
                     "starknet_id",
                     "full withdraw(remove liquidity, swap to eth, bridge to chain)",
-                    "full withdraw to different wallet(EVM)"
+                    "full withdraw to different wallet(EVM)",
+                    "collateral zklend"
                 ],
             )
         ]
@@ -683,6 +684,8 @@ try:
             task_number = 26
         elif action == "full withdraw to different wallet(EVM)":
             task_number = 27
+        elif action == "collateral zklend":
+            task_number = 28
 
        
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")

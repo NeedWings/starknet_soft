@@ -29,10 +29,9 @@ def task_3(stark_keys):
         f.write(res)
 
 
-async def swap_to_eth(account: Account, delay: int):
-    global task_number
+async def swap_to_eth(account: Account, delay: int, in_full = False):
     await asyncio.sleep(delay)
-    if task_number == 3:
+    if not in_full:
         for token in SETTINGS["Supported_tokens"]:
             try:
                 token_contract = TOKENS[token]
