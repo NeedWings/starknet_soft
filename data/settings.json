@@ -28,7 +28,7 @@
         "SaveEthOnBalance" : [0.003, 0.005], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
        
         "MySwapQuestNFTNumber" : 200,
-    
+        "enable_delayed_start": false,
         "dmail_messages_amount": [5, 7],
         "starknet_id_amount": [5, 8],
 
