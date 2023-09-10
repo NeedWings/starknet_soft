@@ -1,11 +1,45 @@
 from starknet_py.hash import transaction 
 from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account
+from starknet_py.net.client import Client
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.contract import Contract, PreparedFunctionCall
+from starknet_py.hash.utils import message_signature, private_to_stark_key, verify_message_signature, compute_hash_on_elements
+from starknet_py.net.models import AddressRepresentation, StarknetChainId, parse_address
+from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
+from starknet_py.net.account.account import _add_max_fee_to_transaction
+from starknet_py.net.signer import BaseSigner
+from starknet_py.utils.iterable import ensure_iterable
+from starknet_py.net.models.transaction import (
+    AccountTransaction,
+    Declare,
+    DeclareV2,
+    DeployAccount,
+    Invoke,
+)
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
+from starknet_py.constants import DEFAULT_ENTRY_POINT_SELECTOR
+from starknet_py.hash.transaction import (
+    TransactionHashPrefix,
+    compute_declare_transaction_hash,
+    compute_declare_v2_transaction_hash,
+    compute_deploy_account_transaction_hash,
+    compute_transaction_hash,
+)
+from starknet_py.net.client_models import (
+    Call,
+    Calls,
+    EstimatedFee,
+    Hash,
+    SentTransactionResponse,
+    Tag,
+)
+from random import shuffle
+import multiprocessing
+from threading import Thread
 try:
     import Crypto.Hash._keccak
     import cytoolz._signatures
@@ -78,10 +112,15 @@ import getpass
 import hashlib
 import sys
 import socket
+#import wmi
+from aiohttp import ClientSession
 
-client = GatewayClient(net=MAINNET)
-chain = StarknetChainId.MAINNET
+#client = GatewayClient(net=MAINNET)
+#chain = StarknetChainId.MAINNET
 import sys, os
+import inquirer
+from termcolor import colored
+from inquirer.themes import load_theme_from_dict as loadth
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -91,7 +130,8 @@ def get_bytes(value: str) -> str:
     i = len(value)
     return '0x' + ''.join('0' for k in range(64-i)) + value
 
-
+global task_number
+task_number = 3
 def json_remove_comments(invalid_json: str):
     comment_start = -1
     for char in range(len(invalid_json)):
@@ -150,7 +190,9 @@ TEN_K_SWAP_CONTRACT = 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27
 SITHSWAP_CONTRACT = 0x028c858a586fa12123a1ccb337a0a3b369281f91ea00544d0c086524b759f627
 ORBITER_STARK_CONTRACT = 0x0173f81c529191726c6e7287e24626fe24760ac44dae2a1f7e02080230f8458b
 ANVU_CONTRACT = 0x4270219d365d6b017231b52e92b3fb5d7c8378b05e9abc97724537a80e93b0f
+ARGENT_NFT_CONTRACT = 0x07606cac9053e9b8b573a4b0a0ce608880f64869e24b8a605210d7a85bb6e5f1
 wstETH_TOKEN_CONTRACT = 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
+ZKLEND_CONTRACT = 0x04c0a5193d58f74fbace4b74dcf65481e734ed1714121bdc571da345540efa05
 
 LIQ_PRICES = {
     "my" : 8136191259,
@@ -164,7 +206,8 @@ SUPPORTED_FOR_SWAPS = [
     "my",
     "10k",
     "sith",
-    "anvu"
+    "anvu",
+    "fibrous"
 ]
 
 SUPPORTED_FOR_LIQ = [
@@ -230,6 +273,11 @@ TOKENS = {
     "USDC": USDC_TOKEN_CONTRACT,
     "ETH": ETH_TOKEN_CONTRACT,
     "wstETH": wstETH_TOKEN_CONTRACT
+}
+
+TOKENS_REVERCE = {
+    USDT_TOKEN_CONTRACT: "usdt",
+    USDC_TOKEN_CONTRACT: "usdc",
 }
 
 ETH_RPC = SETTINGS["RPC"]["ETHEREUM_MAINNET"]
@@ -309,6 +357,13 @@ MYSWAP_POOLS = {
     f"{ETH_TOKEN_CONTRACT}:{wstETH_TOKEN_CONTRACT}": 7,
     f"{wstETH_TOKEN_CONTRACT}:{ETH_TOKEN_CONTRACT}": 7,
 }
+
+SECOND_TOKEN_FROM_POOL_ID_MYSWAP = {
+    7: "wsteth",
+    1: "usdc",
+    4: "usdt" 
+}
+
 DECIMALS = {
     ETH_TOKEN_CONTRACT: 18,
     wstETH_TOKEN_CONTRACT: 18,
@@ -359,6 +414,9 @@ f.close()
 f = open(f"{SETTINGS_PATH}abi/anvu.json", "r")
 ANVU_ABI = json.loads(f.read())
 f.close()
+f = open(f"{SETTINGS_PATH}abi/zk_lend.json", "r")
+ZKLEND_ABI = json.loads(f.read())
+f.close()
 with open(f"{SETTINGS_PATH}abi/erc20.json", "r", encoding='utf-8') as file:
     ERC20_ABI = json.load(file)
 with open(f"{SETTINGS_PATH}abi/sushi.json", "r", encoding='utf-8') as file:
@@ -367,6 +425,12 @@ with open(f"{SETTINGS_PATH}abi/bridge.json", "r", encoding='utf-8') as file:
     BRIDGE_ABI = json.load(file)
 with open(f"{SETTINGS_PATH}abi/myswap_quest_nft.json", "r", encoding='utf-8') as file:
     MYSWAP_NFT_QUEST_ABI = json.load(file)
+with open(f"{SETTINGS_PATH}abi/nostra_abi.json", "r", encoding='utf-8') as file:
+    NOSTRA_ABI = json.load(file)
+with open(f"{SETTINGS_PATH}abi/starknetturkey.json", "r", encoding='utf-8') as file:
+    STARKNET_TURKEY_ABI = json.load(file)
+with open(f"{SETTINGS_PATH}abi/fibrous.json", "r", encoding='utf-8') as file:
+    FIBROUS_ABI = json.load(file)
 
 ABIs = {
     ETH_TOKEN_CONTRACT: ETH_STARK_ABI,
@@ -375,6 +439,23 @@ ABIs = {
     wstETH_TOKEN_CONTRACT: ETH_STARK_ABI
 }
 
+proxy_dict_cfg = {
 
+}
+
+
+
+
+chain = StarknetChainId.MAINNET
 
 slippage = SETTINGS["Slippage"]
+
+ACTUAL_IMPL = 0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a3ae3a054a4ec5254e4
+
+
+out_wallets_result = {
+    
+}
+
+starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;myswap wstETH;myswap USDC; myswap USDT;jediswap USDC;jediswap USDT;sithswap USDC;sithswap USDT;10kswap USDC;10kswap USDT;avnu USDC;avnu USDT\n"
+#slippage = SETTINGS["Slippage"]

@@ -1,7 +1,7 @@
 from utils import *
 
 async def get_fee_for_starkgate(rec: str, amount: int):
-    r = requests.post("https://alpha-mainnet.starknet.io/feeder_gateway/estimate_message_fee?blockNumber=pending",
+    r = req_post("https://alpha-mainnet.starknet.io/feeder_gateway/estimate_message_fee?blockNumber=pending",
                       data= json.dumps({"from_address":"993696174272377493693496825928908586134624850969",
                              "to_address":"0x073314940630fd6dcda0d772d4c972c4e0a9946bef9dabf4ef84eda8ef542b82",
                              "entry_point_selector":"0x2d757788a8d8d6f21d1cd40bce38a8222d70654214e96ff95d8086e684fbee5",
@@ -13,7 +13,7 @@ async def get_fee_for_starkgate(rec: str, amount: int):
                             "Content-type": "application/json"
                         })
 
-    return r.json()["overall_fee"]
+    return r["overall_fee"]
 
 async def starkgate(amount: float, eth_key: str, recepient: str):
     try:
@@ -33,13 +33,8 @@ async def starkgate(amount: float, eth_key: str, recepient: str):
 
         contract = web3.eth.contract(STARKGATE_CONTRACT, abi=STARKGATE_ABI)
 
-        dict_transaction = {
-            'chainId': web3.eth.chain_id,
-            'value' : int((amount + fee)*1e18),
-            'gasPrice': gas_price,
-            'nonce': web3.eth.get_transaction_count(wallet),
-        }
 
+        dict_transaction = await get_tx_data_evm(wallet, web3, "ETHEREUM_MAINNET", int((amount + fee)*1e18))
         txn = contract.functions.deposit(
             int(amount*1e18), int(recepient, 16)
         ).build_transaction(dict_transaction)
@@ -70,7 +65,6 @@ async def eth_bridge_officialOld(private_key: str, recepient: str, eth_key, dela
         else:
             logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
             await sleeping(wallet, True)
-
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
     ETH_price = get_eth_price()
 

@@ -30,7 +30,7 @@ async def get_evm_token_balance(address, token_address=None, net_name=None, cont
             return balance, float(from_wei_balance)
         except Exception as error:
             logger.error(f'[{address}] Cant get balance of: {token_address}! Error: {error}')
-            sleeping(address, True)
+            await sleeping(address, True)
 
 async def check_main_asset(address: str):
         main_asset = (None, 0, None, None)
@@ -66,39 +66,6 @@ async def check_main_asset(address: str):
                 main_asset = net_name, asset, name_, token_contract
 
         return main_asset
-
-
-async def get_tx_data_evm(address, w3: Web3, net_name: str, value=0) -> dict:
-
-        gas_price = await get_gas_price_evm(address, net_name)
-
-
-        data = {
-            'chainId': w3.eth.chain_id,
-            'nonce': w3.eth.get_transaction_count(address),
-            'from': address,
-            "value": value
-        }
-
-
-        if net_name in ["AVALANCHE_MAINNET", "POLYGON_MAINNET", "ARBITRUM_MAINNET"]:
-            data["type"] = "0x2"
-
-
-        if net_name not in ['ARBITRUM_MAINNET', "AVALANCHE_MAINNET", "POLYGON_MAINNET"]:
-            data["gasPrice"] = gas_price
-
-        else:
-            data["maxFeePerGas"] = gas_price
-            if net_name == "POLYGON_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(30, "gwei")
-            elif net_name == "AVALANCHE_MAINNET":
-                data["maxPriorityFeePerGas"] = gas_price
-            elif net_name == "ETHEREUM_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(0.05, "gwei")
-            elif net_name == "ARBITRUM_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(0.01, "gwei")
-        return data
 
 def send_transaction_evm(private_key: str, tx: dict, net_name: str, approve=False) -> str: 
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER[net_name])))
@@ -366,14 +333,28 @@ async def collector(private_key: str, recepient: str, eth_key, delay: int):
 
     await eth_bridge_no_off(private_key, recepient, eth_key, 0)
 
-
-def task_9(stark_keys):
+def start_collector(private_key: str, recepient: str, delay: int):
     loop = asyncio.new_event_loop()
     tasks = []
-
-    for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
-        tasks.append(loop.create_task(collector(account)))
-
-
+    tasks.append(loop.create_task(collector(private_key, recepient, delay)))
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+
+def task_9(stark_keys):
+    #loop = asyncio.new_event_loop()
+    tasks = []
+    delay = 0
+    for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
+
+        tasks.append(Thread(target=start_collector, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+        
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+    for i in tasks:
+        i.start()
+    for k in tasks:
+        k.join()
+

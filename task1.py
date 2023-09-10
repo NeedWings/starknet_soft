@@ -31,15 +31,9 @@ async def orbiter(amount: float, source: str, eth_key: str, recepient: str):
             logger.error(f"[{wallet}] not enough ETH for bridge ")
             return NOT_ENOUGH_NATIVE, ""
         contract = web3.eth.contract(ORBITER_CONTRACT, abi=ORBITER_ABI)
-        dict_transaction = {
-            'chainId': web3.eth.chain_id,
-            'value' : int(amount * decimal.Decimal(1e18)),
-            'gasPrice': web3.eth.gas_price,
-            'nonce': web3.eth.get_transaction_count(wallet),
-        }
-        gasEstimate = web3.eth.estimate_gas(dict_transaction)
 
-        dict_transaction["gas"] = gasEstimate*2
+        dict_transaction = await get_tx_data_evm(wallet, web3, source, int(amount * decimal.Decimal(1e18)))
+
         txn = contract.functions.transfer(
             ORBITER_CONTRACTS_REC, recepient
         ).build_transaction(dict_transaction)
@@ -111,7 +105,14 @@ async def layerswap(amount: float, source: str, eth_key: str, recepient: str):
             logger.error(f"[{wallet}] LayerSwap sent bad data")
             return LAYERSWAP_BAD_DATA, ""
 
-
+'''
+resolve later
+<<<< main
+        
+        tx = await get_tx_data_evm(wallet, web3, source, Web3.to_wei(amount, 'ether'))
+        signed_tx = web3.eth.account.sign_transaction(tx, private_key)
+        
+=======
         tx = {
             'nonce': web3.eth.get_transaction_count(wallet),
             'to': Web3.to_checksum_address(address),
@@ -125,6 +126,7 @@ async def layerswap(amount: float, source: str, eth_key: str, recepient: str):
 
         signed_tx = web3.eth.account.sign_transaction(tx, eth_key)
 
+>>>> ktydev
         #send transaction
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
@@ -134,6 +136,17 @@ async def layerswap(amount: float, source: str, eth_key: str, recepient: str):
         logger.error(f"[{wallet}] failed to send tx: {source}! Error: {e}")
         await sleeping(wallet, True)
         return UNEXPECTED_ERROR, ""
+<<<< main
+    
+async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
+    private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
+
+    await asyncio.sleep(delay)
+    way = random.choice(SETTINGS["BridgeType"])
+    web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+    wallet = web3.eth.account.from_key(private_key).address
+    i = 0
+=======
 
 async def eth_bridge_no_off(private_key: str, recepient: str, eth_key, delay: int):
     await asyncio.sleep(delay)
@@ -142,6 +155,7 @@ async def eth_bridge_no_off(private_key: str, recepient: str, eth_key, delay: in
     #wallet = web3.eth.account.from_key(private_key).address
     #wallet = web3.eth.account.from_key(eth_key).address
     wallet = eth_account.from_key(eth_key).address #less network footprint
+>>>> ktydev
     while True:
         value, net = await check_net_assets(wallet)
         value = value - get_random_value(SETTINGS["SaveOnWallet"])
@@ -150,7 +164,15 @@ async def eth_bridge_no_off(private_key: str, recepient: str, eth_key, delay: in
         else:
             logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
             await sleeping(wallet, True)
+<<<< main
+        if i >= retries_limit:
+            logger.error(f"[{wallet}] max retries limit reached, stop searching")
+            return
+        i+=1
+    
+=======
 
+>>>> ktydev
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
     ETH_price = get_eth_price()
 
@@ -178,14 +200,40 @@ async def eth_bridge_no_off(private_key: str, recepient: str, eth_key, delay: in
         logger.success(f"[{wallet}] txn has sent, hash: {res[1]}")
         await sleeping(wallet)
 
+def start_eth_bridge_no_off(private_key: str, recepient: str, delay: int):
+    loop = asyncio.new_event_loop()
+    tasks = []
+    tasks.append(loop.create_task(eth_bridge_no_off(private_key, recepient, delay)))
+    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
+<<<< main
+def task_1(stark_keys):
 
+=======
 def task_1(stark_keys, eth_keys):
     loop = asyncio.new_event_loop()
+>>>> ktydev
     tasks = []
     delay = 0
     number = len(stark_keys)
 
+<<<< main
+    for key in stark_keys:
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
+
+        tasks.append(Thread(target=start_eth_bridge_no_off, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
+        
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
+    for i in tasks:
+        i.start()
+    for k in tasks:
+        k.join()
+
+=======
     #for key in stark_keys:
     for i in range(number):
         account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
@@ -194,3 +242,5 @@ def task_1(stark_keys, eth_keys):
 
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+>>>> ktydev
+'''

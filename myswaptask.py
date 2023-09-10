@@ -1,11 +1,13 @@
 from utils import *
+from task4 import add_liq_task
+from task5 import remove_liq_task
 
 
-def myswap_call_quest(amount: float, token1: int, token2: int, contract: Contract):
+async def myswap_call_quest(amount: float, token1: int, token2: int, contract: Contract):
     token1_dec = DECIMALS[token1]
     token2_dec = DECIMALS[token2]
     eth_price = get_eth_price()
-    wstEth_price = get_wsteth_price()
+    wstEth_price = await get_wsteth_price("")
     if token1 == ETH_TOKEN_CONTRACT:
         amount_out = amount * (eth_price/wstEth_price)
     else:
@@ -24,7 +26,7 @@ async def myswap_quest(amount: float, token1: int, token2: int, provider: Accoun
     token_contract = Contract(token1, ABIs[token1], provider)
     calldata = [
         approve_token_call(amount, MYSWAP_CONTRACT, token_contract),
-        myswap_call_quest(amount, token1, token2, myswap_contract)
+        await myswap_call_quest(amount, token1, token2, myswap_contract)
     ]
 
     return await execute_function(provider, calldata)
@@ -36,73 +38,97 @@ async def swap_myswap_task(amount: float, dex: str, token1: int, token2: int, pr
         try:
             token1_balance = await provider.get_balance(token1)/10**DECIMALS[token1]
             break
-        except:
-            logger.error(f"[{hex(provider.address)}] can't get balance. Too many attempts ")
-            await sleeping(hex(provider.address), True)
+        except Exception as e:
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] can't get balance. {e}")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
     if token1_balance < amount:
-        logger.error(f"[{hex(provider.address)}] not enough token for swap: balance {token1_balance}, required {amount}")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] not enough token for swap: balance {token1_balance}, required {amount}")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return NOT_ENOUGH_NATIVE, ""
 
     if dex == "my":
         res = await myswap_quest(amount, token1, token2, provider)
     else:
-        logger.error(f"[{hex(provider.address)}] chosen wrong dex for swap: {dex}; supported:  my")
-        await sleeping(hex(provider.address), True)
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] chosen wrong dex for swap: {dex}; supported:  my")
+        await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         return WRONG_CHOICE, ""
     return res
 
 async def mint_myswap_quest_nft(provider: Account):
-    mint_contract = Contract(0x07c351118b538157458aebedb92212624027f4813ab39cd7971df9f1720f7633, MYSWAP_NFT_QUEST_ABI, provider)
+    await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::])
+    mint_contract = Contract(0x06b1826599e9637eb16e11605ae5df008b7c043bfed0f1009ce99bd87b723fe7, MYSWAP_NFT_QUEST_ABI, provider)
     i = 0
     while retries_limit > i:
-        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}")
+        resp = req(f"https://api.braavos.app/v1/notifications/myswap_nft100?address={hex(provider.address)}&coin={SETTINGS['MySwapQuestNFTNumber']}")
         try:
             a = resp['sig']
             break
         except:
-            logger.error(f"[{hex(provider.address)}] myswap sent bad data :( trying again")
-            await sleeping(hex(provider.address), True)
+            logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] myswap sent bad data :( trying again")
+            await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         i+=1
     if retries_limit <= i:
-        logger.error(f"[{hex(provider.address)}] max retries limit reached")
+        logger.error(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] max retries limit reached")
         return MAX_RETRIES_LIMIT_REACHED
     call = mint_contract.functions["signed_mint"].prepare(
-            100,
+            SETTINGS["MySwapQuestNFTNumber"],
             int(resp["sig"]["r"], 16),
             int(resp["sig"]["s"], 16) 
             )
     calldata = [
         call
     ]
-
     return await execute_function(provider, calldata)
 
 
 async def random_swaps_myswap_quest(account: Account, delay: int):
     await asyncio.sleep(delay)
+
     while True:
         try:
             eth_balacne = await account.get_balance()/1e18
             break
-        except:
-            logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
-            await sleeping(hex(account.address), True)
-    limit = int((int(0.03/(eth_balacne*0.6))+1) / 2 ) + 1
-    while limit > 0:
-        limit -= 1
+        except Exception as e:
+            logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+            await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+    val = 0
+    if SETTINGS["SwapAmounts"] == [-1, -1]:
+        val = 1000
+        dex = "my"
+        token_contract = TOKENS["wstETH"]
+        while True:
+            try:
+                wsteth_balacne = await account.get_balance(token_contract)
+                break
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
+
+        swap_amount_wsteth = wsteth_balacne/1e18 - (wsteth_balacne/1e18)*0.02
+        
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        if swap_amount_wsteth <= SETTINGS["MinwstEthBalanceToReturn"]:
+            logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] balance of wstETH is {swap_amount_wsteth} which is lower than MinwstEthBalanceToReturn in settings ({SETTINGS['MinwstEthBalanceToReturn']})")
+            return
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {swap_amount_wsteth} wstETH for ETH on {dex}swap")
+
+        await swap_myswap_task(swap_amount_wsteth, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+        
+        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
+        return
+    while val < SETTINGS["MySwapQuestValue"]:
         dex = "my"
         eth_price = get_eth_price()
-        wstEth_price = get_wsteth_price()
+        wstEth_price = await get_wsteth_price('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
         while True:
             try:
                 eth_balacne = await account.get_balance()
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
-                await sleeping(hex(account.address), True)
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
         swap_amount_eth = (eth_balacne * 0.8)/1e18
-        
+        val += swap_amount_eth*0.95
         wstEth_value = swap_amount_eth * (eth_price/wstEth_price)
         
         token = "wstETH"
@@ -113,75 +139,85 @@ async def random_swaps_myswap_quest(account: Account, delay: int):
             input("Please restart soft with correct settings")
 
 
-
-
         if dex != "my":
             logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (my)")
             input("Please restart soft with correct settings")
         
-        await wait_for_better_eth_gwei(hex(account.address))
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-        logger.info(f"[{hex(account.address)}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {swap_amount_eth} ETH for {token} on {dex}swap")
 
         await swap_myswap_task(swap_amount_eth, dex, ETH_TOKEN_CONTRACT, token_contract, account)
         
-        await sleeping(hex(account.address))
+        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
         while True:
             try:
                 wsteth_balacne = await account.get_balance(token_contract)
                 break
-            except:
-                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
-                await sleeping(hex(account.address), True)
+            except Exception as e:
+                logger.error(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] got error while trying to get balance: {e}")
+                await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], True)
 
         swap_amount_wsteth = wsteth_balacne/1e18 - (wsteth_balacne/1e18)*0.02
-        
-        await wait_for_better_eth_gwei(hex(account.address))
+        Eth_value = swap_amount_wsteth / (eth_price/wstEth_price)
+        val += Eth_value*0.95
+        await wait_for_better_eth_gwei('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-        logger.info(f"[{hex(account.address)}] going to swap {swap_amount_wsteth} wstETH for ETH on {dex}swap")
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to swap {swap_amount_wsteth} wstETH for ETH on {dex}swap")
 
         await swap_myswap_task(swap_amount_wsteth, dex, token_contract, ETH_TOKEN_CONTRACT, account)
         
-        await sleeping(hex(account.address))
+        logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] total swap value is: {val}")
+        await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
-    logger.info(f"[{hex(account.address)}] going to mint nft")
+    logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint nft")
+    if SETTINGS["MintAtTheEndOfMyswapQuest"]:
+        await mint_myswap_quest_nft(account)
 
-    await mint_myswap_quest_nft(account)
-
-    await sleeping(hex(account.address))
+    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
     
 
    
 
 
 def myswap_task(stark_keys):
+    SETTINGS["LiqDEXs"] = ["my"]
+    SETTINGS["SwapDEXs"] = ["my"]
     loop = asyncio.new_event_loop()
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+                client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(random_swaps_myswap_quest(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 async def myswap_mint_only(account: Account, delay: int):
     await asyncio.sleep(delay)
 
-    logger.info(f"[{hex(account.address)}] going to mint nft")
+    logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] going to mint nft")
 
     await mint_myswap_quest_nft(account)
 
-    await sleeping(hex(account.address))
+    await sleeping('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::])
 
 def myswap_task_mint(stark_keys):
     loop = asyncio.new_event_loop()
     tasks = []
     delay = 0
     for key in stark_keys:
-        account, call_data, salt, class_hash = import_argent_account(key)
+        if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
+            client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+        else:
+            client = GatewayClient(net=MAINNET)
+        account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(myswap_mint_only(account, delay)))
-        delay += get_random_value_int(SETTINGS["TaskSleep"])
+        delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
 
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
