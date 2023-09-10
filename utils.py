@@ -555,11 +555,11 @@ async def get_invocation(provider: Account, i: int, calls, limit: int):
         logger.info(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] trying again")
         await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         
-'''
+        '''
         logger.error(f"[{hex(provider.address)}] got error while trying to execute a function: {e}")
         logger.info(f"[{hex(provider.address)}] trying again")
         await sleeping(hex(provider.address), True)
-'''
+        '''
         return await get_invocation(provider, i, calls, limit)
 
 def approve_token_call(amount: float, spender: int, contract: Contract):
