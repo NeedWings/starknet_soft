@@ -36,6 +36,7 @@ async def swap_to_eth(account: Account, delay: int, in_full = False):
             try:
                 token_contract = TOKENS[token]
             except:
+                '''<<<<<<< main'''
                 logger.error(f"Selected unsupported token ({token}), please choose one from this (USDT, USDC)")
                 input("Please restart soft with correct settings")
             while True:
@@ -49,6 +50,22 @@ async def swap_to_eth(account: Account, delay: int, in_full = False):
                 logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] {token} balance is {token_balance} which is lower than MINIMAL_SWAP_AMOUNTS in settings({SETTINGS['MINIMAL_SWAP_AMOUNTS'][token]})")
                 continue
             dex = random.choice(SETTINGS["SwapDEXs"])
+            '''
+            =======
+            !RESOLVE_LATER!
+                logger.error(f"[{hex(account.address)}] got error while trying to get balance: too many requests")
+                await sleeping(hex(account.address), True)
+        if token_balance == 0:
+            continue
+        dex = random.choice(SETTINGS["SwapDEXs"])
+        logger.info(f'{token_balance} multiplying by 0.95')
+        token_balance = token_balance * get_random_value(SETTINGS["TokensToSwapOnAcc"])
+        if dex not in SUPPORTED_FOR_SWAPS:
+            logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
+            input("Please restart soft with correct settings")
+        await wait_for_better_eth_gwei(hex(account.address))
+        >>>>>>> ktydev
+            '''
 
             if dex not in SUPPORTED_FOR_SWAPS:
                 logger.error(f"Selected unsupported DEX ({dex}), please choose one from this (jedi, my, 10k, sith, anvu)")
@@ -166,3 +183,7 @@ async def swap_to_eth(account: Account, delay: int, in_full = False):
 
 
             
+        '''
+        await swap(token_balance, dex, token_contract, ETH_TOKEN_CONTRACT, account)
+        await sleeping(hex(account.address))
+        '''

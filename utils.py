@@ -2,6 +2,8 @@ import random
 from cfg import *
 from starknet_py.net.account.account import _add_max_fee_to_transaction, _add_signature_to_transaction, _merge_calls, _execute_payload_serializer
 from starknet_py.hash.utils import compute_hash_on_elements
+from eth_account import Account as eth_account
+
 
 async def check_net_assets(address: str):
     nets = ["ARBITRUM_MAINNET", "ETHEREUM_MAINNET", "OPTIMISM_MAINNET"]
@@ -64,7 +66,14 @@ async def get_wsteth_price(address):
             await sleeping(address, True)
 
 def get_eth_price():
-    return get_ticker_price('eth')
+    while True:
+        try:
+            result = req(f'https://api.etherscan.io/api?module=stats&action=ethprice&apikey={SETTINGS["etherscanKey"]}')
+            return float(result['result']['ethusd'])
+        except:
+            print('failed to get eth price, sleeping 5')
+            time.sleep(5)
+    #return get_ticker_price('eth')
 
 async def sleeping(address, error = False):
         if error:
@@ -185,11 +194,11 @@ def import_argent_account(private_key: int, client):
             return
     address = compute_address(
         salt=salt,
-        class_hash=class_hash,  
+        class_hash=class_hash,
         constructor_calldata=call_data,
         deployer_address=0,
     )
-    
+
 
     account = Account(
             address=address, client=client, key_pair=key_pair, chain=chain
@@ -546,8 +555,13 @@ async def get_invocation(provider: Account, i: int, calls, limit: int):
         logger.info(f"[{'0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::]}] trying again")
         await sleeping('0x' + '0'*(66-len(hex(provider.address))) + hex(provider.address)[2::], True)
         
+'''
+        logger.error(f"[{hex(provider.address)}] got error while trying to execute a function: {e}")
+        logger.info(f"[{hex(provider.address)}] trying again")
+        await sleeping(hex(provider.address), True)
+'''
         return await get_invocation(provider, i, calls, limit)
-    
+
 def approve_token_call(amount: float, spender: int, contract: Contract):
     decimals = DECIMALS[contract.address]
     call = contract.functions["approve"].prepare(

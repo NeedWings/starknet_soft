@@ -13,7 +13,7 @@ def get_orbiter_value(base_num: float):
     return decimal.Decimal(result_str)
 
 
-async def orbiter(amount: float, source: str, private_key: str, recepient: str):
+async def orbiter(amount: float, source: str, eth_key: str, recepient: str):
     try:
         if amount < 0.005:
             logger.error(f"[{wallet}] value lower, than minimal amount of bridge(0.005)")
@@ -25,7 +25,7 @@ async def orbiter(amount: float, source: str, private_key: str, recepient: str):
         rpc = str(random.choice(RPC_FOR_LAYERSWAP[source]))
         web3 = Web3(Web3.HTTPProvider(rpc))
         amount = get_orbiter_value(amount)
-        wallet = web3.eth.account.from_key(private_key).address
+        wallet = web3.eth.account.from_key(eth_key).address
         balance = await get_native_balance_evm(source, wallet)
         if balance < amount*decimal.Decimal(1e18):
             logger.error(f"[{wallet}] not enough ETH for bridge ")
@@ -38,7 +38,7 @@ async def orbiter(amount: float, source: str, private_key: str, recepient: str):
             ORBITER_CONTRACTS_REC, recepient
         ).build_transaction(dict_transaction)
 
-        signed_txn = web3.eth.account.sign_transaction(txn, private_key)
+        signed_txn = web3.eth.account.sign_transaction(txn, eth_key)
         txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
         return SUCCESS, Web3.to_hex(txn_hash)
     except Exception as e:
@@ -46,11 +46,11 @@ async def orbiter(amount: float, source: str, private_key: str, recepient: str):
         await sleeping(wallet, True)
         return UNEXPECTED_ERROR, ""
 
-async def layerswap(amount: float, source: str, private_key: str, recepient: str):
+async def layerswap(amount: float, source: str, eth_key: str, recepient: str):
     try:
         rpc = random.choice(RPC_FOR_LAYERSWAP[source])
         web3 = Web3(Web3.HTTPProvider(rpc))
-        wallet = web3.eth.account.from_key(private_key).address
+        wallet = web3.eth.account.from_key(eth_key).address
 
         balance = await get_native_balance_evm(source, wallet)
         if balance < amount*1e18:
@@ -74,7 +74,7 @@ async def layerswap(amount: float, source: str, private_key: str, recepient: str
                 }),
                 headers={
                 "Accept":"application/json, text/plain, */*",
-                "Accept-Language":"ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Accept-Language":"en-US,en;q=0.9",
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin":"*",
                 "X-Ls-Correlation-Id": str(correlationId),
@@ -89,7 +89,7 @@ async def layerswap(amount: float, source: str, private_key: str, recepient: str
                 "Sec-Fetch-Site":"same-site",
                 "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
             })
-            
+
             r = requests.post("https://bridge-api.layerswap.io//api/deposit_addresses/" + source, headers={
                 "Authorization": f"Bearer {token}",
             })
@@ -105,20 +105,38 @@ async def layerswap(amount: float, source: str, private_key: str, recepient: str
             logger.error(f"[{wallet}] LayerSwap sent bad data")
             return LAYERSWAP_BAD_DATA, ""
 
-
+'''
+resolve later
+<<<< main
         
         tx = await get_tx_data_evm(wallet, web3, source, Web3.to_wei(amount, 'ether'))
         signed_tx = web3.eth.account.sign_transaction(tx, private_key)
         
+=======
+        tx = {
+            'nonce': web3.eth.get_transaction_count(wallet),
+            'to': Web3.to_checksum_address(address),
+            'value': Web3.to_wei(amount, 'ether'),
+            'gasPrice': web3.eth.gas_price,
+            'chainId': web3.eth.chain_id
+        }
+        gasEstimate = web3.eth.estimate_gas(tx)
+
+        tx["gas"] = gasEstimate*2
+
+        signed_tx = web3.eth.account.sign_transaction(tx, eth_key)
+
+>>>> ktydev
         #send transaction
         tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-        
-        
+
+
         return SUCCESS, Web3.to_hex(tx_hash)
     except Exception as e:
         logger.error(f"[{wallet}] failed to send tx: {source}! Error: {e}")
         await sleeping(wallet, True)
         return UNEXPECTED_ERROR, ""
+<<<< main
     
 async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
@@ -128,6 +146,16 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
     wallet = web3.eth.account.from_key(private_key).address
     i = 0
+=======
+
+async def eth_bridge_no_off(private_key: str, recepient: str, eth_key, delay: int):
+    await asyncio.sleep(delay)
+    way = random.choice(SETTINGS["BridgeType"])
+    #web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+    #wallet = web3.eth.account.from_key(private_key).address
+    #wallet = web3.eth.account.from_key(eth_key).address
+    wallet = eth_account.from_key(eth_key).address #less network footprint
+>>>> ktydev
     while True:
         value, net = await check_net_assets(wallet)
         value = value - get_random_value(SETTINGS["SaveOnWallet"])
@@ -136,32 +164,38 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
         else:
             logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
             await sleeping(wallet, True)
+<<<< main
         if i >= retries_limit:
             logger.error(f"[{wallet}] max retries limit reached, stop searching")
             return
         i+=1
     
+=======
+
+>>>> ktydev
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])
     ETH_price = get_eth_price()
-    
+
     amount = amountUSD/ETH_price
 
     if value < amount:
         amount = value
-    
+
     amount
     if amount < SETTINGS["MinEthValue"] and amount < 0.006:
         logger.error(f"[{wallet}] amount to bridge({amount} ETH) lower than minimum")
     logger.info(f"[{wallet}] going to bridge {amount} ETH in {way} to {recepient}")
 
     if way == "orbiter":
-        res = await orbiter(amount, net, private_key, recepient)
+        #res = await orbiter(amount, net, private_key, recepient)
+        res = await orbiter(amount, net, eth_key, recepient)
     elif way == "layerswap":
-        res = await layerswap(amount, net, private_key, recepient)
+        #res = await layerswap(amount, net, private_key, recepient)
+        res = await layerswap(amount, net, eth_key, recepient)
     else:
         logger.error(f"selected unsupported bridge ({way}), please choose one from this (orbiter, layerswap)")
         input("Please restart soft with correct settings")
-    
+
     if res[0] == SUCCESS:
         logger.success(f"[{wallet}] txn has sent, hash: {res[1]}")
         await sleeping(wallet)
@@ -172,11 +206,18 @@ def start_eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     tasks.append(loop.create_task(eth_bridge_no_off(private_key, recepient, delay)))
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
+<<<< main
 def task_1(stark_keys):
 
+=======
+def task_1(stark_keys, eth_keys):
+    loop = asyncio.new_event_loop()
+>>>> ktydev
     tasks = []
     delay = 0
+    number = len(stark_keys)
 
+<<<< main
     for key in stark_keys:
         if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
             client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
@@ -192,3 +233,14 @@ def task_1(stark_keys):
     for k in tasks:
         k.join()
 
+=======
+    #for key in stark_keys:
+    for i in range(number):
+        account, call_data, salt, class_hash = import_argent_account(stark_keys[i])
+        tasks.append(loop.create_task(eth_bridge_no_off(hex(key), hex(account.address), eth_keys[i], delay)))
+        delay += get_random_value_int(SETTINGS["TaskSleep"])
+
+
+    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+>>>> ktydev
+'''

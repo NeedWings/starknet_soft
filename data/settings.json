@@ -2,12 +2,12 @@
     
     "===============  RPC  ===============": "",
         "RPC": {
-            "ETHEREUM_MAINNET"  : ["https://rpc.ankr.com/eth"],
-            "BSC_MAINNET"       : ["https://bsc-dataseed4.binance.org"],
-            "POLYGON_MAINNET"   : ["https://rpc.ankr.com/polygon"],
-            "ARBITRUM_MAINNET"  : ["https://rpc.ankr.com/arbitrum"],
-            "AVALANCHE_MAINNET" : ["https://rpc.ankr.com/avalanche"],
-            "OPTIMISM_MAINNET"  : ["https://rpc.ankr.com/optimism"]
+            "ETHEREUM_MAINNET"  : ["https://eth.llamarpc.com"],
+            "BSC_MAINNET"       : ["https://bsc.publicnode.com"],
+            "POLYGON_MAINNET"   : ["https://polygon.llamarpc.com"],
+            "ARBITRUM_MAINNET"  : ["https://endpoints.omniatech.io/v1/arbitrum/one/public"],
+            "AVALANCHE_MAINNET" : ["https://avax.meowrpc.com"],
+            "OPTIMISM_MAINNET"  : ["https://optimism.meowrpc.com"]
         },
      
     "===== Download Settings =====":"",

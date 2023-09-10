@@ -26,7 +26,7 @@ async def get_evm_token_balance(address, token_address=None, net_name=None, cont
             if get_decimals:
 
                 return balance, from_wei_balance, decimals
-            
+
             return balance, float(from_wei_balance)
         except Exception as error:
             logger.error(f'[{address}] Cant get balance of: {token_address}! Error: {error}')
@@ -34,10 +34,10 @@ async def get_evm_token_balance(address, token_address=None, net_name=None, cont
 
 async def check_main_asset(address: str):
         main_asset = (None, 0, None, None)
-        
+
         data = RPC_OTHER.keys()
 
-            
+
         for net_name in data:
             usdt_contract = USDT_CONTRACTS.get(net_name)
             if usdt_contract != None:
@@ -57,7 +57,7 @@ async def check_main_asset(address: str):
                 if human_usdc > SETTINGS["minUSDamount"]:
                     asset, name_, token_contract = usdc, "USDC", USDC_CONTRACTS.get(net_name)
                 else: asset = 0
-            else: 
+            else:
                 if human_usdt > SETTINGS["minUSDamount"]:
                     asset, name_, token_contract = usdt, "USDT", USDT_CONTRACTS.get(net_name)
                 else: asset = 0
@@ -66,10 +66,6 @@ async def check_main_asset(address: str):
                 main_asset = net_name, asset, name_, token_contract
 
         return main_asset
-
-
-
-
 
 def send_transaction_evm(private_key: str, tx: dict, net_name: str, approve=False) -> str: 
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER[net_name])))
@@ -132,7 +128,7 @@ async def approve_token_evm(private_key: str, address: str, token_address: str, 
                     balance = amount
                 elif amount > balance:
                     pass
-                
+
             check_data = await __check_allowance__()
             if check_data is not None:
                 try:
@@ -200,13 +196,13 @@ async def sushi_swap_handler(private_key: str, net_name: str, amount: int, ticke
                 logger.error(f'[{wallet}] Tx is failed! Will wake one more soon..')
                 await sleeping(wallet, True)
 
-                
+
         except Exception as error:
             logger.error(f"[{wallet}] Error with swap sushi", str(error))
             await sleeping(wallet, True)
 
 async def quote_layer_zero_fee(dist_chain_name: str, sender_net: str, private_key: str):
-    
+
     while True:
         try:
             contract, w3 = get_contract_evm(STARGATE_CONTRACTS[sender_net], sender_net, token=BRIDGE_ABI)
@@ -214,11 +210,11 @@ async def quote_layer_zero_fee(dist_chain_name: str, sender_net: str, private_ke
             chain_id = LAYERZERO_CHAINS_ID[dist_chain_name]
 
             comission = contract.functions.quoteLayerZeroFee(
-                chain_id, 1, 
+                chain_id, 1,
                 get_bytes(address.split("0x")[1]),
-                get_bytes(address.split("0x")[1]), 
+                get_bytes(address.split("0x")[1]),
                     (
-                        0, 0, 
+                        0, 0,
                         get_bytes(ZERO_ADDRESS.split("0x")[1])
                     )
             ).call()[0]
@@ -230,7 +226,7 @@ async def quote_layer_zero_fee(dist_chain_name: str, sender_net: str, private_ke
             else:
                 logger.info(f'[{address[35:45]}] Got fee to way:{sender_net}->{dist_chain_name} : {human_readable} ')
                 return comission
-            
+
         except Exception as error:
             logger.error(f'[{address}] Cant get L0 fees | {error}')
             await sleeping(address, True)
@@ -285,34 +281,34 @@ async def make_bridge(sending_net: str, dist_net: str, private_key: str, token_a
     else:
         logger.error(f'This asset: {token_address} is not supported to bridge')
         return
-    
+
     contract_address = STARGATE_CONTRACTS[sending_net]
     contract, w3 = get_contract_evm(contract_address, sending_net, token=BRIDGE_ABI)
 
     return await process_bridge(private_key, dist_net, sending_net, token_address,
                    w3, contract, asset_type, contract_address)
 
-async def collector(private_key: str, recepient: str, delay: int):
-    private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]
+async def collector(private_key: str, recepient: str, eth_key, delay: int):
     await asyncio.sleep(delay)
-    web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
-    wallet = web3.eth.account.from_key(private_key).address
+    #web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
+    #wallet = web3.eth.account.from_key(private_key).address
+    wallet = eth_account.from_key(eth_key).address #less network footprint
     while True:
         try:
             net_name, amount, ticker_name, token_contract = await check_main_asset(wallet)
             if net_name is not None:
-            
+
                 if net_name in ["ARBITRUM_MAINNET"]:
                     logger.info(f'[{wallet}] Will wake swap for eth')
-                    await sushi_swap_handler(private_key, net_name, amount, ticker_name, token_contract)
+                    await sushi_swap_handler(eth_key, net_name, amount, ticker_name, token_contract)
                     break
                 else:
                     while True:
                         logger.info(f"[{wallet}] Want to make bridge! (main asset in net: {net_name})")
                         dist_net = "ARBITRUM_MAINNET"
-                        bridge_status = await make_bridge(net_name, dist_net, private_key, token_contract)
+                        bridge_status = await make_bridge(net_name, dist_net, eth_key, token_contract)
                         break
-                        
+
                     if bridge_status is True:
                         while True:
                             net_name, amount, ticker_name, token_contract = await check_main_asset(wallet)
@@ -330,12 +326,12 @@ async def collector(private_key: str, recepient: str, delay: int):
                 else:
                     logger.info(f"[{wallet}] Net name is None, will wait assets. Will sleep: {SETTINGS['ParsingSleep']}")
                     await asyncio.sleep(SETTINGS["ParsingSleep"])
-    
+
         except Exception as error:
             logger.error(f"[{wallet}] failed to make bridge/swap Error: " + str(error))
             await sleeping(wallet, True)
-    
-    await eth_bridge_no_off(private_key, recepient, 0)
+
+    await eth_bridge_no_off(private_key, recepient, eth_key, 0)
 
 def start_collector(private_key: str, recepient: str, delay: int):
     loop = asyncio.new_event_loop()
@@ -344,7 +340,7 @@ def start_collector(private_key: str, recepient: str, delay: int):
     loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 def task_9(stark_keys):
-    loop = asyncio.new_event_loop()
+    #loop = asyncio.new_event_loop()
     tasks = []
     delay = 0
     for key in stark_keys:
@@ -361,5 +357,4 @@ def task_9(stark_keys):
         i.start()
     for k in tasks:
         k.join()
-
 
