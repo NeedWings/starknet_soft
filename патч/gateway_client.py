@@ -20,6 +20,8 @@ from starknet_py.net.client_models import (
     Hash,
     SentTransactionResponse,
     SierraContractClass,
+    SignatureOnStateDiff,
+    StateUpdateWithBlock,
     Tag,
     Transaction,
     TransactionReceipt,
@@ -49,7 +51,9 @@ from starknet_py.net.schemas.gateway import (
     DeployAccountTransactionResponseSchema,
     EstimatedFeeSchema,
     SentTransactionSchema,
+    SignatureOnStateDiffSchema,
     StarknetBlockSchema,
+    StateUpdateWithBlockSchema,
     TransactionReceiptSchema,
     TransactionStatusSchema,
     TypesOfContractClassSchema,
@@ -61,11 +65,13 @@ from starknet_py.utils.sync import add_sync_methods
 
 @add_sync_methods
 class GatewayClient(Client):
+    # pylint: disable=too-many-public-methods
     def __init__(
         self,
         net: Network,
         session: Optional[aiohttp.ClientSession] = None,
         proxy: str = None,
+
     ):
         """
         .. deprecated:: 0.17.0
@@ -97,9 +103,9 @@ class GatewayClient(Client):
         self._net = net
 
         self._feeder_gateway_client = GatewayHttpClient(
-            url=feeder_gateway_url, session=session, proxy=proxy
+            url=feeder_gateway_url, session=session, proxy = proxy
         )
-        self._gateway_client = GatewayHttpClient(url=gateway_url, session=session, proxy=proxy)
+        self._gateway_client = GatewayHttpClient(url=gateway_url, session=session, proxy = proxy)
 
     @property
     def net(self) -> Network:
@@ -143,21 +149,45 @@ class GatewayClient(Client):
         self,
         block_hash: Optional[Union[Hash, Tag]] = None,
         block_number: Optional[Union[int, Tag]] = None,
-    ) -> BlockStateUpdate:
+        # TODO (#1166): revert to `bool = False`
+        include_block: Optional[bool] = None,
+    ) -> Union[BlockStateUpdate, StateUpdateWithBlock]:
         """
-        Get the information about the result of executing the requested block
+        Get the information about the result of executing the requested block.
 
-        :param block_hash: Block's hash
-        :param block_number: Block's number (default "pending")
-        :return: BlockStateUpdate object representing changes in the requested block
+        :param block_hash: Block's hash.
+        :param block_number: Block's number (default "pending").
+        :param include_block: Flag deciding whether to include the queried block. Defaults to false.
+        :return: BlockStateUpdate object representing changes in the requested block.
         """
+        # TODO (#1166): remove that
+        if include_block is not None and self._net in [
+            "https://alpha-mainnet.starknet.io",
+            "mainnet",
+        ]:
+            raise ValueError(
+                "Argument 'include_block' does not work on mainnet yet and will be working after v0.12.2 release."
+            )
+
         block_identifier = get_block_identifier(
             block_hash=block_hash, block_number=block_number
         )
+
+        params = {
+            **block_identifier,
+        }
+        # TODO (#1166): bring back into params
+        if include_block is not None:
+            params["includeBlock"] = str(include_block).lower()
+
         res = await self._feeder_gateway_client.call(
-            method_name="get_state_update",
-            params=block_identifier,
+            method_name="get_state_update", params=params
         )
+
+        if include_block:
+            return StateUpdateWithBlockSchema().load(
+                res, unknown=EXCLUDE
+            )  # pyright: ignore
         return BlockStateUpdateSchema().load(res, unknown=EXCLUDE)  # pyright: ignore
 
     async def get_storage_at(
@@ -429,7 +459,7 @@ class GatewayClient(Client):
 
     async def get_contract_nonce(
         self,
-        contract_address: int,
+        contract_address: Hash,
         block_hash: Optional[Union[Hash, Tag]] = None,
         block_number: Optional[Union[int, Tag]] = None,
     ) -> int:
@@ -446,6 +476,56 @@ class GatewayClient(Client):
         )
         nonce = cast(str, nonce)
         return int(nonce, 16)
+
+    async def get_full_contract(
+        self,
+        contract_address: Hash,
+    ) -> Union[ContractClass, SierraContractClass]:
+        res = await self._feeder_gateway_client.call(
+            method_name="get_full_contract",
+            params={
+                "contractAddress": hash_to_felt(contract_address),
+            },
+        )
+        return TypesOfContractClassSchema().load(
+            res, unknown=EXCLUDE
+        )  # pyright: ignore
+
+    async def get_signature(
+        self,
+        block_hash: Optional[Union[Hash, Tag]] = None,
+        block_number: Optional[Union[int, Tag]] = None,
+    ) -> SignatureOnStateDiff:
+        """
+        Information on what is this signature and how it is calulated here:
+        https://community.starknet.io/t/introducing-p2p-authentication-and-mismatch-resolution-in-v0-12-2/97993#signature-on-state-diff-commitment-and-block-hash-3
+
+        :param block_hash: Block's hash or literals `"pending"` or `"latest"`.
+        :param block_number: Block's number or literals `"pending"` or `"latest"`.
+
+        :return: Signature on state diff.
+        """
+        block_identifier = get_block_identifier(
+            block_hash=block_hash, block_number=block_number
+        )
+        res = await self._feeder_gateway_client.call(
+            method_name="get_signature",
+            params={**block_identifier},
+        )
+        return SignatureOnStateDiffSchema().load(
+            res, unknown=EXCLUDE
+        )  # pyright: ignore
+
+    async def get_public_key(self) -> str:
+        """
+        Method returning current public key.
+
+        :return: Public key.
+        """
+        public_key = await self._feeder_gateway_client.call(
+            method_name="get_public_key"
+        )
+        return cast(str, public_key)
 
 
 def get_block_identifier(

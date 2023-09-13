@@ -30,7 +30,7 @@ class HttpClient(ABC):
             "http_method": http_method,
             "params": params,
             "payload": payload,
-            "proxy": self.proxy,
+            "proxy": self.proxy
         }
         if self.session:
             return await self._make_request(session=self.session, **kwargs)
@@ -45,7 +45,7 @@ class HttpClient(ABC):
         http_method: HttpMethod,
         params: dict,
         payload: dict,
-        proxy: str = None,
+        proxy: str = None
     ) -> dict:
         # pylint: disable=too-many-arguments
         async with session.request(
