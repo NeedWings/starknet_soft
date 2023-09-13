@@ -15,24 +15,23 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "TaskNumber" : 12, //check all task numbers in guide
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.05, // slippage 0.02 = 2%
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
-        "UseProxies": true, // Use or not proxies
-        "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos)
+        "UseProxies": false, // Use or not proxies
+        "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos/argent_newest/braavos_newest)
         "SwapAtTheEnd" : [true], // Swap or no to chosen token in toSaveFunds at the end
         "toSaveFunds" : ["ETH"], // To which token soft will swap after full module
         "SaveEthOnBalance" : [0.003, 0.005], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
-       
-        "MySwapQuestNFTNumber" : 200,
-        "enable_delayed_start": false,
-        "dmail_messages_amount": [5, 7],
-        "starknet_id_amount": [5, 8],
+        "delayed_start" : false,
+        "delayed_start_time": 3,
+    
+        "dmail_messages_amount": [0, 0],
+        "starknet_id_amount": [0, 0],
 
-        "zklend_collateral_amount": [2, 4],
+        "zklend_collateral_amount": [0, 0],
 
     
     "===== ADVANCED PROVIDER =====": "",
@@ -40,12 +39,15 @@
         "class_hash"                  : "0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e",
         "implementation"              : "0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a",
         "selector"                    : "0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a",
+        "new_implementation_for_upgrade": "0x1a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003",
+        "cairo_version"               : 0,
 
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter"], // bridge to deposit in starknet
         "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
         "SaveOnWallet"                : [0.004, 0.007], // how many eth save on wallet
         "USDAmountToBridge"           : [10000, 10000], // amount in usd to bridge
+        "nets_for_deposit"            : ["arbitrum", "ethereum", "optimism"],
 
     
     "======== WITHDRAW  =========": "",
@@ -60,13 +62,10 @@
         
 
     "====== SWAPS =====": "",
-        "SwapAmounts"               : [0, 0], // amount of swaps
-        "SwapDEXs"                  : ["my", "jedi", "10k", "sith", "anvu"], // DEX where will be swaps
-        "MySwapQuestValue"          : 0.09, // Which value soft woll use to make Myswap Quest
-        "MintAtTheEndOfMyswapQuest" : true, // will soft mint NFT at the end of 14 task or not
+        "swapAmounts"               : [6, 8], // amount of swaps
+        "SwapDEXs"                  : ["MySwap", "JediSwap", "10kSwap", "SithSwap", "Fibrous", "Avnu"], // DEX where will be swaps
         "WorkPercent"               : [0.1, 0.5], // percent of balance to swap (0.5 = 50%)
-        "Supported_tokens"          : ["USDC", "USDT"], // tokens for swap
-        "MinwstEthBalanceToReturn"  : 0.001, // minimal balance of wstEth to swap to eth if SwapAmounts [-1, -1]
+        "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
         "MINIMAL_SWAP_AMOUNTS": { 
             "USDC": 1, // minimal amount to swap for every token
             "USDT": 1
@@ -76,21 +75,18 @@
 
     "===== LIQUIDITY =====": "",
         "LiqWorkPercent"          : [0.1, 0.5], // percent of balance to add liquidity (0.5 = 50%)
-        "LiqDEXs"                 : ["my", "jedi", "10k"], // DEX where will be added liquidity
-        "LiqTokens"               : ["USDC", "USDT"], // tokens to be added to the pool
+        "LiqDEXs"                 : ["MySwap", "JediSwap", "10kSwap", "SithSwap"], // DEX where will be added liquidity
         "RemoveOnFullMode"        : [true, false], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [0, 0], // how many times add liquidity
+        "AddLiqAmount"            : [5, 5], // how many times add liquidity
 
     "======= LENDS =======": "",
-        "LendAddAmount"    : [0.00006, 0.00007], // How many eth add to lend
-        "Lend"             : "nostra", //which lending to use
-        "NFTNumbTurkey"    : 1,
+        "LendWorkPercent"    : [0.1, 0.5], // How many eth add to lend
+        "Lends"             : ["ZkLend"], //which lending to use
+        "AddLendAmount"     : [0, 0],
+        "BorrowAddAmount"   : [1, 1],
+        "BorrowWorkPercent" : [0.5, 0.6],
 
-
-    "====== GENERATOR ======": "", 
-        "AmountToCreate"          : 20, // how many wallets to generate
-        "OutFile"                 : "generated_wallets.txt", // the name of the file where the soft will save the generated wallets
-
+    
     "======= MAX GWEI =======": "",
         "GWEI": {
             "ARBITRUM_MAINNET"  : 0.25,
