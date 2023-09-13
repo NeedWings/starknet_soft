@@ -112,7 +112,6 @@ import getpass
 import hashlib
 import sys
 import socket
-import wmi
 from aiohttp import ClientSession
 import sys, os
 import inquirer
