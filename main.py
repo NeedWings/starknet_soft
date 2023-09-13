@@ -1,67 +1,19 @@
 try:
     from MainRouter import *
     from bridger2 import *
-    def decrypt(filename):
-        f = Fernet(KEY)
-        with open(filename, 'rb') as file:
-            encrypted_data = file.read()
-        decrypted_data = f.decrypt(encrypted_data).decode()
-        return decrypted_data.split(':')
-
-    server_data = decrypt(f"{SETTINGS_PATH}server_data.txt")
-    connect_data = (server_data[0], int(server_data[1]))
-
-    def check_license_elig(sha):
-        logger.info("Checking license expiration date...")
-        try:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect(connect_data)
-            message = {
-                "auth": 'StarkNet',
-                "key": sha
-            }
-            client.send(json.dumps(message).encode())
-            response = client.recv(1024).decode()
-            client.close()
-            if response == "True":
-                return True
-            else:
-                logger.error(f'Cant auth your device/subs')
-                input("Press any key to exit")
-                exit()
-        except Exception as error:
-            logger.error(f'SEnd this message to dev: {error}')
-            input("Press any key to exit")
-            exit()
-
-    def checking_license():
-        text = wmi.WMI().Win32_ComputerSystemProduct()[0].UUID + ':SOFT'
-        sha = hashlib.sha1(text.encode()).hexdigest()
-        return check_license_elig(sha)
-
+    from LicenseChecker import *
+    
 
     if __name__ == "__main__":
         pass
-        #checking_license()
+        checking_license()
 
-    def get_disks():
-        c = wmi.WMI()
-        logical_disks = {}
-        for drive in c.Win32_DiskDrive():
-            for partition in drive.associators("Win32_DiskDriveToDiskPartition"):
-                for disk in partition.associators("Win32_LogicalDiskToPartition"):
-                    logical_disks[disk.Caption] = {"model":drive.Model, "serial":drive.SerialNumber}
-        return logical_disks
+    
 
     def decode_secrets():
         logger.info("Decrypting your secret keys..")
-        logical_disks = get_disks()
         decrypt_type = SETTINGS["DecryptType"].lower()
-        disk = SETTINGS["LoaderDisk"]
-        if decrypt_type == "flash":
-            disk_data = logical_disks[disk]
-            data_to_be_encoded = disk_data["model"] + '_' + disk_data["serial"]
-        elif decrypt_type == "password":
+        if decrypt_type == "password":
             data_to_be_encoded = getpass.getpass('[DECRYPTOR] Write here password to decrypt secret keys: ')
         key = hashlib.sha256(data_to_be_encoded.encode()).hexdigest()[:43] + "="
         f = Fernet(key)
@@ -113,11 +65,10 @@ try:
     def encode_secrets():
         enc_type = 0
         while enc_type != 1 and enc_type != 2:
-            enc_type = int(input("which type of encodyng do you want(1 - password, 2 - flash)"))
+            enc_type = int(input("which type of encodyng do you want(1 - password)"))
         if enc_type == 1:
             method = 'password'
-        else:
-            method = "flash"
+
         while True:
             try:
                 with open(SETTINGS_PATH + 'to_encrypted_secrets.txt', encoding='utf-8') as file:
@@ -127,7 +78,6 @@ try:
             except Exception as error:
                 logger.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
                 input("Create file and try again. Press any key to try again: ")
-        logical_disks = get_disks()
         json_wallets = {}
         w3 = Web3(Web3.HTTPProvider(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"]))
         for k in data:
@@ -147,24 +97,8 @@ try:
         with open(SETTINGS_PATH + "data.txt", 'w') as file:
             json.dump(json_wallets, file)
 
-        if method == 'flash':
-            while True:
-                answer = input(
-                    "Write here disk name, like: 'D'\n" + \
-                    ''.join(f"Disk name: {i.replace(':', '')} - {logical_disks[i]}\n" for i in logical_disks.keys())
-                )
-                agree = input(
-                    f"OK, your disk with name: {answer} | Data: {logical_disks[answer + ':']}\n" + \
-                    "Are you agree to encode data.txt using this data? [Y/N]: "
-                )
-                if agree.upper().replace(" ", "") == "Y":
-                    break
-
-            data = logical_disks[answer + ":"]
-            data_to_encoded = data["model"] + '_' + data["serial"]
-            key = hashlib.sha256(data_to_encoded.encode()).hexdigest()[:43] + "="
-
-        elif method == 'password':
+        
+        if method == 'password':
             while True:
                 data_to_be_encoded = getpass.getpass('Write here password to encrypt secret keys: ')
                 agree = input(
