@@ -114,7 +114,7 @@ class MainRouter():
             await self.withdraw()
         elif task_number == 9:
             pass
-        elif task_number == 12:
+        elif task_number == 13:
             await self.deployer()
         elif task_number == 16:
             await self.stats()
