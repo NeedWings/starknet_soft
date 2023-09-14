@@ -376,7 +376,7 @@ class BaseDex(ABC):
         self.supported_tokens = new_supported_tokens
 
     @abstractmethod
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         pass
 
     @abstractmethod

@@ -42,7 +42,7 @@ async def check_main_asset(address: str):
 
 def send_transaction_evm(private_key: str, tx: dict, net_name: str, approve=False) -> str: 
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER[net_name])))
-
+    wallet = w3.eth.account.from_key(private_key).address
 
     gasEstimate = w3.eth.estimate_gas(tx)
 
@@ -51,7 +51,7 @@ def send_transaction_evm(private_key: str, tx: dict, net_name: str, approve=Fals
 
     tx_token = w3.to_hex(w3.eth.send_raw_transaction(signed_txn.rawTransaction))
 
-    logger.success(f"Approved: {tx_token}")
+    logger.success(f"[{wallet}] Approved: {tx_token}")
     return tx_token
 
 async def wait_until_tx_finished_evm(address: str, hash: str, net_name: str, max_time=500) -> bool:
@@ -60,19 +60,19 @@ async def wait_until_tx_finished_evm(address: str, hash: str, net_name: str, max
         while True:
             try:
                 if time.time() - start_time > max_time:
-                    logger.error(f'[{address}] [{hash}] transaction is failed (timeout)')
+                    logger.error(f'[{address}] {hash} transaction is failed (timeout)')
                     return False
                 receipts = w3.eth.get_transaction_receipt(hash)
                 status = receipts.get("status")
 
                 if status == 1:
-                    logger.success(f"{hash} is completed")
+                    logger.success(f"[{address}] {hash} is completed")
                     return True
                 elif status is None:
                     #print(f'[{hash}] still processed')
                     await asyncio.sleep(0.3)
                 elif status != 1:
-                    logger.error(f'[{address}] [{hash}] transaction is failed')
+                    logger.error(f'[{address}] {hash} transaction is failed')
                     return False
             except:
                 #print(f"[{hash}] still in progress")
@@ -194,10 +194,10 @@ async def quote_layer_zero_fee(dist_chain_name: str, sender_net: str, private_ke
             human_readable = round(Web3.from_wei(comission, 'ether'), 7)
 
             if human_readable > SETTINGS["FEES"][sender_net]:
-                logger.info(f'[{address[35:45]}] Got fee to way:{sender_net}->{dist_chain_name} : {human_readable} Fee is to high')
+                logger.info(f'[{address}] Got fee to way:{sender_net}->{dist_chain_name} : {human_readable} Fee is to high')
                 await sleeping(address, True)
             else:
-                logger.info(f'[{address[35:45]}] Got fee to way:{sender_net}->{dist_chain_name} : {human_readable} ')
+                logger.info(f'[{address}] Got fee to way:{sender_net}->{dist_chain_name} : {human_readable} ')
                 return comission
             
         except Exception as error:
@@ -221,7 +221,7 @@ async def process_bridge(private_key: str, dist_net: str,
             balance, human_readable = await get_evm_token_balance(wallet, token_address, sending_net)
             logger.info(f'[{wallet}] Want to bridge: {human_readable} USD, dist asset: {dist_asset}')
             if human_readable < SETTINGS["minUSDamount"]:
-                logger.debug(f'human: {human_readable}, min: {SETTINGS["minUSDamount"]}, balance: {balance}')
+                logger.info(f'[{wallet}] human: {human_readable}, min: {SETTINGS["minUSDamount"]}, balance: {balance}')
                 return
             min_recv_amount = round(balance * 0.998)
             comission = await quote_layer_zero_fee(dist_net, sending_net, private_key)
@@ -243,7 +243,7 @@ async def process_bridge(private_key: str, dist_net: str,
             if attemps > 10:
                 logger.error(f'[{wallet}] Attemps amount is too high!')
                 return
-            logger.error(f"[{wallet}] Failed to send bridge. Error: " + str(error))
+            logger.error(f"[{wallet}] Failed to send bridge. Error: {error}")
             await sleeping(wallet, True)
 
 async def make_bridge(sending_net: str, dist_net: str, private_key: str, token_address: str):
@@ -321,7 +321,10 @@ def task_9(stark_keys):
             else:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
-
+            private_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
+            web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+            wallet = web3.eth.account.from_key(private_key).address
+            indexes.append(wallet)
             tasks.append(Thread(target=start_collector, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
 
             delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
@@ -416,6 +419,10 @@ def task_6(stark_keys):
             client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
         else:
             client = GatewayClient(net=MAINNET)
+        private_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
+        web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+        wallet = web3.eth.account.from_key(private_key).address
+        indexes.append(wallet)
         account, call_data, salt, class_hash = import_argent_account(key, client)
         tasks.append(loop.create_task(eth_bridge_official(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
@@ -438,6 +445,11 @@ def bridge_to_stark_from_different_address(stark_keys):
                 client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
             else:
                 client = GatewayClient(net=MAINNET)
+
+            private_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
+            web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+            wallet = web3.eth.account.from_key(private_key).address
+            indexes.append(wallet)
             web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
             wallet = str(web3.eth.account.from_key('0x' + '0'*(66-len(hex(key))) + hex(key)[2::]).address).lower()
             tasks.append(Thread(target=start_collector, args=(hex(key), addresses2[wallet], delay)))
@@ -467,6 +479,10 @@ def off_bridge_different_wallet(stark_keys):
             else:
                 client = GatewayClient(net=MAINNET)
             web3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ARBITRUM_MAINNET"])))
+            private_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
+            web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+            wallet = web3.eth.account.from_key(private_key).address
+            indexes.append(wallet)
             wallet = str(web3.eth.account.from_key('0x' + '0'*(66-len(hex(key))) + hex(key)[2::]).address).lower()
             account, call_data, salt, class_hash = import_argent_account(key, client)
             tasks.append(loop.create_task(eth_bridge_official(hex(key), addresses2[wallet], delay)))

@@ -82,7 +82,7 @@ class ZkLend(BaseLend):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
         call1 = contract.functions["withdraw"].prepare(
-            token.contract_address,
+            self.token_from_name[token.symbol.split("-")[0]].contract_address,
             amount
         )
 
@@ -103,7 +103,8 @@ class ZkLend(BaseLend):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
         val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token.symbol}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
-
+        if val_in_token_wei <= 0:
+            return -1
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
 
