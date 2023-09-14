@@ -369,7 +369,7 @@ try:
                             
                             if ('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
                                 client = GatewayClient(MAINNET, proxy=proxy)
-                                logger.info(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy:{proxy}")
+                                print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy:{proxy}")
                                 tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))
                                 delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     
@@ -382,7 +382,7 @@ try:
                         tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))
                         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     
-                    loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
+                loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
                 
     if __name__ == "__main__":
         main()
