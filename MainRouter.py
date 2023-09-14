@@ -258,7 +258,7 @@ class MainRouter():
         account = self.account.stark_native_account
         amount = get_random_value_int(SETTINGS["dmail_messages_amount"])
         for qawe in range(amount):
-            l = "1234567890abcdefg"
+            l = "1234567890abcdef"
             t = [random.choice(l) for i in range(32)]
             text = ""
             for i in t:
