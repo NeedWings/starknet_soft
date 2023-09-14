@@ -255,7 +255,10 @@ try:
             else:
                 client = GatewayClient(net=MAINNET)
             account, call_data, salt, class_hash = import_argent_account(key, client)
-
+            private_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
+            web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+            wallet = web3.eth.account.from_key(private_key).address
+            indexes.append(wallet)
             tasks.append(Thread(target=start_eth_bridge_no_off, args=(hex(key), '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::], delay)))
             
             delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])

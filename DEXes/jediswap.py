@@ -65,20 +65,35 @@ class JediSwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         
-        call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
-        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-        call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
-            int(amount_in*10**token1.decimals),
-            int(amount_out*10**token2.decimals*(1-slippage)),
-            (
-                token1.contract_address,
-                token2.contract_address
-            ),
-            sender.stark_native_account.address,
-            int(time.time())+3600
-        )
+        if not full:
+            call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
+                int(amount_in*10**token1.decimals),
+                int(amount_out*10**token2.decimals*(1-slippage)),
+                (
+                    token1.contract_address,
+                    token2.contract_address
+                ),
+                sender.stark_native_account.address,
+                int(time.time())+3600
+            )
+        else:
+            bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
+                bal,
+                int(amount_out*10**token2.decimals*(1-slippage)),
+                (
+                    token1.contract_address,
+                    token2.contract_address
+                ),
+                sender.stark_native_account.address,
+                int(time.time())+3600
+            )
 
         return [call1, call2]
 
@@ -114,11 +129,11 @@ class JediSwap(BaseDex):
         token2_contract = Contract(token2_address, STARK_TOKEN_ABI, sender.stark_native_account)
         
         
-        total_liq_amount = await handle_dangerous_request(token_contract.functions["totalSupply"].call, "Can't get jediswap total pool value. Error:", sender.formatted_hex_address)
+        total_liq_amount = (await handle_dangerous_request(token_contract.functions["totalSupply"].call, "Can't get jediswap total pool value. Error:", sender.formatted_hex_address)).totalSupply
         multiplier = amount/total_liq_amount
-        token1_val = await handle_dangerous_request(token1_contract.functions["balabceOf"].call, "Can't get pool info. Error:", sender.formatted_hex_address, lptoken.contract_address)
+        token1_val = (await handle_dangerous_request(token1_contract.functions["balanceOf"].call, "Can't get pool info. Error:", sender.formatted_hex_address, lptoken.contract_address)).balance
         token1_val = int(token1_val*multiplier)
-        token2_val = await handle_dangerous_request(token2_contract.functions["balabceOf"].call, "Can't get pool info. Error:", sender.formatted_hex_address, lptoken.contract_address)
+        token2_val = (await handle_dangerous_request(token2_contract.functions["balanceOf"].call, "Can't get pool info. Error:", sender.formatted_hex_address, lptoken.contract_address)).balance
         token2_val = int(token2_val*multiplier)
         
 

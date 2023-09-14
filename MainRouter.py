@@ -201,7 +201,7 @@ class MainRouter():
         elif SETTINGS["DistNet"].lower() == "linea":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
         else:
-            logger.error("wrong value in DistNet")
+            logger.error(f"[{self.account.formatted_hex_address}] wrong value in DistNet")
             input()
             exit()
         contract = Contract(eth.contract_address, STARK_TOKEN_ABI, account)
@@ -423,6 +423,7 @@ class MainRouter():
         ways = [1,2,3,4,5]
         shuffle(ways)
         for way in ways:
+            print(way)
             if way == 1:
                 await self.swaps_handler()
             elif way == 2:
@@ -605,8 +606,6 @@ class MainRouter():
 
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
-                else:
-                    balance -= balance*0.0001
                 if balance <=0:
                     continue
                 selected = False
@@ -626,7 +625,7 @@ class MainRouter():
                 logger.info(f"[{self.account.formatted_hex_address}] going to swap {balance/10**token_to_swap.decimals} {token_to_swap.symbol} for {token.symbol} in {dex.name}")
 
 
-                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account)
+                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = True)
                 if swap_txn != -1:
                     await self.account.send_txn(swap_txn)
                     await sleeping(self.account.formatted_hex_address)
@@ -653,7 +652,7 @@ class MainRouter():
 
                 if txn == -1:
                     continue
-                
+                logger.info(f"[{self.account.formatted_hex_address}] going to remove {lpt.symbol} in {dex.name}")
                 await self.account.send_txn(txn)
                 await sleeping(self.account.formatted_hex_address)
 
@@ -666,9 +665,9 @@ class MainRouter():
                 token: Token
                 balance = await self.account.get_balance(token.contract_address, token.symbol)
 
-                if balance <= 0:
+                if balance <= 1:
                     continue
-
+                logger.info(f"[{self.account.formatted_hex_address}] going to return {token.symbol} from {lend.name}")
                 txn = await lend.create_txn_for_removing_token(balance, token, self.account)
                 
                 await self.account.send_txn(txn)
@@ -682,7 +681,9 @@ class MainRouter():
             for token in tokens:
                 try:
                     txn = await lend.create_txn_for_return(token, self.account)
-
+                    if txn == -1:
+                        continue
+                    logger.info(f"[{self.account.formatted_hex_address}] going to return borroved {token.symbol}")
                     await self.account.send_txn(txn)
 
                     await sleeping(self.account.formatted_hex_address)

@@ -38,32 +38,55 @@ class Avnu(BaseDex):
         self.supported_tokens = new_supported_tokens
 
     
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         
         dex = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, amount_in, sender)
         
-
-        call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
-        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
-        call2 = contract.functions["multi_route_swap"].prepare(
-            token1.contract_address,
-            int(amount_in*10**token1.decimals),
-            token2.contract_address,
-            int(amount_out*10**token2.decimals),
-            int(amount_out*10**token2.decimals*(1-slippage)),
-            sender.stark_native_account.address,
-            0,
-            0,
-            [
-                {
-                    "token_from":token1.contract_address,
-                    "token_to":token2.contract_address,
-                    "exchange_address":dex,
-                    "percent":100,
-                    "additional_swap_params":[0]
-                }
-            ]
-        )
+        if not full:
+            call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
+            call2 = contract.functions["multi_route_swap"].prepare(
+                token1.contract_address,
+                int(amount_in*10**token1.decimals),
+                token2.contract_address,
+                int(amount_out*10**token2.decimals),
+                int(amount_out*10**token2.decimals*(1-slippage)),
+                sender.stark_native_account.address,
+                0,
+                0,
+                [
+                    {
+                        "token_from":token1.contract_address,
+                        "token_to":token2.contract_address,
+                        "exchange_address":dex,
+                        "percent":100,
+                        "additional_swap_params":[0]
+                    }
+                ]
+            )
+        else:
+            bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
+            call2 = contract.functions["multi_route_swap"].prepare(
+                token1.contract_address,
+                bal,
+                token2.contract_address,
+                int(amount_out*10**token2.decimals),
+                int(amount_out*10**token2.decimals*(1-slippage)),
+                sender.stark_native_account.address,
+                0,
+                0,
+                [
+                    {
+                        "token_from":token1.contract_address,
+                        "token_to":token2.contract_address,
+                        "exchange_address":dex,
+                        "percent":100,
+                        "additional_swap_params":[0]
+                    }
+                ]
+            )
 
         return [call1, call2]
 

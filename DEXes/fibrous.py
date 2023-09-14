@@ -54,33 +54,54 @@ class Fibrous(BaseDex):
         self.supported_tokens = new_supported_tokens
 
     
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         
         pair = self.normalize_tokens(token1.symbol, token2.symbol)
         
         pool = self.pool_from_token[pair]
-
-        call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
-        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-        call2 = contract.functions["swap"].prepare(
-            [
+        if not full:
+            call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap"].prepare(
+                [
+                    {
+                        "token_in" : token1.contract_address,
+                        "token_out": token2.contract_address,
+                        "rate": 1000000,
+                        "protocol": 2,
+                        "pool_address": pool
+                    }
+                ],
                 {
-                    "token_in" : token1.contract_address,
-                    "token_out": token2.contract_address,
-                    "rate": 1000000,
-                    "protocol": 2,
-                    "pool_address": pool
+                    "token_in":token1.contract_address,
+                    "token_out":token2.contract_address,
+                    "amount": int(amount_in*10**token1.decimals),
+                    "min_received":int(amount_out*10**token2.decimals*(1-slippage)),
+                    "destination": sender.stark_native_account.address
                 }
-            ],
-            {
-                "token_in":token1.contract_address,
-                "token_out":token2.contract_address,
-                "amount": int(amount_in*10**token1.decimals),
-                "min_received":int(amount_out*10**token2.decimals*(1-slippage)),
-                "destination": sender.stark_native_account.address
-            }
-        )
-
+            )
+        else:
+            bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap"].prepare(
+                [
+                    {
+                        "token_in" : token1.contract_address,
+                        "token_out": token2.contract_address,
+                        "rate": 1000000,
+                        "protocol": 2,
+                        "pool_address": pool
+                    }
+                ],
+                {
+                    "token_in":token1.contract_address,
+                    "token_out":token2.contract_address,
+                    "amount": bal,
+                    "min_received":int(amount_out*10**token2.decimals*(1-slippage)),
+                    "destination": sender.stark_native_account.address
+                }
+            )
         return [call1, call2]
 
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):

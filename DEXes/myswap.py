@@ -57,21 +57,31 @@ class MySwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         try:
             a = self.POOLS[f"{token1.symbol}:{token2.symbol}"]
         except:
             logger.error(f"[{sender.formatted_hex_address} got unsupported pool on myswap. Skip")
             return -1
-        
-        call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
-        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-        call2 = contract.functions["swap"].prepare(
-            self.POOLS[f"{token1.symbol}:{token2.symbol}"],
-            token1.contract_address,
-            int(amount_in*10**token1.decimals),
-            int(amount_out*10**token2.decimals*(1-slippage))
-        )
+        if not full:
+            call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap"].prepare(
+                self.POOLS[f"{token1.symbol}:{token2.symbol}"],
+                token1.contract_address,
+                int(amount_in*10**token1.decimals),
+                int(amount_out*10**token2.decimals*(1-slippage))
+            )
+        else:
+            bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
+            contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+            call2 = contract.functions["swap"].prepare(
+                self.POOLS[f"{token1.symbol}:{token2.symbol}"],
+                token1.contract_address,
+                bal,
+                int(amount_out*10**token2.decimals*(1-slippage))
+            )
 
         return [call1, call2]
 
@@ -100,17 +110,17 @@ class MySwap(BaseDex):
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
         amount = await sender.get_balance(lptoken.contract_address, lptoken.symbol)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-        total_liq_amount = await handle_dangerous_request(contract.functions["get_total_shares"].call, "Can't get myswap total pool value. Error:", sender.formatted_hex_address, self.pool_id_from_lpt[lptoken])
+        total_liq_amount = (await handle_dangerous_request(contract.functions["get_total_shares"].call, "Can't get myswap total pool value. Error:", sender.formatted_hex_address, self.pool_id_from_lpt[lptoken])).total_shares
         multiplier = amount/total_liq_amount
-        pool_info = json.loads(await handle_dangerous_request(contract.functions["get_pool"].call, "Can't get pool info. Error:", sender.formatted_hex_address, self.pool_id_from_lpt[lptoken]))
+        pool_info = ((await handle_dangerous_request(contract.functions["get_pool"].call, "Can't get pool info. Error:", sender.formatted_hex_address, self.pool_id_from_lpt[lptoken])).pool)
         token1_val = 0
         token2_val = 0
         for data in pool_info:
-            name = data["name"]
+            name = data[0]
             if name == "token_a_reserves":
-                token1_val = data["value"]*multiplier
+                token1_val = data[1]*multiplier
             if name == "token_b_reserves":
-                token2_val = data["value"]*multiplier
+                token2_val = data[1]*multiplier
         if amount <= 0:
             return -1
         

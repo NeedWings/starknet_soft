@@ -338,13 +338,7 @@ def req_post(url: str, **kwargs):
     except Exception as error:
         logger.error(f"Requests error: {error}")
 
-async def sleeping(address, error = False):
-        if error:
-            rand_time = random.randint(SETTINGS["ErrorSleepeng"][0], SETTINGS["ErrorSleepeng"][1])
-        else:
-            rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
-        logger.info(f'[{address}] sleeping {rand_time} s')
-        await asyncio.sleep(rand_time)
+
 
 async def handle_dangerous_request(func, message, address = "", *args):
     while True:
@@ -352,7 +346,7 @@ async def handle_dangerous_request(func, message, address = "", *args):
             return await func(*args)
         except Exception as e:
             pass
-            logger.error(f"{message}: {e}")
+            logger.error(f"[{address}] {message}: {e}")
             await sleeping(address, True)
 
 def get_random_value_int(param):
@@ -527,3 +521,11 @@ class logger():
             write_global_log()
         except:
             pass
+
+async def sleeping(address, error = False):
+        if error:
+            rand_time = random.randint(SETTINGS["ErrorSleepeng"][0], SETTINGS["ErrorSleepeng"][1])
+        else:
+            rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
+        logger.info(f'[{address}] sleeping {rand_time} s')
+        await asyncio.sleep(rand_time)

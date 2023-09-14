@@ -108,10 +108,13 @@ async def check_net_assets(address: str):
     for net in nets:
         eth = await get_native_balance_evm(net, address)
         human = Web3.from_wei(eth, "ether")
-        logger.info(f'Got {net} balance: {human}')
+        logger.info(f'[{address}] Got {net} balance: {human}')
         if human > max_valued_net_value:
             max_valued_net_value = human
             max_valued_net = net
+    
+    return float(max_valued_net_value), max_valued_net
+
 
 def get_orbiter_value(base_num: float):
     base_num_dec = decimal.Decimal(str(base_num))
@@ -271,7 +274,7 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     elif way == "layerswap":
         res = await layerswap(amount, net, private_key, recepient)
     else:
-        logger.error(f"selected unsupported bridge ({way}), please choose one from this (orbiter, layerswap)")
+        logger.error(f"[{wallet}] selected unsupported bridge ({way}), please choose one from this (orbiter, layerswap)")
         input("Please restart soft with correct settings")
     
     if res[0] == 1:
