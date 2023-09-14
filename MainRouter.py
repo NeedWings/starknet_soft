@@ -352,7 +352,7 @@ class MainRouter():
             except Exception as e:
                 logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get balance: {e}")
                 await sleeping(self.account.formatted_hex_address, True)
-        logger.success(f"[{self.account.hex_formatted_address}] found balance. Going to deploy")
+        logger.success(f"[{self.account.formatted_hex_address}] found balance. Going to deploy")
         i = 0
         while i < retries_limit:
             i += 1
