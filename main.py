@@ -361,6 +361,7 @@ try:
 
                     client = GatewayClient(MAINNET)
                     counter = 1
+                    delay = 0
                     for proxy in proxy_dict:
 
                         addresses = proxy_dict[proxy]
@@ -370,7 +371,7 @@ try:
                             if ('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
                                 client = GatewayClient(MAINNET, proxy=proxy)
                                 print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy:{proxy}")
-                                tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))
+                                tasks.append(loop.create_task(MainRouter(key, delay, task_number, client).start()))
                                 delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     
                 else:
@@ -387,6 +388,6 @@ try:
     if __name__ == "__main__":
         main()
 except Exception as e:
-    logger.error(f"Unexpected error: {e}")
+    console_log.error(f"Unexpected error: {e}")
 
 input("Soft successfully end work")
