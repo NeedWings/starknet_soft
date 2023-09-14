@@ -100,7 +100,7 @@ class JediSwap(BaseDex):
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):
         
         call1 = token1.get_approve_call(amount1, self.contract_address, sender)
-        call2 = token1.get_approve_call(amount2, self.contract_address, sender)
+        call2 = token2.get_approve_call(amount2, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
         call3 = contract.functions["add_liquidity"].prepare(
