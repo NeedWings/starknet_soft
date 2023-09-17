@@ -264,7 +264,7 @@ async def eth_bridge_no_off(private_key: str, recepient: str, delay: int):
     if value < amount:
         amount = value
     
-    amount
+    
     if amount < SETTINGS["MinEthValue"] and amount < 0.006:
         logger.error(f"[{wallet}] amount to bridge({amount} ETH) lower than minimum")
     logger.info(f"[{wallet}] going to bridge {amount} ETH in {way} to {recepient}")

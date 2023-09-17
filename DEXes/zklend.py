@@ -101,18 +101,20 @@ class ZkLend(BaseLend):
 
     async def create_txn_for_return(self, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-
         val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token.symbol}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
         if val_in_token_wei <= 0:
             return -1
+        bal = await sender.get_balance(token.contract_address, token.symbol)
+        if val_in_token_wei <= bal:
+            val_in_token_wei = bal
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
-
 
         call2 = contract.functions["repay_all"].prepare(
             token.contract_address
         )
 
         return [call1, call2]
+
 
 
         
