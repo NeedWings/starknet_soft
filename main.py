@@ -11,7 +11,7 @@ try:
     
 
     def decode_secrets():
-        logger.info("Decrypting your secret keys..")
+        console_log.info("Decrypting your secret keys..")
         decrypt_type = SETTINGS["DecryptType"].lower()
         if decrypt_type == "password":
             data_to_be_encoded = getpass.getpass('[DECRYPTOR] Write here password to decrypt secret keys: ')
@@ -73,10 +73,10 @@ try:
             try:
                 with open(SETTINGS_PATH + 'to_encrypted_secrets.txt', encoding='utf-8') as file:
                     data = file.readlines()
-                    logger.info(f'Found {len(data)} lines of keys')
+                    console_log.info(f'Found {len(data)} lines of keys')
                     break
             except Exception as error:
-                logger.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
+                console_log.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
                 input("Create file and try again. Press any key to try again: ")
         json_wallets = {}
         w3 = Web3(Web3.HTTPProvider(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"]))
@@ -92,7 +92,7 @@ try:
                 address.lower(): k.replace("\n", "").replace(" ", "")
                 })
             except Exception as error:
-                logger.error(f'Cant add line: {k}; {error}')
+                console_log.error(f'Cant add line: {k}; {error}')
 
         with open(SETTINGS_PATH + "data.txt", 'w') as file:
             json.dump(json_wallets, file)
@@ -121,7 +121,7 @@ try:
 
         os.remove(SETTINGS_PATH + "data.txt")
         open(SETTINGS_PATH + "to_encrypted_secrets.txt", 'w')
-        logger.success(f'All is ok! Check to_run_addresses.txt and run soft again')
+        console_log.success(f'All is ok! Check to_run_addresses.txt and run soft again')
         input("Press any key to exit")
         sys.exit()
 
@@ -171,7 +171,8 @@ try:
                     "",
                     "dmail",
                     "starknet_id",
-                    "collateral zklend"
+                    "collateral zklend",
+                    "mint cheap domain"
                 ],
             )
         ]
@@ -278,7 +279,9 @@ try:
             task_number = 30
         elif action == "universal argent upgrader":
             task_number = 31
-
+        elif action == "mint cheap domain":
+            task_number = 32
+            
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
                 addresses[i] = "0x" + "0"*(42-len(addresses[i])) + addresses[i][2::]
