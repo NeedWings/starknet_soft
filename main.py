@@ -12,7 +12,7 @@ try:
     connect_data = (server_data[0], int(server_data[1]))
 
     def check_license_elig(sha):
-        logger.info("Checking license expiration date...")
+        console_log.info("Checking license expiration date...")
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect(connect_data)
@@ -26,11 +26,11 @@ try:
             if response == "True":
                 return True
             else:
-                logger.error(f'Cant auth your device/subs')
+                console_log.error(f'Cant auth your device/subs')
                 input("Press any key to exit")
                 exit()
         except Exception as error:
-            logger.error(f'SEnd this message to dev: {error}')
+            console_log.error(f'SEnd this message to dev: {error}')
             input("Press any key to exit")
             exit()
 
@@ -53,7 +53,7 @@ try:
         return logical_disks
 
     def decode_secrets():
-        logger.info("Decrypting your secret keys..")
+        console_log.info("Decrypting your secret keys..")
         logical_disks = get_disks()
         decrypt_type = SETTINGS["DecryptType"].lower()
         disk = SETTINGS["LoaderDisk"]
@@ -236,7 +236,8 @@ try:
                     "",
                     "dmail",
                     "starknet_id",
-                    "collateral zklend"
+                    "collateral zklend",
+                    "mint cheap domain"
                 ],
             )
         ]
@@ -343,6 +344,8 @@ try:
             task_number = 30
         elif action == "universal argent upgrader":
             task_number = 31
+        elif action == "mint cheap domain":
+            task_number = 32
 
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
@@ -435,7 +438,7 @@ try:
                             
                             if ('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
                                 client = GatewayClient(MAINNET, proxy=proxy)
-                                print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy:{proxy}")
+                                print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy: {proxy}")
                                 tasks.append(loop.create_task(MainRouter(key, delay, task_number, client).start()))
                                 delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     

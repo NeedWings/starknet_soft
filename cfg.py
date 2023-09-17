@@ -4,6 +4,7 @@ from starknet_py.hash.address import compute_address
 from starknet_py.net.account.account import Account as StarkNativeAccount
 from starknet_py.net.client import Client
 from starknet_py.net.gateway_client import GatewayClient
+from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair
@@ -471,6 +472,7 @@ global_log = {}
 indexes = []
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 def write_global_log():
+    print(indexes)
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
@@ -484,7 +486,10 @@ class logger():
     @staticmethod
     def info(message: str):
         try:
+
             addr = message.split("]")[0][1::]
+            if addr not in indexes:
+                indexes.append(addr)
             console_log.info(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
             if addr not in list(global_log.keys()):
                 global_log[addr] = [f"[INFO] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}"]
@@ -498,6 +503,8 @@ class logger():
     def error(message: str):
         try:
             addr = message.split("]")[0][1::]
+            if addr not in indexes:
+                indexes.append(addr)
             console_log.error(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
             if addr not in list(global_log.keys()):
                 global_log[addr] = [f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}"]
@@ -512,6 +519,8 @@ class logger():
     def success(message: str):
         try:
             addr = message.split("]")[0][1::]
+            if addr not in indexes:
+                indexes.append(addr)
             console_log.success(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
             if addr not in list(global_log.keys()):
                 global_log[addr] = [f"[SUCCESS] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}"]
