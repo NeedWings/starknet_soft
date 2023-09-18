@@ -109,8 +109,9 @@ class ZkLend(BaseLend):
             val_in_token_wei = bal
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
-        call2 = contract.functions["repay_all"].prepare(
-            token.contract_address
+        call2 = contract.functions["repay"].prepare(
+            token.contract_address,
+            val_in_token_wei
         )
 
         return [call1, call2]

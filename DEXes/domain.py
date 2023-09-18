@@ -60,16 +60,8 @@ class StarkId:
         return t
             
 
-    async def create_txn(self, eth: Token, sender: BaseStarkAccount):
-        domain = ""
-        with open(f"{SETTINGS_PATH}wordlist.txt", "r") as f:
-            words = f.read().lower().split("\n")
-
-        wl = get_random_value_int([1,3])
-        for i in range(wl):
-            domain += random.choice(words)
-        while len(domain) < 5:
-            domain += random.choice(words)
+    async def create_txn(self, domain: str, eth: Token, sender: BaseStarkAccount):
+        
         
         list_domain = self.encode_domain(domain)
         int_domain = ""
