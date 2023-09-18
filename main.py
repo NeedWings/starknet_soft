@@ -437,7 +437,7 @@ try:
                             account, call_data, salt, class_hash = import_argent_account(key, client)
                             
                             if ('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
-                                client = GatewayClient(MAINNET, proxy=proxy)
+                                client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy)
                                 print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy: {proxy}")
                                 tasks.append(loop.create_task(MainRouter(key, delay, task_number, client).start()))
                                 delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
@@ -445,7 +445,7 @@ try:
                 else:
                     loop = asyncio.new_event_loop()
 
-                    client = GatewayClient(MAINNET)
+                    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]))
                     delay = 0
                     for account in accounts:
                         tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))

@@ -82,6 +82,8 @@ class Fibrous(BaseDex):
             )
         else:
             bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            if token1.symbol == "ETH":
+                bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             call2 = contract.functions["swap"].prepare(

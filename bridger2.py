@@ -395,7 +395,7 @@ async def eth_bridge_official(private_key: str, recepient: str, delay: int):
         if value >= SETTINGS["MinEthValue"]:
             break
         else:
-            logger.error(f"{[wallet]} balance below MinEthValue, keep looking")
+            logger.error(f"[{wallet}] balance below MinEthValue, keep looking")
             await sleeping(wallet, True)
     
     amountUSD = get_random_value(SETTINGS["USDAmountToBridge"])

@@ -146,9 +146,19 @@ class MainRouter():
             await self.new_id()
     
     async def new_id(self):
-        logger.info(f"[{self.account.formatted_hex_address}] going to mint domain")
+        
+        domain = ""
+        with open(f"{SETTINGS_PATH}wordlist.txt", "r") as f:
+            words = f.read().lower().split("\n")
 
-        await self.account.send_txn(await domain_hand.create_txn(eth, self.account))
+        wl = get_random_value_int([1,3])
+        for i in range(wl):
+            domain += random.choice(words)
+        while len(domain) < 5:
+            domain += random.choice(words)
+        
+        logger.info(f"[{self.account.formatted_hex_address}] going to mint domain({domain})")
+        await self.account.send_txn(await domain_hand.create_txn(domain, eth, self.account))
 
 
     async def argent_upgrader(self):
@@ -415,7 +425,12 @@ class MainRouter():
             balance = await self.account.get_balance(token.contract_address, token.symbol)
             if token.symbol == "ETH":
                 balance = balance - get_random_value(SETTINGS["SaveEthOnBalance"])*1e18
-            logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
+            else:
+                if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
+                    balance = 0
+                    logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance below MINIMAL_SWAP_AMOUNTS, will count as 0")
+                else:
+                    logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
             usd_value = token.get_usd_value(balance/10**token.decimals)
             if usd_value>max_value:
                 max_valued = token
@@ -616,6 +631,10 @@ class MainRouter():
 
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
+                else:
+                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
+                        balance = 0
+
                 if balance <=0:
                     continue
                 selected = False
@@ -674,7 +693,8 @@ class MainRouter():
             for token in lend.lend_tokens:
                 token: Token
                 balance = await self.account.get_balance(token.contract_address, token.symbol)
-
+                balance *= 0.99
+                balance = int(balance)
                 if balance <= 1:
                     continue
                 logger.info(f"[{self.account.formatted_hex_address}] going to return {token.symbol} from {lend.name}")
