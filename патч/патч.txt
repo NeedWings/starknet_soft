@@ -1,2 +1,3 @@
 http_client.py -- site-packages/starknet_py/net
 gateway_client.py -- site-packages/starknet_py/net
+full_node_client.py -- site-packages/starknet_py/net
