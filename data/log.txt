@@ -1,5 +1,5 @@
-0x015e27cd8b715684d9fe53c67792c0cbfff9b91f4b1f90377e75a6726ac46b39:
-[INFO] [1/1]  going to mint domain
-[SUCCESS] [1/1]  sending txn with hash: 0x1acd7f2dcd6ac30d3d12baf796039d504723ba1ea4159016d21c3136eb9dc5c
-[SUCCESS] [1/1]  tnx has sent! Hash: 0x1acd7f2dcd6ac30d3d12baf796039d504723ba1ea4159016d21c3136eb9dc5c
+0x05b1fe9bc00240bfa4076ce298e918a1b378c1f1fb258af63321a2b77b03ea39:
+[INFO] [1/1]  going to send eth to 0x15e27cd8b715684d9fe53c67792c0cbfff9b91f4b1f90377e75a6726ac46b39
+[SUCCESS] [1/1]  sending txn with hash: 0x32a990bf5f0ba6de64c3e6357bcbf6dcf6417e60e725af9dc5b03a7e962f93d
+[SUCCESS] [1/1]  tnx has sent! Hash: 0x32a990bf5f0ba6de64c3e6357bcbf6dcf6417e60e725af9dc5b03a7e962f93d
 

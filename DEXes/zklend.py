@@ -98,6 +98,13 @@ class ZkLend(BaseLend):
 
         return [call]
 
+    async def get_total_borrowed(self, sender: BaseStarkAccount):
+        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+        total = 0
+        for token_name in self.supported_tokens:
+            token = self.token_from_name[token_name]
+            val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token.symbol}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
+            
 
     async def create_txn_for_return(self, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -105,7 +112,7 @@ class ZkLend(BaseLend):
         if val_in_token_wei <= 0:
             return -1
         bal = await sender.get_balance(token.contract_address, token.symbol)
-        if val_in_token_wei <= bal:
+        if val_in_token_wei >= bal:
             val_in_token_wei = bal
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
@@ -115,7 +122,4 @@ class ZkLend(BaseLend):
         )
 
         return [call1, call2]
-
-
-
         

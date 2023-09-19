@@ -7,6 +7,7 @@ from DEXes.tenkswap import *
 from DEXes.zklend import *
 from braavos_shit import *
 from DEXes.domain import *
+from DEXes.okx_sender import *
 
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
@@ -17,7 +18,7 @@ wsteth = Token("WSTETH", 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c
 lords = Token("LORDS", 0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49, 18)
 
 domain_hand = StarkId()
-
+sender_hand = Sender()
 tokens = [
     eth,
     usdt,
@@ -144,7 +145,31 @@ class MainRouter():
             await self.argent_upgrader()
         elif task_number == 32:
             await self.new_id()
+        elif task_number == 33:
+            await self.okx()
     
+    async def okx(self):
+        rec = ""
+        with open(f"{SETTINGS_PATH}pairs.txt", "r") as f:
+            pairs = f.read().lower().split("\n")
+        for pair in pairs:
+            try:
+                if self.account.formatted_hex_address == "0x" + "0"*(66-len(hex(int(pair.split("\t")[0], 16)))) + hex(int(pair.split("\t")[0], 16))[2::]:
+                    rec = pair.split("\t")[1]   
+            except:
+                if self.account.formatted_hex_address == "0x" + "0"*(66-len(hex(int(pair.split("    ")[0], 16)))) + hex(int(pair.split("    ")[0], 16))[2::]:
+                    rec = pair.split("    ")[1]   
+        
+        if rec == "":
+            return
+        
+        txn = await sender_hand.create_txn(eth, rec, self.account)
+        if txn == -1:
+            return
+        logger.info(f"[{self.account.formatted_hex_address}] going to send eth to {rec}")
+        await self.account.send_txn(txn)
+    
+
     async def new_id(self):
         
         domain = ""
@@ -357,6 +382,9 @@ class MainRouter():
                 else:
                     break
             except Exception as e:
+                if "contract not found" in (str(e)).lower():
+                    nonce = 0
+                    break
                 logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get nonce: {e}")
                 await sleeping(self.account.formatted_hex_address, True)
         while True:
@@ -632,7 +660,7 @@ class MainRouter():
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
-                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
+                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
                 if balance <=0:
