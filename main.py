@@ -149,6 +149,7 @@ try:
                     "send from stark to different wallet(EVM)",
                     "send to stark from different wallet(EVM)",
                     "full withdraw to different wallet(EVM)",
+                    "okx sender",
                     "",
                     "full module",
                     "",
@@ -203,7 +204,10 @@ try:
         for k in tasks:
             k.join()
 
-    
+    async def get_domains(accs):
+        for account in accs:
+            has = await domain_hand.has_domain(account)
+            print(f"{'0x' + (66-len(hex(account.address))) * '0' + hex(account.address)[2::]} has domain: {has}")
 
     def main():
         routers = []
@@ -281,6 +285,8 @@ try:
             task_number = 31
         elif action == "mint cheap domain":
             task_number = 32
+        elif action == "okx sender":
+            task_number = 33
             
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
@@ -297,21 +303,24 @@ try:
 
             if task_number == 10:
                 w3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
+                sa = []
                 print("Stark Addresses")
                 for key in accounts:
                     if SETTINGS["UseProxies"] and key in proxy_dict_cfg.keys():
-                        client = GatewayClient(net=MAINNET, proxy=proxy_dict_cfg[key])
+                        client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy_dict_cfg[key])
                     else:
-                        client = GatewayClient(net=MAINNET)
+                        client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]))
                     account, call_data, salt, class_hash = import_argent_account(key, client)
                     hex_stark_address = '0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]
                     hex_stark_address = "0x" + "0"*(66-len(hex_stark_address)) + hex_stark_address[2::]
+                    sa.append(account)
                     print(f"{hex_stark_address}")
                 print("EVM Addresses")
                 for key in accounts:
                     hex_key = "0x" + "0"*(66-len(hex(key))) + hex(key)[2::]
                     print(f"{w3.eth.account.from_key(hex_key).address}")
-
+                print("Domains")
+                asyncio.run(get_domains(sa))
                 return
 
             if task_number != 10 and task_number != 16:
@@ -387,9 +396,12 @@ try:
                         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     
                 loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
-                
+                if task_number == 16:
+                    with open(f"{SETTINGS_PATH}starkscan.csv", "w") as f:
+                        f.write(starkstats)
     if __name__ == "__main__":
-        main()
+        while True:
+            main()
 except Exception as e:
     console_log.error(f"Unexpected error: {e}")
 
