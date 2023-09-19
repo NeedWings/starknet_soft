@@ -5,34 +5,6 @@ import random
 import argparse
 from getpass import getpass
 
-passphrase = getpass('Enter db password\n')
-db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
-
-class Wallet(Model):
-    walletId =   AutoField()
-    seed = TextField()
-    eth_key = TextField(null = True)
-    eth_address = TextField(null = True)
-    argent_seed = TextField(null = True)
-    argent_key = TextField(null = True)
-    argent_address = TextField(null = True)
-    owner = TextField(null = True)
-    class Meta:
-        database = db
-
-db.connect()
-
-def range_generator(user_input):
-    tmp=user_input.replace(',',' ').split()
-    values =[]
-    for a in tmp:
-        if '-' in a:
-            start, end = (int(x) for x in a.split('-'))
-            values +=list(range(start,end+1))
-        else:
-            values.append(int(a))
-    return values
-
 message = """
 Enter task number:
 1    ##bridge from arb/opti/eth to start(orbiter/layerswap)
@@ -74,23 +46,56 @@ unavailible tasks:
 20    swaps on fibrous #
 '''
 
+def range_generator(user_input):
+    tmp=user_input.replace(',',' ').split()
+    values =[]
+    for a in tmp:
+        if '-' in a:
+            start, end = (int(x) for x in a.split('-'))
+            values +=list(range(start,end+1))
+        else:
+            values.append(int(a))
+    return values
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Starknet bot with proxy support')
     parser.add_argument('-t', type=int,
                         help='task_number')
     parser.add_argument('-i', type=str,
-                        help='account ids. ex.: 1-5, 8, 10-50')
+                        help='account ids. ex.: "1-5, 8, 10-50"')
+    args = parser.parse_args()
+    task_number = args.t if args.t else int(input(message))
+    work_values = range_generator(args.i if args.i else input('Enter accs range\n'))
+
+passphrase = getpass('Enter db password\n')
+db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
+
+class Wallet(Model):
+    walletId =   AutoField()
+    seed = TextField()
+    eth_key = TextField(null = True)
+    eth_address = TextField(null = True)
+    argent_seed = TextField(null = True)
+    argent_key = TextField(null = True)
+    argent_address = TextField(null = True)
+    owner = TextField(null = True)
+    class Meta:
+        database = db
+
+db.connect()
+
+
+
+if __name__ == "__main__":
     task_args = []
     with open('data/proxyServers.txt') as f:
         proxy_servers = f.read().splitlines()
     proxynum = len(proxy_servers)
     task_number = int(input(message))
-    work_values = range_generator(input('Enter accs range\n'))
     for value in work_values:
         wallet = Wallet.get(Wallet.walletId == value)
         task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
-    random.shuffle(args)
+    random.shuffle(task_args)
     runner.run(task_number, task_args)
     input("Finished\n")
 db.close()
