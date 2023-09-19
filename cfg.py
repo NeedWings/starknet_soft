@@ -464,12 +464,13 @@ def sleeping_sync(address, error = False):
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
 
-starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;myswap wstETH;myswap USDC; myswap USDT;jediswap USDC;jediswap USDT;sithswap USDC;sithswap USDT;10kswap USDC;10kswap USDT;avnu USDC;avnu USDT\n"
+starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;\n"
 
 from loguru import logger as console_log
 
 global_log = {}
 indexes = []
+pairs_for_okx = {}
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 def write_global_log():
     log = ""

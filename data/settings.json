@@ -8,7 +8,7 @@
             "ARBITRUM_MAINNET"  : ["https://rpc.ankr.com/arbitrum"],
             "AVALANCHE_MAINNET" : ["https://rpc.ankr.com/avalanche"],
             "OPTIMISM_MAINNET"  : ["https://rpc.ankr.com/optimism"],
-            "STARKNET_MAINNET"  : ["офф rpc нет:( юзайте от инфуры"]
+            "STARKNET_MAINNET"  : ["https://starknet-mainnet.infura.io/v3/3377b004b8064021b97034e899a769bf"]
         },
      
     "===== Download Settings =====":"",
@@ -29,7 +29,7 @@
         "delayed_start" : false,
         "delayed_start_time": 3,
     
-        "dmail_messages_amount": [0, 0],
+        "dmail_messages_amount": [1, 1],
         "starknet_id_amount": [0, 0],
 
         "zklend_collateral_amount": [0, 0],
