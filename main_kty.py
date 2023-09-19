@@ -91,7 +91,6 @@ if __name__ == "__main__":
     with open('data/proxyServers.txt') as f:
         proxy_servers = f.read().splitlines()
     proxynum = len(proxy_servers)
-    task_number = int(input(message))
     for value in work_values:
         wallet = Wallet.get(Wallet.walletId == value)
         task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
