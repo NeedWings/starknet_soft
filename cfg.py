@@ -108,7 +108,7 @@ import decimal
 #from os import getcwd
 import os
 import base64
-from cryptography.fernet import Fernet
+#from cryptography.fernet import Fernet
 import getpass
 import hashlib
 import sys

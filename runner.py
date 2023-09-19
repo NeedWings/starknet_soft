@@ -386,7 +386,6 @@ try:
             case 27:
                 print('Not ready yet')
             case _:
-                print('No such number\n')
                 for i in range(len(stark_keys)):
                     client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy_servers[i] if proxy_servers else None)
                     tasks.append(loop.create_task(MainRouter(stark_keys[i], delay, task_number, client).start()))

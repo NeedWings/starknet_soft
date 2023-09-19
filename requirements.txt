@@ -2,3 +2,5 @@ starknet-py
 web3
 requests
 loguru
+pysqlcipher3
+peewee

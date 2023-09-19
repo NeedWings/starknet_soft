@@ -1,31 +1,35 @@
 import runner
+from peewee import *
+from playhouse.sqlcipher_ext import SqlCipherDatabase
+from getpass import getpass
 
-#from peewee import *
+passphrase = getpass('Enter db password\n')
+db = SqlCipherDatabase('dbs/wallets.db', passphrase = passphrase)
 
-#if __name__ == "__main__":
-#    i = 0
-#    options = []
-#    print('Choose your database\n')
-#    for file in os.listdir('data'):
-#        if file.endswith(".db"):
-#            print(f'{i} {file}')
-#            options.append(file)
-#            i += 1
-#    option = int(input('Enter number\n'))
-#    db = SqliteDatabase(f'data/{option}')
+class Wallet(Model):
+    walletId =   AutoField()
+    seed = TextField()
+    eth_key = TextField(null = True)
+    eth_address = TextField(null = True)
+    argent_seed = TextField(null = True)
+    argent_key = TextField(null = True)
+    argent_address = TextField(null = True)
+    owner = TextField(null = True)
+    class Meta:
+        database = db
 
-#class Wallet(Model):
-#    walletId =   AutoField()
-#    #seedEncrypted = TextField()
-#    seed = TextField()
-#    walletAddress = TextField()
-#    walletKey = TextField()
-#    ethAddress = TextField()
-#    ethKey = TextField()
-#    class Meta:
-#        database = db
+db.connect()
 
-#db.connect()
+def range_generator(user_input):
+    tmp=user_input.replace(',',' ').split()
+    values =[]
+    for a in tmp:
+        if '-' in a:
+            start, end = (int(x) for x in a.split('-'))
+            values +=list(range(start,end+1))
+        else:
+            values.append(int(a))
+    return values
 
 message = """
 Enter task number:
@@ -53,7 +57,7 @@ Enter task number:
 29    universal braavos upgrader
 30    return borrowed tokens
 31    universal argent upgrader
-32    mint cheap domain
+32    mint cheap domain\n
 """
 
 '''
@@ -68,25 +72,19 @@ unavailible tasks:
 20    swaps on fibrous #
 '''
 
-def ping(proxy):
-    proxyurl = proxy.split('@')[1].split(':')[0]
-    response = os.system("ping -c 1 " + proxyurl)
-    if response == 0:
-        pass
-
-def checkProxy(proxy_list):
-    good_proxy = []
-    proxy = [proxy.split('@')[1].split(':')[0] for proxy in proxy_list]
 
 if __name__ == "__main__":
+    stark_keys = []
+    eth_keys = []
     task_number = int(input(message))
-    with open('data/starknet_keys.txt', 'r') as f:
-        stark_keys = f.read().splitlines()
-    with open('data/eth_keys.txt') as f:
-        eth_keys = f.read().splitlines()
+    work_values = range_generator(input('Enter accs range\n'))
+    for value in work_values:
+        wallet = Wallet.get(Wallet.walletId == value)
+        stark_keys.append(wallet.argent_key)
+        eth_keys.append(wallet.eth_key)
     with open('data/proxyServers.txt') as f:
         proxy_servers = f.read().splitlines()
-    keysnum = len(stark_keys)
+    keysnum = len(work_values)
     proxynum = len(proxy_servers)
     proxy_servers = [proxy_servers[i % proxynum] for i in range(keysnum)]
     runner.run(task_number, stark_keys, eth_keys, proxy_servers)

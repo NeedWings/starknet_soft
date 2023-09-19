@@ -8,7 +8,7 @@
             "ARBITRUM_MAINNET"  : ["https://rpc.ankr.com/arbitrum"],
             "AVALANCHE_MAINNET" : ["https://rpc.ankr.com/avalanche"],
             "OPTIMISM_MAINNET"  : ["https://rpc.ankr.com/optimism"],
-            "STARKNET_MAINNET"  : ["офф rpc нет:( юзайте от инфуры"]
+            "STARKNET_MAINNET"  : ["https://alpha-mainnet.starknet.io"]
         },
      
     "===== Download Settings =====":"",
