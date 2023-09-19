@@ -459,7 +459,7 @@ def write_global_log():
         for data in global_log[key]:
             buff += f"{data}\n"
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}log.txt", "w") as f:
+    with open(f"{SETTINGS_PATH}log.txt", "a") as f:
         f.write(log)
 
 class logger():
