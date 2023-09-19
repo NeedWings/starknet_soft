@@ -107,6 +107,6 @@ if __name__ == "__main__":
         task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
     random.shuffle(task_args)
     with multiprocessing.Pool(processes=1) as s:
-        s.starmap(run, task_args)
+        s.map(run, task_args)
     input("Finished\n")
 db.close()
