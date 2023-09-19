@@ -4,7 +4,7 @@ from playhouse.sqlcipher_ext import SqlCipherDatabase
 from getpass import getpass
 
 passphrase = getpass('Enter db password\n')
-db = SqlCipherDatabase('dbs/wallets.db', passphrase = passphrase)
+db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
 
 class Wallet(Model):
     walletId =   AutoField()
