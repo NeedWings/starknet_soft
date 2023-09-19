@@ -66,9 +66,13 @@ if __name__ == "__main__":
                         help='task_number')
     parser.add_argument('-i', type=str,
                         help='account ids. ex.: "1-5, 8, 10-50"')
+    parser.add_argument('-e', type=str,
+                        help='account ids to exclude. ex.: "1-5, 8, 10-50"')
     args = parser.parse_args()
     task_number = args.t if args.t else int(input(message))
     work_values = range_generator(args.i if args.i else input('Enter accs range\n'))
+    exclude_values = range_generator(args.e if args.e else input('Enter accs range to exclude\n'))
+    work_values = [v for v in work_values if v not in exclude_values]
 
 passphrase = getpass('Enter db password\n')
 db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
