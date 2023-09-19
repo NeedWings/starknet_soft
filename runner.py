@@ -362,7 +362,7 @@ try:
                     
                 loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
     
-    def run(task_number, stark_keys, eth_keys=None, proxy_servers=[]):
+    def run(task_number, args): #(task_number, stark_keys, eth_keys=None, proxy_servers=[]):
         delay = 0
         tasks = []
         loop = asyncio.new_event_loop()
@@ -386,9 +386,9 @@ try:
             case 27:
                 print('Not ready yet')
             case _:
-                for i in range(len(stark_keys)):
-                    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy_servers[i] if proxy_servers else None)
-                    tasks.append(loop.create_task(MainRouter(stark_keys[i], delay, task_number, client).start()))
+                for arg in args:
+                    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=arg['proxy_server'] if arg['proxy_server'] else None)
+                    tasks.append(loop.create_task(MainRouter(arg['argent_key'], delay, task_number, client).start()))
                     delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 

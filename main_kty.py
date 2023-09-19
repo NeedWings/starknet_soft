@@ -1,6 +1,8 @@
 import runner
 from peewee import *
 from playhouse.sqlcipher_ext import SqlCipherDatabase
+import random
+import argparse
 from getpass import getpass
 
 passphrase = getpass('Enter db password\n')
@@ -74,18 +76,21 @@ unavailible tasks:
 
 
 if __name__ == "__main__":
-    stark_keys = []
-    eth_keys = []
+    parser = argparse.ArgumentParser(description='Starknet bot with proxy support')
+    parser.add_argument('-t', type=int,
+                        help='task_number')
+    parser.add_argument('-i', type=str,
+                        help='account ids. ex.: 1-5, 8, 10-50')
+    task_args = []
+    with open('data/proxyServers.txt') as f:
+        proxy_servers = f.read().splitlines()
+    proxynum = len(proxy_servers)
     task_number = int(input(message))
     work_values = range_generator(input('Enter accs range\n'))
     for value in work_values:
         wallet = Wallet.get(Wallet.walletId == value)
-        stark_keys.append(wallet.argent_key)
-        eth_keys.append(wallet.eth_key)
-    with open('data/proxyServers.txt') as f:
-        proxy_servers = f.read().splitlines()
-    keysnum = len(work_values)
-    proxynum = len(proxy_servers)
-    proxy_servers = [proxy_servers[i % proxynum] for i in range(keysnum)]
-    runner.run(task_number, stark_keys, eth_keys, proxy_servers)
+        task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
+    random.shuffle(args)
+    runner.run(task_number, task_args)
     input("Finished\n")
+db.close()
