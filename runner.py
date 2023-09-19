@@ -393,6 +393,6 @@ try:
         loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
 
 except Exception as e:
-    console_log.error(f"Unexpected error: {e}")
+    print(f"Unexpected error: {e}")
 
 input("Soft successfully end work")
