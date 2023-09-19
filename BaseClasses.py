@@ -315,7 +315,7 @@ class Token():
                 if type(response) is dict:
                     return response["lords"]["usd"]
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from coingecko for lords, tring again...')
                     time.sleep(5)
         elif self.symbol == "WSTETH":
             def __find__(ticker: str, rates: list):
@@ -328,7 +328,7 @@ class Token():
                 if type(response) is dict:
                     return response["wrapped-steth"]["usd"]
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from coingecko for wrapped-steth, tring again...')
                     time.sleep(5)
         else:
             def __find__(ticker: str, rates: list):
@@ -341,7 +341,7 @@ class Token():
                 if type(response) is list:
                     return __find__(self.symbol, response)
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from binance for {self.symbol}, tring again...')
                     time.sleep(5)
 
     def get_usd_value(self, amount):
