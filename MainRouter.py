@@ -660,7 +660,7 @@ class MainRouter():
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
-                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
+                    if balance/10**token_to_swap.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
                 if balance <=0:
