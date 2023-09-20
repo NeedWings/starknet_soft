@@ -323,7 +323,7 @@ def req_post(url: str, **kwargs):
 
 
 async def handle_dangerous_request(func, message, address = "", *args):
-    while True:
+    for i in range(retries_limit):
         try:
             return await func(*args)
         except Exception as e:
