@@ -239,7 +239,9 @@ try:
                     "dmail",
                     "starknet_id",
                     "collateral zklend",
-                    "mint cheap domain"
+                    "mint cheap domain",
+                    "bids on unframded",
+                    "bids on flexing"
                 ],
             )
         ]
@@ -354,6 +356,10 @@ try:
             task_number = 32
         elif action == "okx sender":
             task_number = 33
+        elif action == "bids on unframded":
+            task_number = 35
+        elif action == "bids on flexing":
+            task_number = 34
 
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
