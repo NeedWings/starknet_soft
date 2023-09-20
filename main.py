@@ -41,6 +41,7 @@ try:
 
 
     if __name__ == "__main__":
+        pass
         checking_license()
 
     def get_disks():
@@ -469,6 +470,8 @@ try:
     if __name__ == "__main__":
         while True:
             main()
+            input("Soft successfully end work")
+
 except Exception as e:
     console_log.error(f"Unexpected error: {e}")
 

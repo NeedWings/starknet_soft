@@ -99,7 +99,9 @@ class MainRouter():
 
     
     async def start(self):
-        await asyncio.sleep(self.delay)
+        for i in range(100):
+            await asyncio.sleep(self.delay/100)
+            await self.account.wait_for_better_eth_gwei(silent = True)
         task_number = self.task_number
         if task_number == 1:
             pass
@@ -522,7 +524,7 @@ class MainRouter():
                     continue
 
                 await self.account.send_txn(swap_txn)
-                await sleeping(self.account.formatted_hex_address, True)
+                await sleeping(self.account.formatted_hex_address)
 
             except Exception as e:
                 logger.error(f"[{self.account.formatted_hex_address}] got erroor: {e}")
@@ -552,10 +554,10 @@ class MainRouter():
                 amount2 = amount_to_add/token2.get_price()
                 logger.info(f"[{self.account.formatted_hex_address}] going to add liquidity in {dex.name} in {token1.symbol}/{token2.symbol} pair for {amount1} {token1.symbol} and {amount2} {token2.symbol}")
                 
-                if token2_usd_value < amount_to_add*1.001:
+                if token2_usd_value < amount_to_add*(1+ SETTINGS["Slippage"]+0.01):
                     logger.info(f"[{self.account.formatted_hex_address}] not enough second token for adding, will make swap")
                     
-                    amount_to_swap = amount_to_add*1.001 - token2_usd_value
+                    amount_to_swap = amount_to_add*(1+ SETTINGS["Slippage"]+0.01) - token2_usd_value
                     token1_amount_to_swap = amount_to_swap/token1.get_price()
                     amount_out = amount_to_swap/token2.get_price()
                     
@@ -664,6 +666,7 @@ class MainRouter():
                         balance = 0
 
                 if balance <=0:
+                    logger.info(f"[{self.account.formatted_hex_address}] {token_to_swap.symbol} balance 0 or less MINIMAL_SWAP_AMOUNTS. skip")
                     continue
                 selected = False
                 for i in range(SETTINGS["retries_limit"]):
@@ -702,7 +705,8 @@ class MainRouter():
                 lpt: LPToken
                 balance = await self.account.get_balance(lpt.contract_address, lpt.symbol)
 
-                if balance < 0:
+                if balance <= 0:
+                    logger.info(f"[{self.account.formatted_hex_address}] {lpt.symbol} pool value is 0. Skip")
                     continue
 
                 txn = await dex.create_txn_for_remove_liq(lpt, self.account)
@@ -721,13 +725,15 @@ class MainRouter():
             for token in lend.lend_tokens:
                 token: Token
                 balance = await self.account.get_balance(token.contract_address, token.symbol)
-                balance *= 0.99
                 balance = int(balance)
-                if balance <= 1:
+                if balance <= 0:
+                    logger.info(f"[{self.account.formatted_hex_address}] Supplied {token.symbol} is 0. Skip")
                     continue
                 logger.info(f"[{self.account.formatted_hex_address}] going to return {token.symbol} from {lend.name}")
                 txn = await lend.create_txn_for_removing_token(balance, token, self.account)
-                
+                if txn == -1:
+                    logger.info(f"[{self.account.formatted_hex_address}] not enough repayed for removing. Skip")
+                    continue
                 await self.account.send_txn(txn)
 
                 await sleeping(self.account.formatted_hex_address)
