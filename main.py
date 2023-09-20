@@ -278,7 +278,8 @@ try:
     def main():
         routers = []
         
-
+        if SETTINGS["UseOurRPCStark"]:
+            SETTINGS["RPC"]["STARKNET_MAINNET"] = ["http://23.88.45.175:6070/"]
 
         print(autosoft)
         print(subs_text)

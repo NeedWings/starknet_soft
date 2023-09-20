@@ -16,6 +16,7 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
+        "UseOurRPCStark" : true,
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
@@ -33,6 +34,7 @@
         "starknet_id_amount": [0, 0],
 
         "zklend_collateral_amount": [0, 0],
+        "bids_amount"               : [1,2],
 
     
     "===== ADVANCED PROVIDER =====": "",

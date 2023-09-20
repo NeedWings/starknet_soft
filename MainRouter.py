@@ -8,7 +8,8 @@ from DEXes.zklend import *
 from braavos_shit import *
 from DEXes.domain import *
 from DEXes.okx_sender import *
-
+from DEXes.bids import *
+from DEXes.dmail import *
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
 usdt = Token("USDT", 0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8, 6, stable=True)
@@ -149,7 +150,20 @@ class MainRouter():
             await self.new_id()
         elif task_number == 33:
             await self.okx()
+        elif task_number == 34:
+            await self.bids(False)
+        elif task_number == 35:
+            await self.bids(True)
     
+    async def bids(self, flex):
+        for i in range(get_random_value_int(SETTINGS["bids_amount"])):
+            if flex:
+                await self.account.send_txn(await bidder.create_txn_for_flex(eth, self.account))
+            else:
+                await self.account.send_txn(await bidder.create_txn_for_unframed(eth, self.account))
+            await sleeping(self.account.formatted_hex_address)
+
+
     async def okx(self):
         rec = ""
         with open(f"{SETTINGS_PATH}pairs.txt", "r") as f:
@@ -173,19 +187,7 @@ class MainRouter():
     
 
     async def new_id(self):
-        
-        domain = ""
-        with open(f"{SETTINGS_PATH}wordlist.txt", "r") as f:
-            words = f.read().lower().split("\n")
-
-        wl = get_random_value_int([1,3])
-        for i in range(wl):
-            domain += random.choice(words)
-        while len(domain) < 5:
-            domain += random.choice(words)
-        
-        logger.info(f"[{self.account.formatted_hex_address}] going to mint domain({domain})")
-        await self.account.send_txn(await domain_hand.create_txn(domain, eth, self.account))
+        await self.account.send_txn(await domain_hand.create_txn(eth, self.account))
 
 
     async def argent_upgrader(self):
@@ -222,13 +224,7 @@ class MainRouter():
 
         amount = get_random_value(SETTINGS["EtherToWithdraw"])
 
-        while True:
-                try:
-                    balance = await account.get_balance()/1e18
-                    break
-                except Exception as e:
-                    logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get balance: {e}")
-                    await sleeping(self.account.formatted_hex_address, True)
+        balance = await self.account.get_balance()/1e18
 
         balance = balance - get_random_value(SETTINGS["WithdrawSaving"])
 
@@ -238,14 +234,14 @@ class MainRouter():
         if amount < 0.006:
             logger.error(f"[{self.account.formatted_hex_address}] amount to bridge less than minimal amount")
             return
-
-        if SETTINGS["DistNet"].lower() == "arbitrum":
+        distNet = SETTINGS["DistNet"].lower()
+        if distNet == "arbitrum":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
-        elif SETTINGS["DistNet"].lower() == "zksync":
+        elif distNet == "zksync":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
-        elif SETTINGS["DistNet"].lower() == "ethereum":
+        elif distNet == "ethereum":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 3)
-        elif SETTINGS["DistNet"].lower() == "linea":
+        elif distNet == "linea":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
         else:
             logger.error(f"[{self.account.formatted_hex_address}] wrong value in DistNet")
@@ -302,31 +298,10 @@ class MainRouter():
 
 
     async def dmail(self):
-        account = self.account.stark_native_account
         amount = get_random_value_int(SETTINGS["dmail_messages_amount"])
         for qawe in range(amount):
-            l = "1234567890abcdef"
-            t = [random.choice(l) for i in range(32)]
-            text = ""
-            for i in t:
-                text += i
             
-            addr_raw = [random.choice(l) for i in range(32)]
-            addr = ""
-            for i in addr_raw:
-                addr += i
-            
-            felt_text = int(text, 16)
-            felt_rec = int(addr, 16)
-            logger.info(f"[{self.account.formatted_hex_address}] going to send message({text}) to {addr}")
-
-            dmail_contract = Contract(0x0454f0bd015e730e5adbb4f080b075fdbf55654ff41ee336203aa2e1ac4d4309, DMAIL, account)
-
-            call = dmail_contract.functions["transaction"].prepare(
-                felt_rec,
-                felt_text
-            )
-            calldata = [call]
+            calldata = await dmail_hand.create_txn_for_dmail(self.account)
 
             await self.account.send_txn(calldata)
 
@@ -392,23 +367,18 @@ class MainRouter():
         while True:
             
             logger.info(f"[{self.account.formatted_hex_address}] checking balance.")
-            try:
-                balance = await account.get_balance()
-                logger.info(f"[{self.account.formatted_hex_address}] got balance: {balance/1e18} ETH")
-                if balance >= 1e14:
-                    break
-                await sleeping(self.account.formatted_hex_address)
-
-            except Exception as e:
-                logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get balance: {e}")
-                await sleeping(self.account.formatted_hex_address, True)
+            balance = await self.account.get_balance()
+            logger.info(f"[{self.account.formatted_hex_address}] got balance: {balance/1e18} ETH")
+            if balance >= 1e14:
+                break
+            await sleeping(self.account.formatted_hex_address)
         logger.success(f"[{self.account.formatted_hex_address}] found balance. Going to deploy")
         i = 0
         while i < retries_limit:
             i += 1
             try:
-                
-                if SETTINGS["Provider"].lower() == "argent_newest" or SETTINGS["Provider"].lower() == "argent":
+                provider = SETTINGS["Provider"].lower()
+                if provider == "argent_newest" or provider == "argent":
                     account_deployment_result = await StarkNativeAccount.deploy_account(
                         address=account.address,
                         class_hash=class_hash,
@@ -419,7 +389,7 @@ class MainRouter():
                         constructor_calldata=call_data,
                         auto_estimate=True,
                     )
-                elif SETTINGS["Provider"].lower() == "braavos_newest":
+                elif provider == "braavos_newest":
                     account_deployment_result = await deploy_account_braavos(
                         address=account.address,
                         class_hash=class_hash,
@@ -573,9 +543,6 @@ class MainRouter():
                     if (await self.account.send_txn(swap_txn))[0] != 1:
                         continue
                     await sleeping(self.account.formatted_hex_address)
-                
-                
-
                 liq_txn = await dex.create_txn_for_liq(amount1, token1, amount2, token2, self.account)
                 if liq_txn == -1:
                     await sleeping(self.account.formatted_hex_address, True)
@@ -634,10 +601,7 @@ class MainRouter():
                     continue
 
                 await sleeping(self.account.formatted_hex_address)
-
                 logger.info(f"[{self.account.formatted_hex_address}] going to return {amount} {token.symbol} in {lend.name}")
-
-
                 txn = await lend.create_txn_for_return(token, self.account)
 
                 await self.account.send_txn(txn)
