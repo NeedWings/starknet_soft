@@ -1,19 +1,67 @@
 try:
     from MainRouter import *
     from bridger2 import *
-    from LicenseChecker import *
-    
+    def decrypt(filename):
+        f = Fernet(KEY)
+        with open(filename, 'rb') as file:
+            encrypted_data = file.read()
+        decrypted_data = f.decrypt(encrypted_data).decode()
+        return decrypted_data.split(':')
+
+    server_data = decrypt(f"{SETTINGS_PATH}server_data.txt")
+    connect_data = (server_data[0], int(server_data[1]))
+
+    def check_license_elig(sha):
+        console_log.info("Checking license expiration date...")
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect(connect_data)
+            message = {
+                "auth": 'StarkNet',
+                "key": sha
+            }
+            client.send(json.dumps(message).encode())
+            response = client.recv(1024).decode()
+            client.close()
+            if response == "True":
+                return True
+            else:
+                console_log.error(f'Cant auth your device/subs')
+                input("Press any key to exit")
+                exit()
+        except Exception as error:
+            console_log.error(f'SEnd this message to dev: {error}')
+            input("Press any key to exit")
+            exit()
+
+    def checking_license():
+        text = wmi.WMI().Win32_ComputerSystemProduct()[0].UUID + ':SOFT'
+        sha = hashlib.sha1(text.encode()).hexdigest()
+        return check_license_elig(sha)
+
 
     if __name__ == "__main__":
         pass
         checking_license()
 
-    
+    def get_disks():
+        c = wmi.WMI()
+        logical_disks = {}
+        for drive in c.Win32_DiskDrive():
+            for partition in drive.associators("Win32_DiskDriveToDiskPartition"):
+                for disk in partition.associators("Win32_LogicalDiskToPartition"):
+                    logical_disks[disk.Caption] = {"model":drive.Model, "serial":drive.SerialNumber}
+        return logical_disks
 
     def decode_secrets():
         console_log.info("Decrypting your secret keys..")
+        logical_disks = get_disks()
         decrypt_type = SETTINGS["DecryptType"].lower()
-        if decrypt_type == "password":
+        disk = SETTINGS["LoaderDisk"]
+        if decrypt_type == "flash":
+            disk_data = logical_disks[disk]
+            data_to_be_encoded = disk_data["model"] + '_' + disk_data["serial"]
+        elif decrypt_type == "password":
             data_to_be_encoded = getpass.getpass('[DECRYPTOR] Write here password to decrypt secret keys: ')
         key = hashlib.sha256(data_to_be_encoded.encode()).hexdigest()[:43] + "="
         f = Fernet(key)
@@ -65,19 +113,21 @@ try:
     def encode_secrets():
         enc_type = 0
         while enc_type != 1 and enc_type != 2:
-            enc_type = int(input("which type of encodyng do you want(1 - password)"))
+            enc_type = int(input("which type of encodyng do you want(1 - password, 2 - flash)"))
         if enc_type == 1:
             method = 'password'
-
+        else:
+            method = "flash"
         while True:
             try:
                 with open(SETTINGS_PATH + 'to_encrypted_secrets.txt', encoding='utf-8') as file:
                     data = file.readlines()
-                    console_log.info(f'Found {len(data)} lines of keys')
+                    logger.info(f'Found {len(data)} lines of keys')
                     break
             except Exception as error:
-                console_log.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
+                logger.error(f"Failed to open {SETTINGS_PATH + 'to_encrypted_secrets.txt'} | {error}")
                 input("Create file and try again. Press any key to try again: ")
+        logical_disks = get_disks()
         json_wallets = {}
         w3 = Web3(Web3.HTTPProvider(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"]))
         for k in data:
@@ -92,13 +142,29 @@ try:
                 address.lower(): k.replace("\n", "").replace(" ", "")
                 })
             except Exception as error:
-                console_log.error(f'Cant add line: {k}; {error}')
+                logger.error(f'Cant add line: {k}; {error}')
 
         with open(SETTINGS_PATH + "data.txt", 'w') as file:
             json.dump(json_wallets, file)
 
-        
-        if method == 'password':
+        if method == 'flash':
+            while True:
+                answer = input(
+                    "Write here disk name, like: 'D'\n" + \
+                    ''.join(f"Disk name: {i.replace(':', '')} - {logical_disks[i]}\n" for i in logical_disks.keys())
+                )
+                agree = input(
+                    f"OK, your disk with name: {answer} | Data: {logical_disks[answer + ':']}\n" + \
+                    "Are you agree to encode data.txt using this data? [Y/N]: "
+                )
+                if agree.upper().replace(" ", "") == "Y":
+                    break
+
+            data = logical_disks[answer + ":"]
+            data_to_encoded = data["model"] + '_' + data["serial"]
+            key = hashlib.sha256(data_to_encoded.encode()).hexdigest()[:43] + "="
+
+        elif method == 'password':
             while True:
                 data_to_be_encoded = getpass.getpass('Write here password to encrypt secret keys: ')
                 agree = input(
@@ -121,7 +187,7 @@ try:
 
         os.remove(SETTINGS_PATH + "data.txt")
         open(SETTINGS_PATH + "to_encrypted_secrets.txt", 'w')
-        console_log.success(f'All is ok! Check to_run_addresses.txt and run soft again')
+        logger.success(f'All is ok! Check to_run_addresses.txt and run soft again')
         input("Press any key to exit")
         sys.exit()
 
@@ -212,7 +278,8 @@ try:
     def main():
         routers = []
         
-
+        if SETTINGS["UseOurRPCStark"]:
+            SETTINGS["RPC"]["STARKNET_MAINNET"] = ["http://23.88.45.175:6070/"]
 
         print(autosoft)
         print(subs_text)
@@ -287,7 +354,7 @@ try:
             task_number = 32
         elif action == "okx sender":
             task_number = 33
-            
+
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
                 addresses[i] = "0x" + "0"*(42-len(addresses[i])) + addresses[i][2::]
@@ -321,6 +388,7 @@ try:
                     print(f"{w3.eth.account.from_key(hex_key).address}")
                 print("Domains")
                 asyncio.run(get_domains(sa))
+
                 return
 
             if task_number != 10 and task_number != 16:
@@ -382,14 +450,14 @@ try:
                             
                             if ('0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]) in addresses:
                                 client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy)
-                                print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy:{proxy}")
+                                print(f"[{'0x' + '0'*(66-len(hex(account.address))) + hex(account.address)[2::]}] connected to proxy: {proxy}")
                                 tasks.append(loop.create_task(MainRouter(key, delay, task_number, client).start()))
                                 delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
                     
                 else:
                     loop = asyncio.new_event_loop()
 
-                    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=proxy)
+                    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]))
                     delay = 0
                     for account in accounts:
                         tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))
@@ -399,9 +467,12 @@ try:
                 if task_number == 16:
                     with open(f"{SETTINGS_PATH}starkscan.csv", "w") as f:
                         f.write(starkstats)
+                
     if __name__ == "__main__":
         while True:
             main()
+            input("Soft successfully end work")
+
 except Exception as e:
     console_log.error(f"Unexpected error: {e}")
 

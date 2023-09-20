@@ -16,23 +16,25 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
+        "UseOurRPCStark" : true,
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.05, // slippage 0.02 = 2%
-        "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
+        "RetriesLimit": 1, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
         "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos/argent_newest/braavos_newest)
-        "SwapAtTheEnd" : [true], // Swap or no to chosen token in toSaveFunds at the end
+        "SwapAtTheEnd" : [false], // Swap or no to chosen token in toSaveFunds at the end
         "toSaveFunds" : ["USDC"], // To which token soft will swap after full module
         "SaveEthOnBalance" : [0.001, 0.001], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
         "delayed_start" : false,
         "delayed_start_time": 3,
     
-        "dmail_messages_amount": [1, 1],
+        "dmail_messages_amount": [0, 0],
         "starknet_id_amount": [0, 0],
 
         "zklend_collateral_amount": [0, 0],
+        "bids_amount"               : [1,2],
 
     
     "===== ADVANCED PROVIDER =====": "",
@@ -63,7 +65,7 @@
         
 
     "====== SWAPS =====": "",
-        "swapAmounts"               : [1, 2], // amount of swaps
+        "swapAmounts"               : [0, 0], // amount of swaps
         "SwapDEXs"                  : ["MySwap"], // DEX where will be swaps
         "WorkPercent"               : [0.1, 0.5], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
@@ -81,7 +83,7 @@
     "===== LIQUIDITY =====": "",
         "LiqWorkPercent"          : [0.1, 0.5], // percent of balance to add liquidity (0.5 = 50%)
         "LiqDEXs"                 : ["JediSwap"], // DEX where will be added liquidity
-        "RemoveOnFullMode"        : [false, false], // remove liquidity from DEXes on the end of FULL module
+        "RemoveOnFullMode"        : [true, true], // remove liquidity from DEXes on the end of FULL module
         "AddLiqAmount"            : [0, 0], // how many times add liquidity
 
     "======= LENDS =======": "",

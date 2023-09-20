@@ -29,17 +29,32 @@ class ZkLend(BaseLend):
         "USDC": lend_tokens[3],
         "DAI": lend_tokens[4],
     }
+    coeffs_for_supply = {
+        "ETH": 0.8,
+        "WBTC": 0.7,
+        "USDT": 0.7,
+        "USDC": 0.8,
+        "DAI": 0.7,
+    }
+
+    coeffs_for_borrow = {
+        "ETH": 1,
+        "WBTC": 0.91,
+        "USDT": 0.91,
+        "USDC": 1,
+        "DAI": 0.91,
+    }
 
     async def get_total_borrowed(self, sender: BaseStarkAccount):
         val = 0
+        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
         for token_name in self.supported_tokens:
             token = self.token_from_name[token_name]
-            contract = Contract(self.contract_address, self.ABI, sender)
             val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token_name}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
 
             val_in_token = val_in_token_wei/10**token.decimals
 
-            val += await token.get_usd_value(val_in_token)
+            val += token.get_usd_value(val_in_token)*(2-self.coeffs_for_borrow[token.symbol])
         
         return val
 
@@ -54,11 +69,11 @@ class ZkLend(BaseLend):
 
             val_in_token = lend_token_val_wei/10**lend_token.decimals
 
-            usd_val = token.get_usd_value(val_in_token)
+            usd_val = token.get_usd_value(val_in_token) * self.coeffs_for_supply[token.symbol]
             
             val += usd_val
 
-        return val*0.637
+        return val
     
     async def create_txn_for_adding_token(self, token: Token, amount: float, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -80,10 +95,23 @@ class ZkLend(BaseLend):
 
     async def create_txn_for_removing_token(self, amount: int, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
+        stark_token: Token = self.token_from_name[token.symbol.split("-")[0]]
+        usd_val = stark_token.get_usd_value(amount/10**stark_token.decimals)
+        total_borroved = await self.get_total_borrowed(sender)
+        total_supplied = await self.get_total_supplied(sender)
+        usd_delta = total_supplied-total_borroved
+        if usd_val > usd_delta:
+            usd_val = usd_delta
 
+        
+        price = stark_token.get_price()
+        token_val = int((usd_val/price)*10**stark_token.decimals)
+
+        if token_val <= 0:
+            return -1
         call1 = contract.functions["withdraw"].prepare(
-            self.token_from_name[token.symbol.split("-")[0]].contract_address,
-            amount
+            stark_token.contract_address,
+            token_val
         )
 
         return [call1]
@@ -97,23 +125,18 @@ class ZkLend(BaseLend):
         )
 
         return [call]
-
-    async def get_total_borrowed(self, sender: BaseStarkAccount):
-        contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-        total = 0
-        for token_name in self.supported_tokens:
-            token = self.token_from_name[token_name]
-            val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token.symbol}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
-            
+         
 
     async def create_txn_for_return(self, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
         val_in_token_wei = (await handle_dangerous_request(contract.functions["get_user_debt_for_token"].call, f"can't get borrowed {token.symbol}", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).debt
-        if val_in_token_wei <= 0:
-            return -1
+        
         bal = await sender.get_balance(token.contract_address, token.symbol)
         if val_in_token_wei >= bal:
             val_in_token_wei = bal
+        if val_in_token_wei <= 1:
+            return -1
+        print(val_in_token_wei)
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
         call2 = contract.functions["repay"].prepare(
