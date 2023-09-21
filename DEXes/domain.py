@@ -82,7 +82,7 @@ class StarkId:
         while len(domain) < 5:
             domain += random.choice(words)
         
-        logger.info(f"[{self.account.formatted_hex_address}] going to mint domain({domain})")
+        logger.info(f"[{sender.formatted_hex_address}] going to mint domain({domain})")
         list_domain = self.encode_domain(domain)
         int_domain = ""
         for i in list_domain:
