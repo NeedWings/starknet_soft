@@ -140,6 +140,8 @@ try:
                     "full withdraw to different wallet(EVM)",
                     "okx sender",
                     "",
+                    "own tasks",
+                    "",
                     "full module",
                     "",
                     "random swaps",
@@ -277,6 +279,8 @@ try:
             task_number = 35
         elif action == "bids on flexing":
             task_number = 34
+        elif action == "own tasks":
+            task_number = 0
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
                 addresses[i] = "0x" + "0"*(42-len(addresses[i])) + addresses[i][2::]
