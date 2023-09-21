@@ -468,7 +468,7 @@ try:
                     for account in accounts:
                         tasks.append(loop.create_task(MainRouter(account, delay, task_number, client).start()))
                         delay += get_random_value_int(SETTINGS["ThreadRunnerSleep"])
-                    
+                tasks.append(loop.create_task(gas_checker()))
                 loop.run_until_complete(asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED))
                 if task_number == 16:
                     with open(f"{SETTINGS_PATH}starkscan.csv", "w") as f:

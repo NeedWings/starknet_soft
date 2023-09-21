@@ -531,6 +531,35 @@ class logger():
         except:
             pass
 
+gas_high = asyncio.Event()
+
+async def gas_checker():
+    global gas_high
+   
+    w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
+    while True:
+        try:
+            f = open(f"{SETTINGS_PATH}settings.json", "r")
+            a = json_remove_comments(f.read())
+            SETTINGS = json.loads(a)
+            f.close()
+        except Exception as e:
+            input("Error with settings.json")
+            exit()
+        limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
+        try:
+            price = w3.eth.gas_price
+        except:
+            await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
+            continue
+        if price < limit:
+            gas_high.clear()
+        else:
+            gas_high.set()
+
+        await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+
+
 async def sleeping(address, error = False):
         if error:
             rand_time = random.randint(SETTINGS["ErrorSleepeng"][0], SETTINGS["ErrorSleepeng"][1])

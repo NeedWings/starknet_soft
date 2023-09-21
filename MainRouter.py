@@ -100,9 +100,12 @@ class MainRouter():
 
     
     async def start(self):
-        for i in range(100):
-            await asyncio.sleep(self.delay/100)
-            await self.account.wait_for_better_eth_gwei(silent = True)
+        global gas_high
+        if self.delay != 0 or True:
+            for i in range(100):
+                await asyncio.sleep(self.delay/1000)
+                while gas_high.is_set():
+                    await asyncio.sleep(10)
         task_number = self.task_number
         if task_number == 1:
             pass
