@@ -10,6 +10,7 @@ from DEXes.domain import *
 from DEXes.okx_sender import *
 from DEXes.bids import *
 from DEXes.dmail import *
+from own_tasks import *
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
 usdt = Token("USDT", 0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8, 6, stable=True)
@@ -103,7 +104,7 @@ class MainRouter():
         global gas_high
         if self.delay != 0 or True:
             for i in range(100):
-                await asyncio.sleep(self.delay/1000)
+                await asyncio.sleep(self.delay/100)
                 while gas_high.is_set():
                     await asyncio.sleep(10)
         task_number = self.task_number
@@ -111,6 +112,8 @@ class MainRouter():
             pass
         elif task_number == 2:
             await self.swaps_handler()
+        elif task_number == 0:
+            await own_tasks(self)
         elif task_number == 3:
             await self.swap_to_one_token()
         elif task_number == 4:
@@ -589,7 +592,13 @@ class MainRouter():
                 lend: BaseLend = random.choice(supported_lends)
                 token = random.choice(self.supported_tokens_str_to_token(lend.supported_tokens))
 
-                to_borrow_usd = await lend.get_total_supplied(self.account)*get_random_value(SETTINGS["BorrowWorkPercent"])
+                
+                total_borroved = await lend.get_total_borrowed(self.account)
+                total_supplied = await lend.get_total_supplied(self.account)
+                usd_val = total_supplied-total_borroved
+
+                
+                to_borrow_usd = (usd_val)*get_random_value(SETTINGS["BorrowWorkPercent"])*lend.coeffs_for_borrow[token.symbol]
                 if to_borrow_usd == 0:
                     logger.error(f"[{self.account.formatted_hex_address}] to borrow is zero")
                     await sleeping(self.account.formatted_hex_address, True)
