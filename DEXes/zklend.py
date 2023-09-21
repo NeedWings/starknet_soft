@@ -54,7 +54,7 @@ class ZkLend(BaseLend):
 
             val_in_token = val_in_token_wei/10**token.decimals
 
-            val += token.get_usd_value(val_in_token)*(2-self.coeffs_for_borrow[token.symbol])
+            val += token.get_usd_value(val_in_token)/self.coeffs_for_borrow[token.symbol]
         
         return val
 
@@ -100,13 +100,15 @@ class ZkLend(BaseLend):
         total_borroved = await self.get_total_borrowed(sender)
         total_supplied = await self.get_total_supplied(sender)
         usd_delta = total_supplied-total_borroved
+
         if usd_val > usd_delta:
             usd_val = usd_delta
-
+        
+        usd_val = usd_val/self.coeffs_for_supply[stark_token.symbol]
         
         price = stark_token.get_price()
         token_val = int((usd_val/price)*10**stark_token.decimals)
-
+        token_val = int(token_val*0.9999)
         if token_val <= 0:
             return -1
         call1 = contract.functions["withdraw"].prepare(
@@ -136,7 +138,6 @@ class ZkLend(BaseLend):
             val_in_token_wei = bal
         if val_in_token_wei <= 1:
             return -1
-        print(val_in_token_wei)
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
         call2 = contract.functions["repay"].prepare(
