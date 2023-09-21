@@ -16,6 +16,8 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
+        "own_tasks" : [34, 35, [2, 3]],
+
         "UseOurRPCStark" : true,
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
@@ -65,7 +67,7 @@
         
 
     "====== SWAPS =====": "",
-        "swapAmounts"               : [0, 0], // amount of swaps
+        "swapAmounts"               : [1, 1], // amount of swaps
         "SwapDEXs"                  : ["MySwap"], // DEX where will be swaps
         "WorkPercent"               : [0.1, 0.5], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
