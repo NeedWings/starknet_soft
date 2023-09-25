@@ -11,6 +11,7 @@ from DEXes.okx_sender import *
 from DEXes.bids import *
 from DEXes.dmail import *
 from own_tasks import *
+from stats import stat
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
 usdt = Token("USDT", 0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8, 6, stable=True)
@@ -157,9 +158,9 @@ class MainRouter():
         elif task_number == 33:
             await self.okx()
         elif task_number == 34:
-            await self.bids(False)
-        elif task_number == 35:
             await self.bids(True)
+        elif task_number == 35:
+            await self.bids(False)
     
     async def bids(self, flex):
         for i in range(get_random_value_int(SETTINGS["bids_amount"])):
@@ -271,23 +272,8 @@ class MainRouter():
         await self.account.send_txn(calldata)
 
     async def stats(self):
-        account = self.account.stark_native_account
-        global starkstats
-
-        eth_balance = await self.account.get_balance()/1e18
-        
-        usdc_balance = await self.account.get_balance(usdc.contract_address, usdc.symbol)/1e6
-        
-        usdt_balance = await self.account.get_balance(usdt.contract_address, usdc.symbol)/1e6
-        
-        txn_count = await handle_dangerous_request(self.account.stark_native_account.get_nonce, "Can't get nonce, error", self.account.formatted_hex_address)
-        
-
-        data = f"{self.account.formatted_hex_address};{txn_count};{eth_balance};{usdc_balance};{usdt_balance}\n"
-        starkstats += data.replace(".",",")
-        logger.info(f"[{self.account.formatted_hex_address}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
-
-
+        await stat(self)
+       
     async def stark_id(self):
         amount = get_random_value_int(SETTINGS["starknet_id_amount"])
         account = self.account.stark_native_account

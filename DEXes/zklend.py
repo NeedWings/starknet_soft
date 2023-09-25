@@ -103,8 +103,7 @@ class ZkLend(BaseLend):
 
         if usd_val > usd_delta:
             usd_val = usd_delta
-        
-        usd_val = usd_val/self.coeffs_for_supply[stark_token.symbol]
+            usd_val = usd_val/self.coeffs_for_supply[stark_token.symbol]
         
         price = stark_token.get_price()
         token_val = int((usd_val/price)*10**stark_token.decimals)

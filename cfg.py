@@ -119,6 +119,7 @@ import sys, os
 import inquirer
 from termcolor import colored
 from inquirer.themes import load_theme_from_dict as loadth
+import datetime
 
 
 def override_where():
@@ -463,8 +464,9 @@ def sleeping_sync(address, error = False):
         rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
-
-starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;\n"
+with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
+starkstats = ""
 
 from loguru import logger as console_log
 
@@ -472,6 +474,8 @@ global_log = {}
 indexes = []
 pairs_for_okx = {}
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
+
+date_and_time = str(datetime.datetime.now())
 def write_global_log():
     log = ""
     for key in global_log:
@@ -479,7 +483,7 @@ def write_global_log():
         for data in global_log[key]:
             buff += f"{data}\n"
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}log.txt", "w") as f:
+    with open(f"{SETTINGS_PATH}log_{date_and_time}.txt", "w") as f:
         f.write(log)
 
 class logger():
