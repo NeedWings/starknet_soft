@@ -475,13 +475,14 @@ indexes = []
 pairs_for_okx = {}
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 
-date_and_time = str(datetime.datetime.now())
+date_and_time = str(datetime.datetime.now()).replace(":", ".")
+
 def write_global_log():
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
         for data in global_log[key]:
-            buff += f"{data}\n"
+            buff += f"{data}\n" 
         log += buff + "\n"
     with open(f"{SETTINGS_PATH}log_{date_and_time}.txt", "w") as f:
         f.write(log)

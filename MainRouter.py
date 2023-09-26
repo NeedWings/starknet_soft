@@ -109,6 +109,7 @@ class MainRouter():
                 while gas_high.is_set():
                     await asyncio.sleep(10)
         task_number = self.task_number
+        
         if task_number == 1:
             pass
         elif task_number == 2:
