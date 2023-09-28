@@ -98,7 +98,11 @@ def run(task_arg):
     os.environ['HTTPS_PROXY'] = task_arg['proxy_server']
     os.environ['no_proxy'] = '127.0.0.1, localhost'
     os.environ['NO_PROXY'] = '127.0.0.1, localhost'
-    runner.run(task_number, task_arg)
+    try:
+        runner.run(task_number, task_arg)
+    except:
+        with open('data/Failed.txt', 'a') as f:
+            f.write(f'{task_arg["id"]} : {task_number}')
     time.sleep(runner.get_random_value_int(runner.SETTINGS["ThreadRunnerSleep"]))
 
 if __name__ == "__main__":
