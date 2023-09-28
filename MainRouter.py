@@ -633,7 +633,7 @@ class MainRouter():
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
                     balance = int(balance * get_random_value(SETTINGS['StableShareToSwap']))
-                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
+                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
                 if balance <=0:
