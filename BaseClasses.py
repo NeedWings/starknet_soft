@@ -240,7 +240,6 @@ class StarkAccount(BaseStarkAccount):
                 if SETTINGS["cairo_version"] == 1:
                     nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
                     calldata = _parse_calls_v2(ensure_iterable(calls))
-                    
                     wrapped_calldata = _execute_payload_serializer_v2.serialize(
                         {"calls": calldata}
                     )
@@ -303,6 +302,7 @@ class Token():
     def get_approve_call_wei(self, amount: int, spender: int, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, STARK_TOKEN_ABI, sender.stark_native_account)
         decimals = self.decimals
+
         call = contract.functions["approve"].prepare(
             spender, amount
         )

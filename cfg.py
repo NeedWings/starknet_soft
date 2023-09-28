@@ -484,7 +484,7 @@ def write_global_log():
         for data in global_log[key]:
             buff += f"{data}\n" 
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}log_{date_and_time}.txt", "w") as f:
+    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "w") as f:
         f.write(log)
 
 class logger():
@@ -510,11 +510,16 @@ class logger():
             addr = message.split("]")[0][1::]
             if addr not in indexes:
                 indexes.append(addr)
-            console_log.error(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
+            msg = ""
+            for i in range(1, len(message.split("]"))):
+                msg += message.split("]")[i]
+                if i < len(message.split("]"))-1:
+                    msg += "]"
+            console_log.error(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {msg}")
             if addr not in list(global_log.keys()):
-                global_log[addr] = [f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}"]
+                global_log[addr] = [f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {msg}"]
             else:
-                global_log[addr].append(f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
+                global_log[addr].append(f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {msg}")
 
             write_global_log()
         except:

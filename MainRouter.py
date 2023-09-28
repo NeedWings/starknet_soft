@@ -418,6 +418,7 @@ class MainRouter():
             balance = await self.account.get_balance(token.contract_address, token.symbol)
             if token.symbol == "ETH":
                 balance = balance - get_random_value(SETTINGS["SaveEthOnBalance"])*1e18
+                logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
             else:
                 if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
                     balance = 0
@@ -465,7 +466,8 @@ class MainRouter():
         swap_amount = get_random_value_int(SETTINGS["swapAmounts"])
         if swap_amount < 1:
             return
-        for i in range(swap_amount):
+        s = list(range(swap_amount))
+        for i in s:
             try:
                 dex: BaseDex = random.choice(supported_dexes_for_swaps)
                 token1, usd_value =  await self.get_max_valued_token(self.supported_tokens_str_to_token(dex.supported_tokens))
@@ -483,6 +485,7 @@ class MainRouter():
 
                 swap_txn = await dex.create_txn_for_swap(token1_val, token1, token2_val, token2, self.account)
                 if swap_txn == -1:
+                    s.append(len(s))
                     await sleeping(self.account.formatted_hex_address, True)
                     continue
 
@@ -613,8 +616,9 @@ class MainRouter():
 
     async def swap_to_one_token(self, token = "ETH"):
         token = tokens_dict[token]
-        shuffle(suppotred_tokens)
-        for token_to_swap in suppotred_tokens:
+        tokens = suppotred_tokens.copy() 
+        shuffle(tokens)
+        for token_to_swap in tokens:
             try:
                 token_to_swap: Token
                 if token == token_to_swap:
@@ -658,11 +662,11 @@ class MainRouter():
                 await sleeping(self.account.formatted_hex_address, True)
 
     async def remove_liq(self):
-        shuffle(supported_dexes_for_liq)
-
-        for dex in supported_dexes_for_liq:
+        dexes = supported_dexes_for_liq.copy()
+        shuffle(dexes)
+        for dex in dexes:
             dex: BaseDex
-            lptokens = dex.lpts
+            lptokens = dex.lpts.copy()
             shuffle(lptokens)
             for lpt in lptokens:
                 lpt: LPToken
@@ -681,11 +685,13 @@ class MainRouter():
                 await sleeping(self.account.formatted_hex_address)
 
     async def remove_from_lend(self):
-        shuffle(supported_lends)
-        for lend in supported_lends:
+        lends = supported_lends.copy()
+        shuffle(lends)
+        for lend in lends:
             lend: BaseLend
-            shuffle(lend.lend_tokens)
-            for token in lend.lend_tokens:
+            lend_tokens = lend.lend_tokens.copy()
+            shuffle(lend_tokens)
+            for token in lend_tokens:
                 token: Token
                 balance = await self.account.get_balance(token.contract_address, token.symbol)
                 balance = int(balance)
@@ -703,7 +709,7 @@ class MainRouter():
 
     async def return_borrowed(self):
         for lend in lends:
-            tokens = self.supported_tokens_str_to_token(lend.supported_tokens)
+            tokens = self.supported_tokens_str_to_token(lend.supported_tokens).copy()
             shuffle(tokens)
             for token in tokens:
                 try:

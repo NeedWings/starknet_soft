@@ -1,5 +1,5 @@
 from BaseClasses import *
-
+from DEXes.myswap import MySwap
 
 class Avnu(BaseDex):
     name = "Avnu"
@@ -13,6 +13,21 @@ class Avnu(BaseDex):
 
     stables = ["USDT", "USDC", "DAI"]
     
+    def create_additional_payload_for_dex(self, dex, token1: Token, token2: Token):
+        if dex == 0x041fd22b238fa21cfcf5dd45a8548974d8263b3a531a60388411c5e230f97023:
+            return []
+        elif dex == 0x10884171baf1914edc28d7afb619b40a4051cfae78a094a55d230f19e944a28:
+            pool = MySwap().POOLS[f"{token1.symbol}:{token2.symbol}"]
+            return [pool]
+        elif dex == 0x28c858a586fa12123a1ccb337a0a3b369281f91ea00544d0c086524b759f627:
+            if token1.stable and token2.stable:
+                return [1]
+            else:
+                return [0]
+        elif dex == 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1:
+            return []
+        
+
     async def get_best_dex(self, token1, token2, amount_in, sender):
         resp = req(f"https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
 
@@ -25,10 +40,10 @@ class Avnu(BaseDex):
             "10kSwap" : 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1
         }
         try:
-            return DEXes[dex_name]
+            return DEXes[dex_name], int(resp[0]["buyAmount"], 16)
         except:
             dex_name = resp[1]["sourceName"]
-            return DEXes[dex_name]
+            return DEXes[dex_name], int(resp[1]["buyAmount"], 16)
 
     def __init__(self) -> None:
         new_supported_tokens = []
@@ -40,17 +55,21 @@ class Avnu(BaseDex):
     
     async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
         
-        dex = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, amount_in, sender)
         
         if not full:
+            dex, amount_out_avnu = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, amount_in, sender)
+            if amount_out_avnu < (1-slippage)*amount_out*10**token2.decimals:
+                logger.error(f"[{sender.formatted_hex_address}] AVNU MIN VALUE TOO LOW. SKIP")
+                return -1
+            amount_out = amount_out_avnu
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
             call2 = contract.functions["multi_route_swap"].prepare(
                 token1.contract_address,
                 int(amount_in*10**token1.decimals),
                 token2.contract_address,
-                int(amount_out*10**token2.decimals),
-                int(amount_out*10**token2.decimals*(1-slippage)),
+                int(amount_out),
+                int(amount_out*(1-slippage)),
                 sender.stark_native_account.address,
                 0,
                 0,
@@ -60,22 +79,28 @@ class Avnu(BaseDex):
                         "token_to":token2.contract_address,
                         "exchange_address":dex,
                         "percent":100,
-                        "additional_swap_params":[0]
+                        "additional_swap_params":self.create_additional_payload_for_dex(dex, token1, token2)
                     }
                 ]
             )
         else:
             bal = await sender.get_balance(token1.contract_address, token1.symbol)
+            
             if token1.symbol == "ETH":
                 bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
+            dex, amount_out_avnu = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, bal/10**token1.decimals, sender)
+            if amount_out_avnu < (1-slippage)*amount_out*10**token2.decimals:
+                logger.error(f"[{sender.formatted_hex_address}] AVNU MIN VALUE TOO LOW. SKIP")
+                return -1
+            amount_out = amount_out_avnu
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
             call2 = contract.functions["multi_route_swap"].prepare(
                 token1.contract_address,
                 bal,
                 token2.contract_address,
-                int(amount_out*10**token2.decimals),
-                int(amount_out*10**token2.decimals*(1-slippage)),
+                int(amount_out),
+                int(amount_out*(1-slippage)),
                 sender.stark_native_account.address,
                 0,
                 0,
@@ -85,7 +110,7 @@ class Avnu(BaseDex):
                         "token_to":token2.contract_address,
                         "exchange_address":dex,
                         "percent":100,
-                        "additional_swap_params":[0]
+                        "additional_swap_params":self.create_additional_payload_for_dex(dex, token1, token2)
                     }
                 ]
             )
