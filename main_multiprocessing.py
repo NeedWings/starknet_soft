@@ -68,11 +68,14 @@ if __name__ == "__main__":
                         help='account ids. ex.: "1-5, 8, 10-50"')
     parser.add_argument('-e', type=str,
                         help='account ids to exclude. ex.: "1-5, 8, 10-50"')
+    parser.add_argument('-p', type=int,
+                        help='processes')
     args = parser.parse_args()
     task_number = args.t if args.t else int(input(message))
     work_values = range_generator(args.i if args.i else input('Enter accs range\n'))
     exclude_values = range_generator(args.e if args.e else input('Enter accs range to exclude\n'))
     work_values = [v for v in work_values if v not in exclude_values]
+    poolnum = args.p if args.p else 1
 
 passphrase = getpass('Enter db password\n')
 db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
@@ -114,7 +117,7 @@ if __name__ == "__main__":
         wallet = Wallet.get(Wallet.walletId == value)
         task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
     random.shuffle(task_args)
-    with multiprocessing.Pool(processes=1) as s:
+    with multiprocessing.Pool(processes=poolnum) as s:
         s.map(run, task_args)
     input("Finished\n")
 db.close()

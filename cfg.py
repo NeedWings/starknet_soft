@@ -453,6 +453,7 @@ global_log = {}
 indexes = []
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 def write_global_log():
+    return
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
