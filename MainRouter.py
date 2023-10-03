@@ -655,7 +655,7 @@ class MainRouter():
                 logger.info(f"[{self.account.formatted_hex_address}] going to swap {balance/10**token_to_swap.decimals} {token_to_swap.symbol} for {token.symbol} in {dex.name}")
 
 
-                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = True)
+                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = False)
                 if swap_txn != -1:
                     await self.account.send_txn(swap_txn)
                     await sleeping(self.account.formatted_hex_address)
