@@ -629,6 +629,7 @@ class MainRouter():
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
+                    balance = int(balance * get_random_value(SETTINGS['StableShareToSwap']))
                     if balance/10**token_to_swap.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
@@ -652,7 +653,7 @@ class MainRouter():
                 logger.info(f"[{self.account.formatted_hex_address}] going to swap {balance/10**token_to_swap.decimals} {token_to_swap.symbol} for {token.symbol} in {dex.name}")
 
 
-                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = True)
+                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = False)
                 if swap_txn != -1:
                     await self.account.send_txn(swap_txn)
                     await sleeping(self.account.formatted_hex_address)

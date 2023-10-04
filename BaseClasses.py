@@ -322,7 +322,7 @@ class Token():
                 if type(response) is dict:
                     return response["lords"]["usd"]
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from coingecko for lords, tring again...')
                     time.sleep(5)
         elif self.symbol == "WSTETH":
             def __find__(ticker: str, rates: list):
@@ -335,7 +335,20 @@ class Token():
                 if type(response) is dict:
                     return response["wrapped-steth"]["usd"]
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from coingecko for wrapped-steth, tring again...')
+                    time.sleep(5)
+        elif self.symbol == "ETH":
+            def __find__(ticker: str, rates: list):
+                for k in rates:
+                    name = k.get("symbol")
+                    if name == ticker.upper() + 'USDT':
+                        return float(k.get("price"))
+            while True:
+                response = req(f'https://api.etherscan.io/api?module=stats&action=ethprice&apikey={SETTINGS["etherscanKey"]}')
+                if type(response) is dict:
+                    return float(response['result']['ethusd'])
+                else:
+                    print(f'Cant get response from etherscan for {self.symbol}, tring again...')
                     time.sleep(5)
         else:
             def __find__(ticker: str, rates: list):
@@ -348,7 +361,7 @@ class Token():
                 if type(response) is list:
                     return __find__(self.symbol, response)
                 else:
-                    print(f'Cant get response from binance, tring again...')
+                    print(f'Cant get response from binance for {self.symbol}, tring again...')
                     time.sleep(5)
 
     def get_usd_value(self, amount):

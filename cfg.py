@@ -105,43 +105,24 @@ import requests
 from web3 import Web3
 import uuid
 import decimal
-from os import getcwd
+#from os import getcwd
 import os
 import base64
-from cryptography.fernet import Fernet
+#from cryptography.fernet import Fernet
 import getpass
 import hashlib
 import sys
 import socket
-import wmi
+#import wmi
 from aiohttp import ClientSession
 import sys, os
-import inquirer
-from termcolor import colored
-from inquirer.themes import load_theme_from_dict as loadth
 import datetime
+#import inquirer
+#from termcolor import colored
+#from inquirer.themes import load_theme_from_dict as loadth
 
-
-def override_where():
-    """ overrides certifi.core.where to return actual location of cacert.pem"""
-    # change this to match the location of cacert.pem
-    return os.path.abspath("data/cacert.pem")
-
-
-# is the program compiled?
-if True:
-    import certifi.core
-
-    os.environ["REQUESTS_CA_BUNDLE"] = override_where()
-    certifi.core.where = override_where
-
-    # delay importing until after where() has been replaced
-    import requests.utils
-    import requests.adapters
-    # replace these variables in case these modules were
-    # imported before we replaced certifi.core.where
-    requests.utils.DEFAULT_CA_BUNDLE_PATH = override_where()
-    requests.adapters.DEFAULT_CA_BUNDLE_PATH = override_where()
+import requests.utils
+import requests.adapters
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -177,7 +158,7 @@ def json_remove_comments(invalid_json: str):
 autosoft = """
 
  _______          _________ _______  _______  _______  _______ _________
-(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ \\__   __/
+(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ /__   __/
 | (   ) || )   ( |   ) (   | (   ) || (    \/| (   ) || (    \/   ) (   
 | (___) || |   | |   | |   | |   | || (_____ | |   | || (__       | |   
 |  ___  || |   | |   | |   | |   | |(_____  )| |   | ||  __)      | |   
@@ -195,7 +176,7 @@ Ask all questions in our chat.
 """
 
 KEY = "CEy426oSSaOTWDPgtuKxm1nS2uWN_4-L_eyt0dmAr40="
-SETTINGS_PATH = getcwd() + '\\data\\'
+SETTINGS_PATH = 'data/'
 
 CONTRACT_ADDRESS_PREFIX = str_to_felt('STARKNET_CONTRACT_ADDRESS')
 UNIVERSAL_DEPLOYER_PREFIX = str_to_felt('UniversalDeployerContract')
@@ -343,7 +324,7 @@ def req_post(url: str, **kwargs):
 
 
 async def handle_dangerous_request(func, message, address = "", *args):
-    while True:
+    for i in range(retries_limit):
         try:
             return await func(*args)
         except Exception as e:
@@ -478,13 +459,14 @@ SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 date_and_time = str(datetime.datetime.now()).replace(":", ".")
 
 def write_global_log():
+    return
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
         for data in global_log[key]:
             buff += f"{data}\n" 
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "w") as f:
+    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "a") as f:
         f.write(log)
 
 class logger():
