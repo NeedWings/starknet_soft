@@ -199,12 +199,12 @@ ORBITER_CONTRACT = "0xD9D74a29307cc6Fc8BF424ee4217f1A587FBc8Dc"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 try:
-    f = open(f"{SETTINGS_PATH}settings.json", "r")
+    f = open(f"{SETTINGS_PATH}settings_main.json", "r")
     a = json_remove_comments(f.read())
     SETTINGS = json.loads(a)
     f.close()
 except Exception as e:
-    input("Error with settings.json")
+    input("Error with settings_main.json")
     exit()
 
 retries_limit = SETTINGS["RetriesLimit"]
