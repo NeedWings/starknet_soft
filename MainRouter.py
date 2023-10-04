@@ -7,7 +7,11 @@ from DEXes.tenkswap import *
 from DEXes.zklend import *
 from braavos_shit import *
 from DEXes.domain import *
-
+from DEXes.okx_sender import *
+from DEXes.bids import *
+from DEXes.dmail import *
+from own_tasks import *
+from stats import stat
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
 usdt = Token("USDT", 0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8, 6, stable=True)
@@ -17,7 +21,7 @@ wsteth = Token("WSTETH", 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c
 lords = Token("LORDS", 0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49, 18)
 
 domain_hand = StarkId()
-
+sender_hand = Sender()
 tokens = [
     eth,
     usdt,
@@ -98,12 +102,20 @@ class MainRouter():
 
     
     async def start(self):
-        await asyncio.sleep(self.delay)
+        global gas_high
+        if self.delay != 0 or True:
+            for i in range(100):
+                await asyncio.sleep(self.delay/100)
+                while gas_high.is_set():
+                    await asyncio.sleep(10)
         task_number = self.task_number
+        
         if task_number == 1:
             pass
         elif task_number == 2:
             await self.swaps_handler()
+        elif task_number == 0:
+            await own_tasks(self)
         elif task_number == 3:
             await self.swap_to_one_token()
         elif task_number == 4:
@@ -144,21 +156,46 @@ class MainRouter():
             await self.argent_upgrader()
         elif task_number == 32:
             await self.new_id()
+        elif task_number == 33:
+            await self.okx()
+        elif task_number == 34:
+            await self.bids(True)
+        elif task_number == 35:
+            await self.bids(False)
     
-    async def new_id(self):
-        
-        domain = ""
-        with open(f"{SETTINGS_PATH}wordlist.txt", "r") as f:
-            words = f.read().lower().split("\n")
+    async def bids(self, flex):
+        for i in range(get_random_value_int(SETTINGS["bids_amount"])):
+            if flex:
+                await self.account.send_txn(await bidder.create_txn_for_flex(eth, self.account))
+            else:
+                await self.account.send_txn(await bidder.create_txn_for_unframed(eth, self.account))
+            await sleeping(self.account.formatted_hex_address)
 
-        wl = get_random_value_int([1,3])
-        for i in range(wl):
-            domain += random.choice(words)
-        while len(domain) < 5:
-            domain += random.choice(words)
+
+    async def okx(self):
+        rec = ""
+        with open(f"{SETTINGS_PATH}pairs.txt", "r") as f:
+            pairs = f.read().lower().split("\n")
+        for pair in pairs:
+            try:
+                if self.account.formatted_hex_address == "0x" + "0"*(66-len(hex(int(pair.split("\t")[0], 16)))) + hex(int(pair.split("\t")[0], 16))[2::]:
+                    rec = pair.split("\t")[1]   
+            except:
+                if self.account.formatted_hex_address == "0x" + "0"*(66-len(hex(int(pair.split("    ")[0], 16)))) + hex(int(pair.split("    ")[0], 16))[2::]:
+                    rec = pair.split("    ")[1]   
         
-        logger.info(f"[{self.account.formatted_hex_address}] going to mint domain({domain})")
-        await self.account.send_txn(await domain_hand.create_txn(domain, eth, self.account))
+        if rec == "":
+            return
+        
+        txn = await sender_hand.create_txn(eth, rec, self.account)
+        if txn == -1:
+            return
+        logger.info(f"[{self.account.formatted_hex_address}] going to send eth to {rec}")
+        await self.account.send_txn(txn)
+    
+
+    async def new_id(self):
+        await self.account.send_txn(await domain_hand.create_txn(eth, self.account))
 
 
     async def argent_upgrader(self):
@@ -195,13 +232,7 @@ class MainRouter():
 
         amount = get_random_value(SETTINGS["EtherToWithdraw"])
 
-        while True:
-                try:
-                    balance = await account.get_balance()/1e18
-                    break
-                except Exception as e:
-                    logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get balance: {e}")
-                    await sleeping(self.account.formatted_hex_address, True)
+        balance = await self.account.get_balance()/1e18
 
         balance = balance - get_random_value(SETTINGS["WithdrawSaving"])
 
@@ -211,14 +242,14 @@ class MainRouter():
         if amount < 0.006:
             logger.error(f"[{self.account.formatted_hex_address}] amount to bridge less than minimal amount")
             return
-
-        if SETTINGS["DistNet"].lower() == "arbitrum":
+        distNet = SETTINGS["DistNet"].lower()
+        if distNet == "arbitrum":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
-        elif SETTINGS["DistNet"].lower() == "zksync":
+        elif distNet == "zksync":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
-        elif SETTINGS["DistNet"].lower() == "ethereum":
+        elif distNet == "ethereum":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 3)
-        elif SETTINGS["DistNet"].lower() == "linea":
+        elif distNet == "linea":
             amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
         else:
             logger.error(f"[{self.account.formatted_hex_address}] wrong value in DistNet")
@@ -242,23 +273,8 @@ class MainRouter():
         await self.account.send_txn(calldata)
 
     async def stats(self):
-        account = self.account.stark_native_account
-        global starkstats
-
-        eth_balance = await self.account.get_balance()/1e18
-        
-        usdc_balance = await self.account.get_balance(usdc.contract_address, usdc.symbol)/1e6
-        
-        usdt_balance = await self.account.get_balance(usdt.contract_address, usdc.symbol)/1e6
-        
-        txn_count = await handle_dangerous_request(self.account.stark_native_account.get_nonce, "Can't get nonce, error", self.account.formatted_hex_address)
-        
-
-        data = f"{self.account.formatted_hex_address};{txn_count};{eth_balance};{usdc_balance};{usdt_balance}\n"
-        starkstats += data.replace(".",",")
-        logger.info(f"[{self.account.formatted_hex_address}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}")
-
-
+        await stat(self)
+       
     async def stark_id(self):
         amount = get_random_value_int(SETTINGS["starknet_id_amount"])
         account = self.account.stark_native_account
@@ -275,31 +291,10 @@ class MainRouter():
 
 
     async def dmail(self):
-        account = self.account.stark_native_account
         amount = get_random_value_int(SETTINGS["dmail_messages_amount"])
         for qawe in range(amount):
-            l = "1234567890abcdef"
-            t = [random.choice(l) for i in range(32)]
-            text = ""
-            for i in t:
-                text += i
             
-            addr_raw = [random.choice(l) for i in range(32)]
-            addr = ""
-            for i in addr_raw:
-                addr += i
-            
-            felt_text = int(text, 16)
-            felt_rec = int(addr, 16)
-            logger.info(f"[{self.account.formatted_hex_address}] going to send message({text}) to {addr}")
-
-            dmail_contract = Contract(0x0454f0bd015e730e5adbb4f080b075fdbf55654ff41ee336203aa2e1ac4d4309, DMAIL, account)
-
-            call = dmail_contract.functions["transaction"].prepare(
-                felt_rec,
-                felt_text
-            )
-            calldata = [call]
+            calldata = await dmail_hand.create_txn_for_dmail(self.account)
 
             await self.account.send_txn(calldata)
 
@@ -357,28 +352,26 @@ class MainRouter():
                 else:
                     break
             except Exception as e:
+                if "contract not found" in (str(e)).lower():
+                    nonce = 0
+                    break
                 logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get nonce: {e}")
                 await sleeping(self.account.formatted_hex_address, True)
         while True:
             
             logger.info(f"[{self.account.formatted_hex_address}] checking balance.")
-            try:
-                balance = await account.get_balance()
-                logger.info(f"[{self.account.formatted_hex_address}] got balance: {balance/1e18} ETH")
-                if balance >= 1e14:
-                    break
-                await sleeping(self.account.formatted_hex_address)
-
-            except Exception as e:
-                logger.error(f"[{self.account.formatted_hex_address}] got error while trying to get balance: {e}")
-                await sleeping(self.account.formatted_hex_address, True)
+            balance = await self.account.get_balance()
+            logger.info(f"[{self.account.formatted_hex_address}] got balance: {balance/1e18} ETH")
+            if balance >= 1e14:
+                break
+            await sleeping(self.account.formatted_hex_address)
         logger.success(f"[{self.account.formatted_hex_address}] found balance. Going to deploy")
         i = 0
         while i < retries_limit:
             i += 1
             try:
-                
-                if SETTINGS["Provider"].lower() == "argent_newest" or SETTINGS["Provider"].lower() == "argent":
+                provider = SETTINGS["Provider"].lower()
+                if provider == "argent_newest" or provider == "argent":
                     account_deployment_result = await StarkNativeAccount.deploy_account(
                         address=account.address,
                         class_hash=class_hash,
@@ -389,7 +382,7 @@ class MainRouter():
                         constructor_calldata=call_data,
                         auto_estimate=True,
                     )
-                elif SETTINGS["Provider"].lower() == "braavos_newest":
+                elif provider == "braavos_newest":
                     account_deployment_result = await deploy_account_braavos(
                         address=account.address,
                         class_hash=class_hash,
@@ -425,6 +418,7 @@ class MainRouter():
             balance = await self.account.get_balance(token.contract_address, token.symbol)
             if token.symbol == "ETH":
                 balance = balance - get_random_value(SETTINGS["SaveEthOnBalance"])*1e18
+                logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
             else:
                 if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token.symbol]:
                     balance = 0
@@ -472,7 +466,8 @@ class MainRouter():
         swap_amount = get_random_value_int(SETTINGS["swapAmounts"])
         if swap_amount < 1:
             return
-        for i in range(swap_amount):
+        s = list(range(swap_amount))
+        for i in s:
             try:
                 dex: BaseDex = random.choice(supported_dexes_for_swaps)
                 token1, usd_value =  await self.get_max_valued_token(self.supported_tokens_str_to_token(dex.supported_tokens))
@@ -490,11 +485,12 @@ class MainRouter():
 
                 swap_txn = await dex.create_txn_for_swap(token1_val, token1, token2_val, token2, self.account)
                 if swap_txn == -1:
+                    s.append(len(s))
                     await sleeping(self.account.formatted_hex_address, True)
                     continue
 
                 await self.account.send_txn(swap_txn)
-                await sleeping(self.account.formatted_hex_address, True)
+                await sleeping(self.account.formatted_hex_address)
 
             except Exception as e:
                 logger.error(f"[{self.account.formatted_hex_address}] got erroor: {e}")
@@ -524,10 +520,10 @@ class MainRouter():
                 amount2 = amount_to_add/token2.get_price()
                 logger.info(f"[{self.account.formatted_hex_address}] going to add liquidity in {dex.name} in {token1.symbol}/{token2.symbol} pair for {amount1} {token1.symbol} and {amount2} {token2.symbol}")
                 
-                if token2_usd_value < amount_to_add*1.001:
+                if token2_usd_value < amount_to_add*(1+ SETTINGS["Slippage"]+0.01):
                     logger.info(f"[{self.account.formatted_hex_address}] not enough second token for adding, will make swap")
                     
-                    amount_to_swap = amount_to_add*1.001 - token2_usd_value
+                    amount_to_swap = amount_to_add*(1+ SETTINGS["Slippage"]+0.01) - token2_usd_value
                     token1_amount_to_swap = amount_to_swap/token1.get_price()
                     amount_out = amount_to_swap/token2.get_price()
                     
@@ -543,9 +539,6 @@ class MainRouter():
                     if (await self.account.send_txn(swap_txn))[0] != 1:
                         continue
                     await sleeping(self.account.formatted_hex_address)
-                
-                
-
                 liq_txn = await dex.create_txn_for_liq(amount1, token1, amount2, token2, self.account)
                 if liq_txn == -1:
                     await sleeping(self.account.formatted_hex_address, True)
@@ -589,7 +582,13 @@ class MainRouter():
                 lend: BaseLend = random.choice(supported_lends)
                 token = random.choice(self.supported_tokens_str_to_token(lend.supported_tokens))
 
-                to_borrow_usd = await lend.get_total_supplied(self.account)*get_random_value(SETTINGS["BorrowWorkPercent"])
+                
+                total_borroved = await lend.get_total_borrowed(self.account)
+                total_supplied = await lend.get_total_supplied(self.account)
+                usd_val = total_supplied-total_borroved
+
+                
+                to_borrow_usd = (usd_val)*get_random_value(SETTINGS["BorrowWorkPercent"])*lend.coeffs_for_borrow[token.symbol]
                 if to_borrow_usd == 0:
                     logger.error(f"[{self.account.formatted_hex_address}] to borrow is zero")
                     await sleeping(self.account.formatted_hex_address, True)
@@ -604,10 +603,7 @@ class MainRouter():
                     continue
 
                 await sleeping(self.account.formatted_hex_address)
-
                 logger.info(f"[{self.account.formatted_hex_address}] going to return {amount} {token.symbol} in {lend.name}")
-
-
                 txn = await lend.create_txn_for_return(token, self.account)
 
                 await self.account.send_txn(txn)
@@ -620,8 +616,9 @@ class MainRouter():
 
     async def swap_to_one_token(self, token = "ETH"):
         token = tokens_dict[token]
-        shuffle(suppotred_tokens)
-        for token_to_swap in suppotred_tokens:
+        tokens = suppotred_tokens.copy() 
+        shuffle(tokens)
+        for token_to_swap in tokens:
             try:
                 token_to_swap: Token
                 if token == token_to_swap:
@@ -633,10 +630,11 @@ class MainRouter():
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
                     balance = int(balance * get_random_value(SETTINGS['StableShareToSwap']))
-                    if balance/10**token.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
+                    if balance/10**token_to_swap.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
                 if balance <=0:
+                    logger.info(f"[{self.account.formatted_hex_address}] {token_to_swap.symbol} balance 0 or less MINIMAL_SWAP_AMOUNTS. skip")
                     continue
                 selected = False
                 for i in range(SETTINGS["retries_limit"]):
@@ -665,17 +663,18 @@ class MainRouter():
                 await sleeping(self.account.formatted_hex_address, True)
 
     async def remove_liq(self):
-        shuffle(supported_dexes_for_liq)
-
-        for dex in supported_dexes_for_liq:
+        dexes = supported_dexes_for_liq.copy()
+        shuffle(dexes)
+        for dex in dexes:
             dex: BaseDex
-            lptokens = dex.lpts
+            lptokens = dex.lpts.copy()
             shuffle(lptokens)
             for lpt in lptokens:
                 lpt: LPToken
                 balance = await self.account.get_balance(lpt.contract_address, lpt.symbol)
 
-                if balance < 0:
+                if balance <= 0:
+                    logger.info(f"[{self.account.formatted_hex_address}] {lpt.symbol} pool value is 0. Skip")
                     continue
 
                 txn = await dex.create_txn_for_remove_liq(lpt, self.account)
@@ -687,27 +686,31 @@ class MainRouter():
                 await sleeping(self.account.formatted_hex_address)
 
     async def remove_from_lend(self):
-        shuffle(supported_lends)
-        for lend in supported_lends:
+        lends = supported_lends.copy()
+        shuffle(lends)
+        for lend in lends:
             lend: BaseLend
-            shuffle(lend.lend_tokens)
-            for token in lend.lend_tokens:
+            lend_tokens = lend.lend_tokens.copy()
+            shuffle(lend_tokens)
+            for token in lend_tokens:
                 token: Token
                 balance = await self.account.get_balance(token.contract_address, token.symbol)
-                balance *= 0.99
                 balance = int(balance)
-                if balance <= 1:
+                if balance <= 0:
+                    logger.info(f"[{self.account.formatted_hex_address}] Supplied {token.symbol} is 0. Skip")
                     continue
                 logger.info(f"[{self.account.formatted_hex_address}] going to return {token.symbol} from {lend.name}")
                 txn = await lend.create_txn_for_removing_token(balance, token, self.account)
-                
+                if txn == -1:
+                    logger.info(f"[{self.account.formatted_hex_address}] not enough repayed for removing. Skip")
+                    continue
                 await self.account.send_txn(txn)
 
                 await sleeping(self.account.formatted_hex_address)
 
     async def return_borrowed(self):
         for lend in lends:
-            tokens = self.supported_tokens_str_to_token(lend.supported_tokens)
+            tokens = self.supported_tokens_str_to_token(lend.supported_tokens).copy()
             shuffle(tokens)
             for token in tokens:
                 try:

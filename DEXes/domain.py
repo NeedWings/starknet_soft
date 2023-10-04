@@ -59,10 +59,30 @@ class StarkId:
             t.append(buff(e))
         return t
             
+    async def has_domain(self, sender: StarkNativeAccount):
+        contract = Contract(self.contract_address3, self.abi3, sender)
+        has = len((await handle_dangerous_request(contract.functions["address_to_domain"].call, "Can't get domain, trying again", "0x"+ (66-len(hex(sender.address)))*"0" + hex(sender.address)[2::], sender.address)).domain)
+        if has == 0:
+            return False
+        else:
+            return True
 
-    async def create_txn(self, domain: str, eth: Token, sender: BaseStarkAccount):
+
+
+    async def create_txn(self, eth: Token, sender: BaseStarkAccount):
         
+                
+        domain = ""
+        with open(f"{SETTINGS_PATH}wordlist.txt", "r") as f:
+            words = f.read().lower().split("\n")
+
+        wl = get_random_value_int([1,3])
+        for i in range(wl):
+            domain += random.choice(words)
+        while len(domain) < 5:
+            domain += random.choice(words)
         
+        logger.info(f"[{sender.formatted_hex_address}] going to mint domain({domain})")
         list_domain = self.encode_domain(domain)
         int_domain = ""
         for i in list_domain:

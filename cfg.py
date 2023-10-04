@@ -116,6 +116,7 @@ import socket
 #import wmi
 from aiohttp import ClientSession
 import sys, os
+import datetime
 #import inquirer
 #from termcolor import colored
 #from inquirer.themes import load_theme_from_dict as loadth
@@ -444,23 +445,28 @@ def sleeping_sync(address, error = False):
         rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
-
-starkstats = "address;txn count;ETH balance;USDC balance;USDT balance;myswap wstETH;myswap USDC; myswap USDT;jediswap USDC;jediswap USDT;sithswap USDC;sithswap USDT;10kswap USDC;10kswap USDT;avnu USDC;avnu USDT\n"
+with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
+starkstats = ""
 
 from loguru import logger as console_log
 
 global_log = {}
 indexes = []
+pairs_for_okx = {}
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
+
+date_and_time = str(datetime.datetime.now()).replace(":", ".")
+
 def write_global_log():
     return
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
         for data in global_log[key]:
-            buff += f"{data}\n"
+            buff += f"{data}\n" 
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}log.txt", "a") as f:
+    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "a") as f:
         f.write(log)
 
 class logger():
@@ -486,11 +492,16 @@ class logger():
             addr = message.split("]")[0][1::]
             if addr not in indexes:
                 indexes.append(addr)
-            console_log.error(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
+            msg = ""
+            for i in range(1, len(message.split("]"))):
+                msg += message.split("]")[i]
+                if i < len(message.split("]"))-1:
+                    msg += "]"
+            console_log.error(f"[{addr}] [{indexes.index(addr)+1}/{len(indexes)}] {msg}")
             if addr not in list(global_log.keys()):
-                global_log[addr] = [f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}"]
+                global_log[addr] = [f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {msg}"]
             else:
-                global_log[addr].append(f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {message.split(']')[1]}")
+                global_log[addr].append(f"[ERROR] [{indexes.index(addr)+1}/{len(indexes)}] {msg}")
 
             write_global_log()
         except:
@@ -511,6 +522,35 @@ class logger():
             write_global_log()
         except:
             pass
+
+gas_high = asyncio.Event()
+
+async def gas_checker():
+    global gas_high
+   
+    w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
+    while True:
+        try:
+            f = open(f"{SETTINGS_PATH}settings.json", "r")
+            a = json_remove_comments(f.read())
+            SETTINGS = json.loads(a)
+            f.close()
+        except Exception as e:
+            input("Error with settings.json")
+            exit()
+        limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
+        try:
+            price = w3.eth.gas_price
+        except:
+            await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
+            continue
+        if price < limit:
+            gas_high.clear()
+        else:
+            gas_high.set()
+
+        await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+
 
 async def sleeping(address, error = False):
         if error:

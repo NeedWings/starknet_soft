@@ -1,5 +1,10 @@
-0x015e27cd8b715684d9fe53c67792c0cbfff9b91f4b1f90377e75a6726ac46b39:
-[INFO] [1/1]  going to mint domain
-[SUCCESS] [1/1]  sending txn with hash: 0x1acd7f2dcd6ac30d3d12baf796039d504723ba1ea4159016d21c3136eb9dc5c
-[SUCCESS] [1/1]  tnx has sent! Hash: 0x1acd7f2dcd6ac30d3d12baf796039d504723ba1ea4159016d21c3136eb9dc5c
+0x05b1fe9bc00240bfa4076ce298e918a1b378c1f1fb258af63321a2b77b03ea39:
+[INFO] [1/1]  Supplied USDC-SUPPLIED is 0. Skip
+[INFO] [1/1]  going to return ETH-SUPPLIED from ZkLend
+[SUCCESS] [1/1]  sending txn with hash: 0x9e800ee6766a99eda5ab657880d32e09d15b0756322a277a149c0f6f3f7a6
+[SUCCESS] [1/1]  tnx has sent! Hash: 0x9e800ee6766a99eda5ab657880d32e09d15b0756322a277a149c0f6f3f7a6
+[INFO] [1/1]  sleeping 2 s
+[INFO] [1/1]  Supplied USDT-SUPPLIED is 0. Skip
+[INFO] [1/1]  Supplied DAI-SUPPLIED is 0. Skip
+[INFO] [1/1]  Supplied WBTC-SUPPLIED is 0. Skip
 

@@ -181,7 +181,7 @@ class StarkAccount(BaseStarkAccount):
     async def get_balance(self, token: int = None, symbol: str = "ETH"):
         return await handle_dangerous_request(self.stark_native_account.get_balance, f"can't get balance of {symbol}. Error", self.formatted_hex_address, token)
 
-    async def wait_for_better_eth_gwei(self):
+    async def wait_for_better_eth_gwei(self, silent = False):
         w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
         address = self.formatted_hex_address
         while True:
@@ -197,13 +197,20 @@ class StarkAccount(BaseStarkAccount):
             try:
                 price = w3.eth.gas_price
             except:
-                logger.error(f"[{address}] can't get eth gas price. will try later")
-                await sleeping(address, True)
+                if not silent:
+                    logger.error(f"[{address}] can't get eth gas price. will try later")
+                    await sleeping(address, True)
+                else:
+                    await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
                 continue
             if price < limit:
                 break
-            logger.info(f"[{address}] Current gas price in eth is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
-            await sleeping(address)
+            if not silent:
+                logger.info(f"[{address}] Current gas price in eth is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
+                await sleeping(address)
+            else:
+                await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+
             
     async def send_txn(self, calldata):
         await self.wait_for_better_eth_gwei()
@@ -233,7 +240,6 @@ class StarkAccount(BaseStarkAccount):
                 if SETTINGS["cairo_version"] == 1:
                     nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
                     calldata = _parse_calls_v2(ensure_iterable(calls))
-                    
                     wrapped_calldata = _execute_payload_serializer_v2.serialize(
                         {"calls": calldata}
                     )
@@ -296,6 +302,7 @@ class Token():
     def get_approve_call_wei(self, amount: int, spender: int, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, STARK_TOKEN_ABI, sender.stark_native_account)
         decimals = self.decimals
+
         call = contract.functions["approve"].prepare(
             spender, amount
         )

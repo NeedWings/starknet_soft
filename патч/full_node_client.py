@@ -650,7 +650,6 @@ class FullNodeClient(Client):
         block_identifier = get_block_identifier(
             block_hash=block_hash, block_number=block_number
         )
-        print(block_identifier)
         res = await self._client.call(
             method_name="getNonce",
             params={
