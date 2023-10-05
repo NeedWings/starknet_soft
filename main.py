@@ -166,7 +166,8 @@ try:
                     "collateral zklend",
                     "mint cheap domain",
                     "bids on unframded",
-                    "bids on flexing"
+                    "bids on flexing",
+                    "bids on element"
                 ],
             )
         ]
@@ -279,6 +280,8 @@ try:
             task_number = 35
         elif action == "bids on flexing":
             task_number = 34
+        elif action == "bids on element":
+            task_number = 36
         elif action == "own tasks":
             task_number = 0
         for i in range(len(addresses)):
