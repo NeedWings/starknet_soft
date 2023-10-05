@@ -195,10 +195,14 @@ class StarkAccount(BaseStarkAccount):
                 exit()
             limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
             try:
-                price = w3.eth.gas_price
+                if SETTINGS["UseStarknetGwei"]:
+                    client = GatewayClient(MAINNET)
+                    price = (await client.get_block()).gas_price
+                else:
+                    price = w3.eth.gas_price
             except:
                 if not silent:
-                    logger.error(f"[{address}] can't get eth gas price. will try later")
+                    logger.error(f"[{address}] can't get gas price. will try later")
                     await sleeping(address, True)
                 else:
                     await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
@@ -206,7 +210,7 @@ class StarkAccount(BaseStarkAccount):
             if price < limit:
                 break
             if not silent:
-                logger.info(f"[{address}] Current gas price in eth is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
+                logger.info(f"[{address}] Current gas price is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
                 await sleeping(address)
             else:
                 await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))

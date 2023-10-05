@@ -159,16 +159,20 @@ class MainRouter():
         elif task_number == 33:
             await self.okx()
         elif task_number == 34:
-            await self.bids(True)
+            await self.bids(1)
         elif task_number == 35:
-            await self.bids(False)
-    
+            await self.bids(2)
+        elif task_number == 36:
+            await self.bids(3)
+
     async def bids(self, flex):
         for i in range(get_random_value_int(SETTINGS["bids_amount"])):
-            if flex:
+            if flex == 1:
                 await self.account.send_txn(await bidder.create_txn_for_flex(eth, self.account))
-            else:
+            elif flex == 2:
                 await self.account.send_txn(await bidder.create_txn_for_unframed(eth, self.account))
+            elif flex == 3:
+                await self.account.send_txn(await bidder.create_txn_for_element(eth, self.account))
             await sleeping(self.account.formatted_hex_address)
 
 
