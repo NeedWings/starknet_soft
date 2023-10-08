@@ -25,11 +25,12 @@ async def stat(self):
 
     txn_count = await handle_dangerous_request(self.account.stark_native_account.get_nonce, "Can't get nonce, error", self.account.formatted_hex_address)
         
-    with open(f"{SETTINGS_PATH}starkstats.csv", "r") as f:
-        starkstats = f.read()
-    data = f"{self.account.formatted_hex_address};{txn_count};{eth_balance};{usdc_balance};{usdt_balance};{dai_balance};{wbtc_balance};{wsteth_balance};{lords_balance}\n"
-    starkstats += data.replace(".",",")
-    with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+    #with open(f"{SETTINGS_PATH}starkstats.csv", "r") as f:
+    #    starkstats = f.read()
+    data = f"{self.account.formatted_hex_address}\t{txn_count}\t{eth_balance}\t{usdc_balance}\t{usdt_balance}\t{dai_balance}\t{wbtc_balance}\t{wsteth_balance}\t{lords_balance}\n"
+    starkstats = data.replace(".",",")
+    with open(f"{SETTINGS_PATH}starkstats.csv", "a") as f:
         f.write(starkstats)
     logger.info(f"[{self.account.formatted_hex_address}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}\nDAI: {dai_balance}\nWBTC: {wbtc_balance}\nWSTETH: {wsteth_balance}\nLORDS: {lords_balance}")
+    
 
