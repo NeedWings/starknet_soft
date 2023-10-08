@@ -27,8 +27,7 @@ async def stat(self):
         
     #with open(f"{SETTINGS_PATH}starkstats.csv", "r") as f:
     #    starkstats = f.read()
-    data = f"{self.account.formatted_hex_address}\t{txn_count}\t{eth_balance}\t{usdc_balance}\t{usdt_balance}\t{dai_balance}\t{wbtc_balance}\t{wsteth_balance}\t{lords_balance}\n"
-    starkstats = data.replace(".",",")
+    starkstats = f"{self.account.formatted_hex_address}\t{txn_count}\t{eth_balance}\t{usdc_balance}\t{usdt_balance}\t{dai_balance}\t{wbtc_balance}\t{wsteth_balance}\t{lords_balance}\n"
     with open(f"{SETTINGS_PATH}starkstats.csv", "a") as f:
         f.write(starkstats)
     logger.info(f"[{self.account.formatted_hex_address}] data:\ntxn count: {txn_count}\nETH: {eth_balance}\nUSDC: {usdc_balance}\nUSDT: {usdt_balance}\nDAI: {dai_balance}\nWBTC: {wbtc_balance}\nWSTETH: {wsteth_balance}\nLORDS: {lords_balance}")
