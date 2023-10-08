@@ -445,9 +445,9 @@ def sleeping_sync(address, error = False):
         rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
-with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
-    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
-starkstats = ""
+#with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+#    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
+#starkstats = ""
 
 from loguru import logger as console_log
 
