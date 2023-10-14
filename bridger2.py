@@ -381,7 +381,34 @@ async def starkgate(amount: float, private_key: str, recepient: str):
         await sleeping(wallet, True)
         return -1, ""
 
+async def simple_bridge(private_key: str, recepient: str):
+    rpc = random.choice(RPC_FOR_LAYERSWAP["ETHEREUM_MAINNET"])
+    web3 = Web3(Web3.HTTPProvider(rpc))
+    
 
+    wallet = web3.eth.account.from_key(private_key).address
+    gas_price = await get_gas_price_evm(wallet, "ETHEREUM_MAINNET")
+    balance = await get_native_balance_evm("ETHEREUM_MAINNET", wallet)
+    match SETTINGS['BridgeMode']:
+        case 'percent':
+            amount = int(balance * random.uniform(SETTINGS['ShareToBridge'][0], SETTINGS['ShareToBridge'][1]))
+        case 'value':
+            amount = Web3.to_wei(random.uniform(SETTINGS['ValueToBridge'][0], SETTINGS['ValueToBridge'][1]), 'ether')
+    
+    fee = await get_fee_for_starkgate(recepient.lower(), amount)
+    if balance < amount+fee:
+        logger.error(f"[{wallet}] not enough ETH for bridge ")
+        return -1, ""
+    contract = web3.eth.contract(STARKGATE_CONTRACT, abi=STARKGATE_ABI)
+    dict_transaction = await get_tx_data_evm(wallet, web3, "ETHEREUM_MAINNET", int(amount + fee))
+    txn = contract.functions.deposit(
+        int(amount), int(recepient, 16)
+    ).build_transaction(dict_transaction)
+
+    signed_txn = web3.eth.account.sign_transaction(txn, private_key)
+    txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    logger.success(f"[{wallet}] txn has sent, hash: { Web3.to_hex(txn_hash)}")
+    return 1, Web3.to_hex(txn_hash)
 
 async def eth_bridge_official(private_key: str, recepient: str, delay: int):
     private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]

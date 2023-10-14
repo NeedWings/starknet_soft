@@ -370,7 +370,7 @@ try:
             case 1:
                 pass##
             case 6:
-                pass##
+                asyncio.run(simple_bridge(args['eth_key'], args['argent_address']))
             case 9:
                 pass##
             case 10:

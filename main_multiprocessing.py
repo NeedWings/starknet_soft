@@ -15,7 +15,7 @@ Enter task number:
 3    swap to eth
 4    add liquidity
 5    remove liquidity
-6    ##starkgate
+6    bridge from eth to starknet
 7    full module
 8    withdraw from stark
 9    ##swap stables from chains and bridge to stark
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     proxynum = len(proxy_servers)
     for value in work_values:
         wallet = Wallet.get(Wallet.walletId == value)
-        task_args.append({'argent_key': wallet.argent_key, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
+        task_args.append({'argent_key': wallet.argent_key, 'argent_address': wallet.argent_address, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
     random.shuffle(task_args)
     with multiprocessing.Pool(processes=poolnum) as s:
         s.map(run, task_args)
