@@ -103,8 +103,9 @@ def run(task_arg):
     os.environ['NO_PROXY'] = '127.0.0.1, localhost'
     try:
         runner.run(task_number, task_arg)
-    except:
+    except Exception as e:
         with open('data/Failed.txt', 'a') as f:
+            error = f'{e}'.replace('\n', ' ')
             f.write(f'{task_arg["id"]} : {task_number}\t{error}\n')
     time.sleep(runner.get_random_value_int(runner.SETTINGS["ThreadRunnerSleep"]))
 
