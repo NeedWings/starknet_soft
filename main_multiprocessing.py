@@ -89,6 +89,7 @@ class Wallet(Model):
     argent_key = TextField(null = True)
     argent_address = TextField(null = True)
     owner = TextField(null = True)
+    tags = TextField(null = True)
     class Meta:
         database = db
 
