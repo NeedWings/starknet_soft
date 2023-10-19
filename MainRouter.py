@@ -175,7 +175,6 @@ class MainRouter():
                 await self.account.send_txn(await bidder.create_txn_for_element(eth, self.account))
             await sleeping(self.account.formatted_hex_address)
 
-
     async def okx(self):
         rec = ""
         with open(f"{SETTINGS_PATH}pairs.txt", "r") as f:

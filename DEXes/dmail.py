@@ -3,12 +3,12 @@ from BaseClasses import *
 class DmailHandler:
     async def create_txn_for_dmail(self, sender:StarkAccount):
         l = "1234567890abcdef"
-        t = [random.choice(l) for i in range(32)]
+        t = [random.choice(l) for i in range(31)]
         text = ""
         for i in t:
             text += i
             
-        addr_raw = [random.choice(l) for i in range(32)]
+        addr_raw = [random.choice(l) for i in range(31)]
         addr = ""
         for i in addr_raw:
             addr += i

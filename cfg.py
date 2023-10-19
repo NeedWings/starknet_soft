@@ -14,6 +14,7 @@ from starknet_py.net.models import AddressRepresentation, StarknetChainId, parse
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
 from starknet_py.net.account.account import _add_max_fee_to_transaction
 from starknet_py.net.signer import BaseSigner
+#from curl_cffi import requests as mod_requests
 from starknet_py.utils.iterable import ensure_iterable
 from starknet_py.net.models.transaction import (
     AccountTransaction,
@@ -466,7 +467,7 @@ def sleeping_sync(address, error = False):
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
 with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
-    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
+    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance;Have liq;Have lend\n")
 starkstats = ""
 
 from loguru import logger as console_log
@@ -559,7 +560,11 @@ async def gas_checker():
             exit()
         limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
         try:
-            price = w3.eth.gas_price
+            if SETTINGS["UseStarknetGwei"]:
+                client = GatewayClient(MAINNET)
+                price = (await client.get_block()).gas_price
+            else:
+                price = w3.eth.gas_price
         except:
             await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
             continue
@@ -568,7 +573,7 @@ async def gas_checker():
         else:
             gas_high.set()
 
-        await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+        await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
 
 async def sleeping(address, error = False):
