@@ -490,6 +490,8 @@ class MainRouter():
                     continue
 
                 await self.account.send_txn(swap_txn)
+                if SETTINGS['SingleSwapPerDex']:
+                    supported_dexes_for_swaps.remove(dex)
                 await sleeping(self.account.formatted_hex_address)
 
             except Exception as e:
