@@ -42,8 +42,12 @@ class Avnu(BaseDex):
         try:
             return DEXes[dex_name], int(resp[0]["buyAmount"], 16)
         except:
-            dex_name = resp[1]["sourceName"]
-            return DEXes[dex_name], int(resp[1]["buyAmount"], 16)
+            try:
+                dex_name = resp[2]["sourceName"]
+                return DEXes[dex_name], int(resp[1]["buyAmount"], 16)
+            except:
+                dex_name = resp[2]["sourceName"]
+                return DEXes[dex_name], int(resp[1]["buyAmount"], 16)
 
     def __init__(self) -> None:
         new_supported_tokens = []

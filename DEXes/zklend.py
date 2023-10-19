@@ -107,8 +107,11 @@ class ZkLend(BaseLend):
         
         price = stark_token.get_price()
         token_val = int((usd_val/price)*10**stark_token.decimals)
-        token_val = int(token_val*0.9999)
-        if token_val <= 0:
+        token_val = int(token_val)
+        token_bal = await sender.get_balance(token.contract_address, token.symbol) - 1
+        if token_val > token_bal:
+            token_val = token_bal
+        if token_val <= 1:
             return -1
         call1 = contract.functions["withdraw"].prepare(
             stark_token.contract_address,
