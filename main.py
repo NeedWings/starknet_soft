@@ -42,7 +42,7 @@ try:
 
     if __name__ == "__main__":
         pass
-        #checking_license()
+        checking_license()
 
     def get_disks():
         c = wmi.WMI()
