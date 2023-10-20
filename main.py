@@ -161,6 +161,7 @@ try:
                     "universal argent upgrader",
                     "stats",
                     "",
+                    "starkstars mint",
                     "dmail",
                     "starknet_id",
                     "collateral zklend",
@@ -282,6 +283,8 @@ try:
             task_number = 34
         elif action == "bids on element":
             task_number = 36
+        elif action == "starkstars mint":
+            task_number = 37
         elif action == "own tasks":
             task_number = 0
         for i in range(len(addresses)):
