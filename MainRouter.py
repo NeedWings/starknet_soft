@@ -11,6 +11,7 @@ from DEXes.okx_sender import *
 from DEXes.bids import *
 from DEXes.dmail import *
 from own_tasks import *
+from DEXes.starkstars import *
 from stats import stat
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
@@ -22,6 +23,7 @@ lords = Token("LORDS", 0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec90091
 
 domain_hand = StarkId()
 sender_hand = Sender()
+stars_hand = StarkStars()
 tokens = [
     eth,
     usdt,
@@ -103,7 +105,7 @@ class MainRouter():
     
     async def start(self):
         global gas_high
-        if self.delay != 0 or True:
+        if self.delay != 0:
             for i in range(100):
                 await asyncio.sleep(self.delay/100)
                 while gas_high.is_set():
@@ -164,6 +166,16 @@ class MainRouter():
             await self.bids(2)
         elif task_number == 36:
             await self.bids(3)
+        elif task_number == 37:
+            await self.starkstars()
+    
+    async def starkstars(self):
+        for i in range(get_random_value_int(SETTINGS["starkstars_nft_amount"])):
+            logger.info(f"[{self.account.formatted_hex_address}] going to mint starkstars nft")
+            calldata = await stars_hand.create_tnx_for_mint(self.account, eth)
+            await self.account.send_txn(calldata)
+            await sleeping(self.account.formatted_hex_address)
+
 
     async def bids(self, flex):
         for i in range(get_random_value_int(SETTINGS["bids_amount"])):
