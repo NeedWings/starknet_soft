@@ -92,9 +92,9 @@ for name in SETTINGS["Supported_tokens"]:
 
 
 class MainRouter():
-    def __init__(self, stark_key: int, delay: int, task_number: int, client) -> None:
+    def __init__(self, stark_key: int, delay: int, task_number: int, client, wallet_provider) -> None:
         self.task_number = task_number
-        stark_native_account, call_data, salt, class_hash = import_argent_account(stark_key, client)
+        stark_native_account, call_data, salt, class_hash = import_argent_account(stark_key, client, wallet_provider)
 
         self.account = StarkAccount(stark_native_account, call_data, salt, class_hash)
         self.delay = delay

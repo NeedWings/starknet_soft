@@ -338,13 +338,13 @@ def get_random_value_int(param):
 def get_random_value(param):
     return random.uniform(param[0], param[1])
 
-def import_argent_account(private_key: int, client):
+def import_argent_account(private_key: int, client, wallet_provider):
     if SETTINGS["useAdvanced"]:
         key_pair = KeyPair.from_private_key(private_key)
         salt = key_pair.public_key
-        if SETTINGS["Provider"].lower() == "argent" or SETTINGS["Provider"].lower() == "argent_newest":
+        if wallet_provider.lower() == "argent" or wallet_provider.lower() == "argent_newest":
             account_initialize_call_data = [key_pair.public_key, 0]
-        elif SETTINGS["Provider"].lower() == "braavos" or SETTINGS["Provider"].lower() == "braavos_newest":
+        elif wallet_provider.lower() == "braavos" or wallet_provider.lower() == "braavos_newest":
             account_initialize_call_data = [key_pair.public_key]
         else:
             logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
@@ -357,7 +357,7 @@ def import_argent_account(private_key: int, client):
                 *account_initialize_call_data
             ]
     else:
-        if SETTINGS["Provider"].lower() == "argent":
+        if wallet_provider.lower() == "argent":
             class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
 
             key_pair = KeyPair.from_private_key(private_key)
@@ -372,7 +372,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "argent_newest":
+        elif wallet_provider.lower() == "argent_newest":
             class_hash = 0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003
 
             key_pair = KeyPair.from_private_key(private_key)
@@ -384,7 +384,7 @@ def import_argent_account(private_key: int, client):
             call_data = [
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "braavos":
+        elif wallet_provider.lower() == "braavos":
             class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key
@@ -396,7 +396,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "braavos_newest":
+        elif wallet_provider.lower() == "braavos_newest":
             class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key
@@ -408,7 +408,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "argent_old":
+        elif wallet_provider.lower() == "argent_old":
             class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key

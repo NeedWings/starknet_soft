@@ -387,7 +387,7 @@ try:
                 print('Not ready yet')
             case _:
                 client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]))
-                asyncio.run(MainRouter(args['argent_key'], 0, task_number, client).start())
+                asyncio.run(MainRouter(args['argent_key'], 0, task_number, client,  args['wallet_provider']).start())
                 #for arg in args:
                 #    client = FullNodeClient(random.choice(SETTINGS["RPC"]["STARKNET_MAINNET"]), proxy=arg['proxy_server'] if arg['proxy_server'] else None)
                 #    tasks.append(loop.create_task(MainRouter(arg['argent_key'], delay, task_number, client).start()))

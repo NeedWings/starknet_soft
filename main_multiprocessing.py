@@ -1,12 +1,9 @@
 import runner
-from peewee import *
-from playhouse.sqlcipher_ext import SqlCipherDatabase
 import random
 import time
 import argparse
 import os
 import multiprocessing
-from getpass import getpass
 
 message = """
 Enter task number:
@@ -77,23 +74,7 @@ if __name__ == "__main__":
     work_values = [v for v in work_values if v not in exclude_values]
     poolnum = args.p if args.p else 1
 
-passphrase = getpass('Enter db password\n')
-db = SqlCipherDatabase('../dbs/wallets.db', passphrase = passphrase)
-
-class Wallet(Model):
-    walletId =   AutoField()
-    seed = TextField()
-    eth_key = TextField(null = True)
-    eth_address = TextField(null = True)
-    argent_seed = TextField(null = True)
-    argent_key = TextField(null = True)
-    argent_address = TextField(null = True)
-    owner = TextField(null = True)
-    tags = TextField(null = True)
-    class Meta:
-        database = db
-
-db.connect()
+from Wallets import *
 
 def run(task_arg):
     os.environ['http_proxy'] = task_arg['proxy_server']
@@ -117,7 +98,7 @@ if __name__ == "__main__":
     proxynum = len(proxy_servers)
     for value in work_values:
         wallet = Wallet.get(Wallet.walletId == value)
-        task_args.append({'id': wallet.walletId, 'argent_key': wallet.argent_key, 'argent_address': wallet.argent_address, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
+        task_args.append({'id': wallet.walletId, 'argent_key': wallet.argent_key, 'argent_address': wallet.argent_address, 'wallet_provider': wallet.argent_provider, 'eth_key': wallet.eth_key, 'proxy_server': proxy_servers[value % proxynum]})
     random.shuffle(task_args)
     with multiprocessing.Pool(processes=poolnum) as s:
         s.map(run, task_args)
