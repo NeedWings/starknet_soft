@@ -44,7 +44,20 @@ class ZkLend(BaseLend):
         "DAI": 0.91,
     }
 
+    async def get_prices(self, sender: BaseStarkAccount):
+        while True:
+            try:
+                r = req("https://data.app.zklend.com/pools")
+                break
+            except Exception as e:
+                logger.error(f"[{sender.formatted_hex_address}] can't get zklend prices: {e} trying again")
+        res = {}
+        for info in r:
+            res[info["token"]["symbol"].upper()] = int(info["price"]["price"], 16)/1e8
+        return res
+
     async def get_total_borrowed(self, sender: BaseStarkAccount):
+        prices = await self.get_prices(sender)
         val = 0
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
         for token_name in self.supported_tokens:
@@ -53,11 +66,12 @@ class ZkLend(BaseLend):
 
             val_in_token = val_in_token_wei/10**token.decimals
 
-            val += token.get_usd_value(val_in_token)/self.coeffs_for_borrow[token.symbol]
+            val += (prices[token_name]*val_in_token)/self.coeffs_for_borrow[token.symbol]
         
         return val
 
     async def get_total_supplied(self, sender: BaseStarkAccount):
+        prices = await self.get_prices(sender)
         val = 0
 
         for token_name in self.supported_tokens:
@@ -68,7 +82,7 @@ class ZkLend(BaseLend):
 
             val_in_token = lend_token_val_wei/10**lend_token.decimals
 
-            usd_val = token.get_usd_value(val_in_token) * self.coeffs_for_supply[token.symbol]
+            usd_val = (prices[token_name]*val_in_token) * self.coeffs_for_supply[token.symbol]
             
             val += usd_val
 
@@ -93,9 +107,10 @@ class ZkLend(BaseLend):
         return [call1, call2]
 
     async def create_txn_for_removing_token(self, amount: int, token: Token, sender: BaseStarkAccount):
+        prices = await self.get_prices(sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
         stark_token: Token = self.token_from_name[token.symbol.split("-")[0]]
-        usd_val = stark_token.get_usd_value(amount/10**stark_token.decimals)
+        usd_val = (amount/10**stark_token.decimals)*prices[stark_token.symbol]
         total_borroved = await self.get_total_borrowed(sender)
         total_supplied = await self.get_total_supplied(sender)
         usd_delta = total_supplied-total_borroved
@@ -104,10 +119,14 @@ class ZkLend(BaseLend):
             usd_val = usd_delta
             usd_val = usd_val/self.coeffs_for_supply[stark_token.symbol]
         
-        price = stark_token.get_price()
+        price = prices[stark_token.symbol]
+
         token_val = int((usd_val/price)*10**stark_token.decimals)
-        token_val = int(token_val*0.9999)
-        if token_val <= 0:
+        token_val = int(token_val*0.99988)
+        token_bal = await sender.get_balance(token.contract_address, token.symbol) - 1
+        if token_val > token_bal:
+            token_val = token_bal
+        if token_val <= 1:
             return -1
         call1 = contract.functions["withdraw"].prepare(
             stark_token.contract_address,

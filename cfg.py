@@ -14,6 +14,7 @@ from starknet_py.net.models import AddressRepresentation, StarknetChainId, parse
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
 from starknet_py.net.account.account import _add_max_fee_to_transaction
 from starknet_py.net.signer import BaseSigner
+#from curl_cffi import requests as mod_requests
 from starknet_py.utils.iterable import ensure_iterable
 from starknet_py.net.models.transaction import (
     AccountTransaction,
@@ -198,6 +199,7 @@ ORBITER_CONTRACTS_REC = "0xE4eDb277e41dc89aB076a1F049f4a3EfA700bCE8"
 ORBITER_CONTRACT = "0xD9D74a29307cc6Fc8BF424ee4217f1A587FBc8Dc"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
+print(SETTINGS_PATH)
 try:
     f = open(f"{SETTINGS_PATH}settings_main.json", "r")
     a = json_remove_comments(f.read())
@@ -540,7 +542,11 @@ async def gas_checker():
             exit()
         limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
         try:
-            price = w3.eth.gas_price
+            if SETTINGS["UseStarknetGwei"]:
+                client = GatewayClient(MAINNET)
+                price = (await client.get_block()).gas_price
+            else:
+                price = w3.eth.gas_price
         except:
             await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
             continue
@@ -549,7 +555,7 @@ async def gas_checker():
         else:
             gas_high.set()
 
-        await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+        await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
 
 async def sleeping(address, error = False):

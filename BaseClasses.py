@@ -195,10 +195,14 @@ class StarkAccount(BaseStarkAccount):
                 exit()
             limit = Web3.to_wei(SETTINGS["MaxETHGwei"], "gwei")
             try:
-                price = w3.eth.gas_price
+                if SETTINGS["UseStarknetGwei"]:
+                    client = GatewayClient(MAINNET)
+                    price = (await client.get_block()).gas_price
+                else:
+                    price = w3.eth.gas_price
             except:
                 if not silent:
-                    logger.error(f"[{address}] can't get eth gas price. will try later")
+                    logger.error(f"[{address}] can't get gas price. will try later")
                     await sleeping(address, True)
                 else:
                     await asyncio.sleep(get_random_value(SETTINGS["ErrorSleepeng"]))
@@ -206,10 +210,10 @@ class StarkAccount(BaseStarkAccount):
             if price < limit:
                 break
             if not silent:
-                logger.info(f"[{address}] Current gas price in eth is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
-                await sleeping(address)
+                logger.info(f"[{address}] Current gas price is {Web3.from_wei(price, 'gwei')}, which is more, than max in settings({SETTINGS['MaxETHGwei']}). Will wait for better fees")
+                await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
             else:
-                await asyncio.sleep(get_random_value(SETTINGS["TaskSleep"]))
+                await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
             
     async def send_txn(self, calldata):
@@ -256,6 +260,7 @@ class StarkAccount(BaseStarkAccount):
                     if max_fee > SETTINGS["MaxFee"]:
                         logger.error(f"[{self.formatted_hex_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
                         await sleeping(self.formatted_hex_address, True)
+                        continue
                     invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True, cairo_version=1)
                 else:
                     nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
@@ -276,6 +281,7 @@ class StarkAccount(BaseStarkAccount):
                     if max_fee > SETTINGS["MaxFee"]:
                         logger.error(f"[{self.formatted_hex_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
                         await sleeping(self.formatted_hex_address, True)
+                        continue
                     invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True, cairo_version=0)
                 return invocation
             except Exception as e:

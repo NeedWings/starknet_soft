@@ -16,27 +16,29 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "own_tasks" : [34, 35, [2, 3]],
+        "own_tasks": [34, 35, [4, 5, 3], 23],
 
         "UseOurRPCStark" : true,
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
         "Slippage": 0.05, // slippage 0.02 = 2%
-        "RetriesLimit": 1, // how many times soft will try to resend transaction in starknet
+        "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
         "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos/argent_newest/braavos_newest)
         "SwapAtTheEnd" : [false], // Swap or no to chosen token in toSaveFunds at the end
         "toSaveFunds" : ["USDC"], // To which token soft will swap after full module
-        "SaveEthOnBalance" : [0.001, 0.001], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
+        "SaveEthOnBalance" : [0.004, 0.004], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
         "delayed_start" : false,
         "delayed_start_time": 3,
     
-        "dmail_messages_amount": [0, 0],
-        "starknet_id_amount": [0, 0],
 
-        "zklend_collateral_amount": [0, 0],
-        "bids_amount"               : [1,2],
+        "dmail_messages_amount": [0, 1],
+        "starknet_id_amount": [0, 0],
+        "starkstars_nft_amount": [1, 2],
+
+        "zklend_collateral_amount": [1, 1],
+        "bids_amount"             : [0, 1],
 
     
     "===== ADVANCED PROVIDER =====": "",
@@ -49,7 +51,7 @@
 
     "======== BRIDGE =========": "",
         "BridgeType"                  : ["orbiter"], // bridge to deposit in starknet
-        "MinEthValue"                 : 0.005, // minimal value of eth to be on wallet
+        "MinEthValue"                 : 0.01, // minimal value of eth to be on wallet
         "SaveOnWallet"                : [0.004, 0.007], // how many eth save on wallet
         "USDAmountToBridge"           : [20, 20], // amount in usd to bridge
         "nets_for_deposit"            : ["arbitrum", "ethereum", "optimism"],
@@ -67,18 +69,18 @@
         
 
     "====== SWAPS =====": "",
-        "swapAmounts"               : [1, 1], // amount of swaps
-        "SwapDEXs"                  : ["MySwap"], // DEX where will be swaps
-        "WorkPercent"               : [0.1, 0.5], // percent of balance to swap (0.5 = 50%)
+        "swapAmounts"               : [20, 20], // amount of swaps
+        "SwapDEXs"                  : ["JediSwap"], // DEX where will be swaps
+        "WorkPercent"               : [0.97, 0.98], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
         "StableShareToSwap"         : [0.94, 0.96], // Percent of stable balance to swap for eth
         "MINIMAL_SWAP_AMOUNTS": { 
-            "USDC": 1, // minimal amount to swap for every token
-            "USDT": 1,
-            "DAI":  1, 
-            "WBTC" :0.000001, 
-            "WSTETH": 0.000001, 
-            "LORDS": 10
+            "USDC": 0, // minimal amount to swap for every token
+            "USDT": 0,
+            "DAI":  0, 
+            "WBTC" :0, 
+            "WSTETH": 0, 
+            "LORDS": 0
         },
 
 
@@ -87,7 +89,7 @@
         "LiqWorkPercent"          : [0.1, 0.5], // percent of balance to add liquidity (0.5 = 50%)
         "LiqDEXs"                 : ["JediSwap"], // DEX where will be added liquidity
         "RemoveOnFullMode"        : [true, true], // remove liquidity from DEXes on the end of FULL module
-        "AddLiqAmount"            : [0, 0], // how many times add liquidity
+        "AddLiqAmount"            : [2, 2], // how many times add liquidity
 
     "======= LENDS =======": "",
         "LendWorkPercent"    : [0.1, 0.5], // How many eth add to lend
@@ -118,8 +120,10 @@
         },
 
     "======= Max Starknet Fee Settings =======": "",
-        "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 220, // Max gwei value in Etherium net
+        "MaxFee" : 0.00105, // Max gas soft can spend on starknet transaction
+        "MaxETHGwei": 20, // Max gwei value in Etherium net
+        "UseStarknetGwei": true,
+        "WaitGWEISleep" : [100, 200],
 
 
     "========= END =========": ""

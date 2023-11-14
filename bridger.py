@@ -83,13 +83,13 @@ async def get_tx_data_evm(address, w3: Web3, net_name: str, value=0) -> dict:
             data["gasPrice"] = gas_price
             
         else:
-            data["maxFeePerGas"] = gas_price
+            data["maxFeePerGas"] = int(gas_price*1.2)
             if net_name == "POLYGON_MAINNET":
                 data["maxPriorityFeePerGas"] = Web3.to_wei(30, "gwei")
             elif net_name == "AVALANCHE_MAINNET":
                 data["maxPriorityFeePerGas"] = gas_price
             elif net_name == "ETHEREUM_MAINNET":
-                data["maxPriorityFeePerGas"] = Web3.to_wei(0.05, "gwei")
+                data["maxPriorityFeePerGas"] = int(1.2*(Web3.to_wei(0.05, "gwei")))
             elif net_name == "ARBITRUM_MAINNET":
                 data["maxPriorityFeePerGas"] = Web3.to_wei(0.01, "gwei")
         return data
