@@ -1,4 +1,4 @@
-from own_tasks import *
+from .own_tasks import *
 data = {
     1 : [],
     2 : [],

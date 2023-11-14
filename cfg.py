@@ -1,10 +1,10 @@
-from abi import *
+from .abi import *
 from starknet_py.hash import transaction 
 from starknet_py.hash.address import compute_address
-from starknet_py.net.account.account import Account as StarkNativeAccount
+from .lib.account import Account as StarkNativeAccount
 from starknet_py.net.client import Client
-from starknet_py.net.gateway_client import GatewayClient
-from starknet_py.net.full_node_client import FullNodeClient
+from .lib.gateway_client import GatewayClient
+from .lib.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair
@@ -106,43 +106,24 @@ import requests
 from web3 import Web3
 import uuid
 import decimal
-from os import getcwd
+#from os import getcwd
 import os
 import base64
-from cryptography.fernet import Fernet
+#from cryptography.fernet import Fernet
 import getpass
 import hashlib
 import sys
 import socket
-import wmi
+#import wmi
 from aiohttp import ClientSession
 import sys, os
-import inquirer
-from termcolor import colored
-from inquirer.themes import load_theme_from_dict as loadth
 import datetime
+#import inquirer
+#from termcolor import colored
+#from inquirer.themes import load_theme_from_dict as loadth
 
-
-def override_where():
-    """ overrides certifi.core.where to return actual location of cacert.pem"""
-    # change this to match the location of cacert.pem
-    return os.path.abspath("data/cacert.pem")
-
-
-# is the program compiled?
-if True:
-    import certifi.core
-
-    os.environ["REQUESTS_CA_BUNDLE"] = override_where()
-    certifi.core.where = override_where
-
-    # delay importing until after where() has been replaced
-    import requests.utils
-    import requests.adapters
-    # replace these variables in case these modules were
-    # imported before we replaced certifi.core.where
-    requests.utils.DEFAULT_CA_BUNDLE_PATH = override_where()
-    requests.adapters.DEFAULT_CA_BUNDLE_PATH = override_where()
+import requests.utils
+import requests.adapters
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -178,7 +159,7 @@ def json_remove_comments(invalid_json: str):
 autosoft = """
 
  _______          _________ _______  _______  _______  _______ _________
-(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ \\__   __/
+(  ___  )|\     /|\__   __/(  ___  )(  ____ \(  ___  )(  ____ /__   __/
 | (   ) || )   ( |   ) (   | (   ) || (    \/| (   ) || (    \/   ) (   
 | (___) || |   | |   | |   | |   | || (_____ | |   | || (__       | |   
 |  ___  || |   | |   | |   | |   | |(_____  )| |   | ||  __)      | |   
@@ -196,7 +177,7 @@ Ask all questions in our chat.
 """
 
 KEY = "CEy426oSSaOTWDPgtuKxm1nS2uWN_4-L_eyt0dmAr40="
-SETTINGS_PATH = getcwd() + '\\data\\'
+SETTINGS_PATH = 'data/'
 
 CONTRACT_ADDRESS_PREFIX = str_to_felt('STARKNET_CONTRACT_ADDRESS')
 UNIVERSAL_DEPLOYER_PREFIX = str_to_felt('UniversalDeployerContract')
@@ -220,12 +201,12 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 print(SETTINGS_PATH)
 try:
-    f = open(f"{SETTINGS_PATH}settings.json", "r")
+    f = open(f"{SETTINGS_PATH}settings_main.json", "r")
     a = json_remove_comments(f.read())
     SETTINGS = json.loads(a)
     f.close()
 except Exception as e:
-    input("Error with settings.json")
+    input("Error with settings_main.json")
     exit()
 
 retries_limit = SETTINGS["RetriesLimit"]
@@ -345,7 +326,7 @@ def req_post(url: str, **kwargs):
 
 
 async def handle_dangerous_request(func, message, address = "", *args):
-    while True:
+    for i in range(retries_limit):
         try:
             return await func(*args)
         except Exception as e:
@@ -359,13 +340,13 @@ def get_random_value_int(param):
 def get_random_value(param):
     return random.uniform(param[0], param[1])
 
-def import_argent_account(private_key: int, client):
+def import_argent_account(private_key: int, client, wallet_provider):
     if SETTINGS["useAdvanced"]:
         key_pair = KeyPair.from_private_key(private_key)
         salt = key_pair.public_key
-        if SETTINGS["Provider"].lower() == "argent" or SETTINGS["Provider"].lower() == "argent_newest":
+        if wallet_provider.lower() == "argent" or wallet_provider.lower() == "argent_newest":
             account_initialize_call_data = [key_pair.public_key, 0]
-        elif SETTINGS["Provider"].lower() == "braavos" or SETTINGS["Provider"].lower() == "braavos_newest":
+        elif wallet_provider.lower() == "braavos" or wallet_provider.lower() == "braavos_newest":
             account_initialize_call_data = [key_pair.public_key]
         else:
             logger.error(f"Selected unsupported wallet provider: {SETTINGS['Provider'].lower()}. Please select one of this: argent, braavos")
@@ -378,7 +359,7 @@ def import_argent_account(private_key: int, client):
                 *account_initialize_call_data
             ]
     else:
-        if SETTINGS["Provider"].lower() == "argent":
+        if wallet_provider.lower() == "argent":
             class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
 
             key_pair = KeyPair.from_private_key(private_key)
@@ -393,7 +374,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "argent_newest":
+        elif wallet_provider.lower() == "argent_newest":
             class_hash = 0x01a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003
 
             key_pair = KeyPair.from_private_key(private_key)
@@ -405,7 +386,7 @@ def import_argent_account(private_key: int, client):
             call_data = [
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "braavos":
+        elif wallet_provider.lower() == "braavos":
             class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key
@@ -417,7 +398,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "braavos_newest":
+        elif wallet_provider.lower() == "braavos_newest":
             class_hash = 0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key
@@ -429,7 +410,7 @@ def import_argent_account(private_key: int, client):
                 len(account_initialize_call_data),
                 *account_initialize_call_data
             ]
-        elif SETTINGS["Provider"].lower() == "argent_old":
+        elif wallet_provider.lower() == "argent_old":
             class_hash = 0x025ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918
             key_pair = KeyPair.from_private_key(private_key)
             salt = key_pair.public_key
@@ -466,9 +447,9 @@ def sleeping_sync(address, error = False):
         rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
-with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
-    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance;Have liq;Have lend\n")
-starkstats = ""
+#with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
+#    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
+#starkstats = ""
 
 from loguru import logger as console_log
 
@@ -480,13 +461,14 @@ SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
 date_and_time = str(datetime.datetime.now()).replace(":", ".")
 
 def write_global_log():
+    return
     log = ""
     for key in global_log:
         buff = f"{key}:\n"
         for data in global_log[key]:
             buff += f"{data}\n" 
         log += buff + "\n"
-    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "w") as f:
+    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "a") as f:
         f.write(log)
 
 class logger():

@@ -1,18 +1,19 @@
-from DEXes.avnu import *
-from DEXes.fibrous import *
-from DEXes.jediswap import *
-from DEXes.myswap import *
-from DEXes.sithswap import *
-from DEXes.tenkswap import *
-from DEXes.zklend import *
-from braavos_shit import *
-from DEXes.domain import *
-from DEXes.okx_sender import *
-from DEXes.bids import *
-from DEXes.dmail import *
-from own_tasks import *
-from DEXes.starkstars import *
-from stats import stat
+from .DEXes.avnu import *
+from .DEXes.fibrous import *
+from .DEXes.jediswap import *
+from .DEXes.myswap import *
+from .DEXes.sithswap import *
+from .DEXes.tenkswap import *
+from .DEXes.zklend import *
+from .braavos_shit import *
+from .DEXes.domain import *
+from .DEXes.okx_sender import *
+from .DEXes.bids import *
+from .DEXes.dmail import *
+from .own_tasks import *
+from .DEXes.starkstars import *
+from .stats import stat
+
 eth = Token("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = Token("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
 usdt = Token("USDT", 0x068f5c6a61780768455de69077e07e89787839bf8166decfbf92b645209c0fb8, 6, stable=True)
@@ -94,9 +95,9 @@ for name in SETTINGS["Supported_tokens"]:
 
 
 class MainRouter():
-    def __init__(self, stark_key: int, delay: int, task_number: int, client) -> None:
+    def __init__(self, stark_key: int, delay: int, task_number: int, client, wallet_provider) -> None:
         self.task_number = task_number
-        stark_native_account, call_data, salt, class_hash = import_argent_account(stark_key, client)
+        stark_native_account, call_data, salt, class_hash = import_argent_account(stark_key, client, wallet_provider)
 
         self.account = StarkAccount(stark_native_account, call_data, salt, class_hash)
         self.delay = delay
@@ -505,6 +506,8 @@ class MainRouter():
                     continue
 
                 await self.account.send_txn(swap_txn)
+                if SETTINGS['SingleSwapPerDex']:
+                    supported_dexes_for_swaps.remove(dex)
                 await sleeping(self.account.formatted_hex_address)
 
             except Exception as e:
@@ -644,6 +647,7 @@ class MainRouter():
                 if token_to_swap.symbol == "ETH":
                     balance -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
                 else:
+                    balance = int(balance * get_random_value(SETTINGS['StableShareToSwap']))
                     if balance/10**token_to_swap.decimals < SETTINGS["MINIMAL_SWAP_AMOUNTS"][token_to_swap.symbol]:
                         balance = 0
 
@@ -667,7 +671,7 @@ class MainRouter():
                 logger.info(f"[{self.account.formatted_hex_address}] going to swap {balance/10**token_to_swap.decimals} {token_to_swap.symbol} for {token.symbol} in {dex.name}")
 
 
-                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = True)
+                swap_txn = await dex.create_txn_for_swap(balance/10**token_to_swap.decimals, token_to_swap, amount_out, token, self.account, full = False)
                 if swap_txn != -1:
                     await self.account.send_txn(swap_txn)
                     await sleeping(self.account.formatted_hex_address)

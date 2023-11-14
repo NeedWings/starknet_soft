@@ -73,6 +73,7 @@
         "SwapDEXs"                  : ["JediSwap"], // DEX where will be swaps
         "WorkPercent"               : [0.97, 0.98], // percent of balance to swap (0.5 = 50%)
         "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
+        "StableShareToSwap"         : [0.94, 0.96], // Percent of stable balance to swap for eth
         "MINIMAL_SWAP_AMOUNTS": { 
             "USDC": 0, // minimal amount to swap for every token
             "USDT": 0,

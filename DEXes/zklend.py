@@ -1,5 +1,4 @@
-from BaseClasses import *
-from BaseClasses import BaseStarkAccount, Token
+from ..BaseClasses import *
 
 class ZkLend(BaseLend):
     name = "ZkLend"

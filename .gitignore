@@ -1,0 +1,6 @@
+data/*.txt
+data/settings_main.json
+venv/
+__pycache__/
+DEXes/__pycache__/
+Modules/

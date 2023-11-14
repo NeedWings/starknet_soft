@@ -1,4 +1,4 @@
-from BaseClasses import *
+from .BaseClasses import *
 
 async def own_tasks(self):
     tasks = SETTINGS["own_tasks"].copy()
