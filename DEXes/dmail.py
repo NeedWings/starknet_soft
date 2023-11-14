@@ -1,4 +1,4 @@
-from BaseClasses import *
+from ..BaseClasses import *
 
 class DmailHandler:
     async def create_txn_for_dmail(self, sender:StarkAccount):

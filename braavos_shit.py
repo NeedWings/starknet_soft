@@ -32,7 +32,7 @@ from starknet_py.hash.transaction import (
     compute_deploy_account_transaction_hash,
     compute_transaction_hash,
 )
-from cfg import *
+from .cfg import *
 from starknet_py.net.client_models import EstimatedFee
 from starknet_py.net.account.account import _add_max_fee_to_transaction, _add_signature_to_transaction
 from starknet_py.hash.utils import compute_hash_on_elements

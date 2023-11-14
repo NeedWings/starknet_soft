@@ -1,4 +1,4 @@
-from BaseClasses import *
+from ..BaseClasses import *
 
 
 lets = "abcdefghijklmnopqrstuvwxyz0123456789-"

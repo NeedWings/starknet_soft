@@ -1,10 +1,10 @@
-from abi import *
+from .abi import *
 from starknet_py.hash import transaction 
 from starknet_py.hash.address import compute_address
-from starknet_py.net.account.account import Account as StarkNativeAccount
+from .lib.account import Account as StarkNativeAccount
 from starknet_py.net.client import Client
-from starknet_py.net.gateway_client import GatewayClient
-from starknet_py.net.full_node_client import FullNodeClient
+from .lib.gateway_client import GatewayClient
+from .lib.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 from starknet_py.net.networks import MAINNET
 from starknet_py.net.signer.stark_curve_signer import KeyPair

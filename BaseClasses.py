@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from cfg import *
+from .cfg import *
 from starknet_py.net.account.account import _add_max_fee_to_transaction, _add_signature_to_transaction, _parse_calls_v2, _execute_payload_serializer_v2, _merge_calls, _execute_payload_serializer
 
 def req(url: str, **kwargs):

@@ -1,5 +1,5 @@
-from BaseClasses import *
-from DEXes.myswap import MySwap
+from ..BaseClasses import *
+from .myswap import MySwap
 
 class Avnu(BaseDex):
     name = "Avnu"

@@ -1,4 +1,4 @@
-from bridger import *
+from .bridger import *
 
 
 async def check_main_asset(address: str):
