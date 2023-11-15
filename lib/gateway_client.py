@@ -17,6 +17,7 @@ from starknet_py.net.client_models import (
     DeployAccountTransactionResponse,
     EstimatedFee,
     GatewayBlock,
+    GatewayTransactionStatusResponse,
     Hash,
     SentTransactionResponse,
     SierraContractClass,
@@ -25,7 +26,6 @@ from starknet_py.net.client_models import (
     Tag,
     Transaction,
     TransactionReceipt,
-    TransactionStatusResponse,
 )
 from starknet_py.net.client_utils import hash_to_felt, is_block_identifier
 from .http_client import GatewayHttpClient
@@ -102,9 +102,9 @@ class GatewayClient(Client):
         self._net = net
 
         self._feeder_gateway_client = GatewayHttpClient(
-            url=feeder_gateway_url, session=session, proxy = proxy
+            url=feeder_gateway_url, session=session, proxy=proxy
         )
-        self._gateway_client = GatewayHttpClient(url=gateway_url, session=session, proxy = proxy)
+        self._gateway_client = GatewayHttpClient(url=gateway_url, session=session, proxy=proxy)
 
     @property
     def net(self) -> Network:
@@ -389,7 +389,7 @@ class GatewayClient(Client):
     async def get_transaction_status(
         self,
         tx_hash: Hash,
-    ) -> TransactionStatusResponse:
+    ) -> GatewayTransactionStatusResponse:
         """
         Fetches the transaction's status and block number
 
