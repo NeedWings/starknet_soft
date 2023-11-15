@@ -230,7 +230,7 @@ class AccRouter():
             return -1, 'No dex specified'
         dex = swap_dexes[dex]
         try:
-            token_in, usd_value =  await self.get_max_valued_token(self.tokens_to_list(dex.tokens), SaveEthOnBalance, MINIMAL_SWAP_AMOUNTS)
+            token_in, usd_value =  await self.get_max_valued_token(self.tokens_to_list(dex.supported_tokens), SaveEthOnBalance, min_swap_values)
             if token_in == None:
                 logger.error(f"[{self.account.formatted_hex_address}] all balances is 0")
                 return -1, 'Not enough balance'
@@ -260,17 +260,17 @@ class AccRouter():
         LiqWorkPercent=None,
         Slippage=None,
         SaveEthOnBalance=None,
-        MINIMAL_SWAP_AMOUNTS=None
+        min_swap_values={}
         ):
         if not liq:
             return -1, 'No liq_dex specified'
         liq = liq_dexes[liq]
         try:
-            token1, usd_value = await self.get_max_valued_token(self.tokens_to_list(dex.tokens), SaveEthOnBalance, MINIMAL_SWAP_AMOUNTS)
+            token1, usd_value = await self.get_max_valued_token(self.tokens_to_list(liq.supported_tokens), SaveEthOnBalance, min_swap_values)
             if token1 == None:
                 return -1, 'all balances are 0'
 
-            token2 = tokens[dex.get_pair(token1.symbol)]
+            token2 = tokens[liq.get_pair(token1.symbol)]
 
             amount_to_add = usd_value * get_random_value(LiqWorkPercent if LiqWorkPercent else SETTINGS["LiqWorkPercent"])/2
             token2_usd_value = token2.get_usd_value(await self.account.get_balance(token2.contract_address, token2.symbol) / 10**token2.decimals)
@@ -281,7 +281,7 @@ class AccRouter():
             if token2_usd_value < amount_to_add*(1+ (Slippage if Slippage else SETTINGS["Slippage"]+0.01)):
                 return -1, 'token2_usd_value is less than amount_to_add*(1+Slippage)'
 
-            status, liq_txn = await dex.create_txn_for_liq(amount1, token1, amount2, token2, self.account)
+            status, liq_txn = await liq.create_txn_for_liq(amount1, token1, amount2, token2, self.account)
             if status < 0:
                 return -1, liq_txn
 
@@ -300,13 +300,13 @@ class AccRouter():
         BorrowAddAmount=None,
         BorrowWorkPercent=None,
         SaveEthOnBalance=None,
-        MINIMAL_SWAP_AMOUNTS=None
+        min_swap_values={}
         ):
         if not lend:
             return -1, 'No lend specified'
         lend = lends[lend]
         try:
-            token, usd_value = await self.get_max_valued_token(self.tokens_to_list(lend.tokens), SaveEthOnBalance, MINIMAL_SWAP_AMOUNTS)
+            token, usd_value = await self.get_max_valued_token(self.tokens_to_list(lend.supported_tokens), SaveEthOnBalance, min_swap_values)
             if token == None:
                 return -1, 'all balances are 0'
             amount_to_add = usd_value * get_random_value(LendWorkPercent if LendWorkPercent else SETTINGS["LendWorkPercent"])
@@ -364,7 +364,7 @@ class AccRouter():
             return -1, 'No lend specified'
         lend = lends[lend]
         try:
-            token = tokens[random.choice(lend.tokens)]
+            token = tokens[random.choice(lend.supported_tokens)]
 
             
             total_borroved = await lend.get_total_borrowed(self.account)
