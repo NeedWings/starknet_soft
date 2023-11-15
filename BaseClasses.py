@@ -170,8 +170,7 @@ class StarkAccount(BaseStarkAccount):
             self.salt,
             self.class_hash
         ) = import_argent_account(stark_key, self.client, provider)
-        self.formatted_hex_address = "0x" + "0"*(64 - len(hex(stark_native_account.address)[2::])) + hex(stark_native_account.address)[2::]
-        self.client = stark_native_account.client
+        self.formatted_hex_address = "0x" + "0"*(64 - len(hex(self.stark_native_account.address)[2::])) + hex(self.stark_native_account.address)[2::]
         self.address = self.stark_native_account.address
         self.provider = provider
 
