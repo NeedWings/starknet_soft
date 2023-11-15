@@ -43,7 +43,7 @@ class TenKSwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
         
         if not full:
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
@@ -62,7 +62,7 @@ class TenKSwap(BaseDex):
         else:
             bal = await sender.get_balance(token1.contract_address, token1.symbol)
             if token1.symbol == "ETH":
-                bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
+                bal -= int(get_random_value(SaveEthOnBalance if SaveEthOnBalance else SETTINGS["SaveEthOnBalance"])*1e18)
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             
@@ -77,7 +77,7 @@ class TenKSwap(BaseDex):
                 int(time.time()+(3600*24))
             )
 
-        return [call1, call2]
+        return 0, [call1, call2]
 
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):
         
@@ -96,7 +96,7 @@ class TenKSwap(BaseDex):
             int(time.time())+3600
         )
 
-        return [call1, call2, call3]
+        return 0, [call1, call2, call3]
 
 
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
@@ -120,7 +120,7 @@ class TenKSwap(BaseDex):
         
 
         if amount <= 0:
-            return -1
+            return -1, 'Tenkswap\tLiquidity is 0'
         
         call1 = lptoken.get_approve_call(amount, self.contract_address, sender)
 
@@ -134,4 +134,4 @@ class TenKSwap(BaseDex):
             int(time.time())+3600
         )
         
-        return [call1, call2]
+        return 0, [call1, call2]

@@ -1,6 +1,17 @@
 from ..BaseClasses import *
 
 class Bidder:
+    async def create_bid_tx(self, eth, account, flex):
+        match flex:
+            case 1:
+                creator = self.create_txn_for_flex
+            case 2:
+                creator = self.create_txn_for_unframed
+            case 3:
+                creator = self.create_txn_for_element
+            case _:
+                return -1, 'Unknown flex'
+        return creator(eth, account)
 
     async def create_txn_for_unframed(self, eth: Token, sender: StarkAccount):
         logger.info(f"[{sender.formatted_hex_address}] going to bid on unframed")

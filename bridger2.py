@@ -408,7 +408,7 @@ async def simple_bridge(private_key: str, recepient: str):
     signed_txn = web3.eth.account.sign_transaction(txn, private_key)
     txn_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
     logger.success(f"[{wallet}] txn has sent, hash: { Web3.to_hex(txn_hash)}")
-    return 1, Web3.to_hex(txn_hash)
+    return 0, Web3.to_hex(txn_hash)
 
 async def eth_bridge_official(private_key: str, recepient: str, delay: int):
     private_key = "0x" + "0"*(66-len(private_key)) + private_key[2::]

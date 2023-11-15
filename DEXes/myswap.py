@@ -57,12 +57,12 @@ class MySwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
         try:
             a = self.POOLS[f"{token1.symbol}:{token2.symbol}"]
         except:
             logger.error(f"[{sender.formatted_hex_address} got unsupported pool on myswap. Skip")
-            return -1
+            return -1, 'got unsupported pool on myswap. Skip'
         if not full:
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -75,7 +75,7 @@ class MySwap(BaseDex):
         else:
             bal = await sender.get_balance(token1.contract_address, token1.symbol)
             if token1.symbol == "ETH":
-                bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
+                bal -= int(get_random_value(SaveEthOnBalance if SaveEthOnBalance else SETTINGS["SaveEthOnBalance"])*1e18)
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             call2 = contract.functions["swap"].prepare(
@@ -85,14 +85,14 @@ class MySwap(BaseDex):
                 int(amount_out*10**token2.decimals*(1-slippage))
             )
 
-        return [call1, call2]
+        return 0, [call1, call2]
 
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):
         try:
             a = self.POOLS[f"{token1.symbol}:{token2.symbol}"]
         except:
             logger.error(f"[{sender.formatted_hex_address} got unsupported pool on myswap. Skip")
-            return -1
+            return -1, 'got unsupported pool on myswap. Skip'
         call1 = token1.get_approve_call(amount1, self.contract_address, sender)
         call2 = token2.get_approve_call(amount2, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -106,7 +106,7 @@ class MySwap(BaseDex):
             int(amount2*10**token2.decimals * (1-slippage)),
         )
 
-        return [call1, call2, call3]
+        return 0, [call1, call2, call3]
 
 
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
@@ -124,7 +124,7 @@ class MySwap(BaseDex):
             if name == "token_b_reserves":
                 token2_val = data[1]*multiplier
         if amount <= 0:
-            return -1
+            return -1, 'Myswap\tLiquidity is 0'
         
         call1 = lptoken.get_approve_call(amount, self.contract_address, sender)
 
@@ -135,4 +135,4 @@ class MySwap(BaseDex):
             int(token2_val * (1-slippage))
         )
         
-        return [call1, call2]
+        return 0, [call1, call2]

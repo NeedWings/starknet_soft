@@ -44,10 +44,11 @@ class ZkLend(BaseLend):
         "DAI": 0.91,
     }
 
-    async def get_prices(self, sender: BaseStarkAccount):
+    async def get_prices(self, sender: BaseStarkAccount, proxy=None):
+        proxies = {'https': proxy, 'http': proxy} if proxy else None
         while True:
             try:
-                r = req("https://data.app.zklend.com/pools")
+                r = req("https://data.app.zklend.com/pools", proxies=proxies)
                 break
             except Exception as e:
                 logger.error(f"[{sender.formatted_hex_address}] can't get zklend prices: {e} trying again")
@@ -127,7 +128,7 @@ class ZkLend(BaseLend):
         if token_val > token_bal:
             token_val = token_bal
         if token_val <= 1:
-            return -1
+            return -1, 'Zklend\tLiquidity is 1'
         call1 = contract.functions["withdraw"].prepare(
             stark_token.contract_address,
             token_val
@@ -154,7 +155,7 @@ class ZkLend(BaseLend):
         if val_in_token_wei >= bal:
             val_in_token_wei = bal
         if val_in_token_wei <= 1:
-            return -1
+            return -1, 'Sithswap\tReturn is 0'
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
         call2 = contract.functions["repay"].prepare(

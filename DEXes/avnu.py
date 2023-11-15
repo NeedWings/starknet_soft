@@ -28,8 +28,9 @@ class Avnu(BaseDex):
             return []
         
 
-    async def get_best_dex(self, token1, token2, amount_in, sender):
-        resp = req(f"https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
+    async def get_best_dex(self, token1, token2, amount_in, sender, proxy=None):
+        proxies = {'https': proxy, 'http': proxy} if proxy else None
+        resp = req(f"https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal", proxies=proxies)
 
         dex_name = resp[0]["sourceName"]
 
@@ -57,14 +58,14 @@ class Avnu(BaseDex):
         self.supported_tokens = new_supported_tokens
 
     
-    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False):
+    async def create_txn_for_swap(self, amount_in: float, token1: Token, amount_out: float, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
         
         
         if not full:
             dex, amount_out_avnu = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, amount_in, sender)
             if amount_out_avnu < (1-slippage)*amount_out*10**token2.decimals:
                 logger.error(f"[{sender.formatted_hex_address}] AVNU MIN VALUE TOO LOW. SKIP")
-                return -1
+                return -1, 'AVNU MIN VALUE TOO LOW. SKIP'
             amount_out = amount_out_avnu
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
@@ -91,11 +92,11 @@ class Avnu(BaseDex):
             bal = await sender.get_balance(token1.contract_address, token1.symbol)
             
             if token1.symbol == "ETH":
-                bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
+                bal -= int(get_random_value(SaveEthOnBalance if SaveEthOnBalance else SETTINGS["SaveEthOnBalance"])*1e18)
             dex, amount_out_avnu = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.formatted_hex_address, token1, token2, bal/10**token1.decimals, sender)
             if amount_out_avnu < (1-slippage)*amount_out*10**token2.decimals:
                 logger.error(f"[{sender.formatted_hex_address}] AVNU MIN VALUE TOO LOW. SKIP")
-                return -1
+                return -1, 'AVNU MIN VALUE TOO LOW. SKIP'
             amount_out = amount_out_avnu
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
@@ -119,11 +120,11 @@ class Avnu(BaseDex):
                 ]
             )
 
-        return [call1, call2]
+        return 0, [call1, call2]
 
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):
-        return -1
+        return -1, 'Avnu Liquidity not implemented'
 
 
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
-        return -1
+        return -1, 'Avnu Liquidity not implemented'

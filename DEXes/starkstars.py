@@ -37,4 +37,4 @@ class StarkStars:
 
         call2 = contract.functions["mint"].prepare()
 
-        return [call1, call2]
+        return 0, [call1, call2]

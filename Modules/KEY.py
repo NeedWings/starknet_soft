@@ -1,1 +1,0 @@
-USER_KEY = "1ee5eda19c2409249a9ccb19c26a2c3b28340df4"

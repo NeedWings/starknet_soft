@@ -107,8 +107,8 @@ class Fibrous(BaseDex):
         return [call1, call2]
 
     async def create_txn_for_liq(self, amount1: float, token1: Token, amount2: float, token2: Token, sender: BaseStarkAccount):
-        return -1
+        return -1, 'Liquidity is not implemented for fibrious'
 
 
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
-        return -1
+        return -1, 'Liquidity is not implemented for fibrious'

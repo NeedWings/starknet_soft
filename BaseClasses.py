@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from .cfg import *
-from starknet_py.net.account.account import _add_max_fee_to_transaction, _add_signature_to_transaction, _parse_calls_v2, _execute_payload_serializer_v2, _merge_calls, _execute_payload_serializer
+from .lib.account import _add_max_fee_to_transaction, _add_signature_to_transaction, _parse_calls_v2, _execute_payload_serializer_v2, _merge_calls, _execute_payload_serializer
 
 def req(url: str, **kwargs):
     try:
@@ -39,7 +39,6 @@ class EVMTransactionDataHandler():
             except Exception as error:
                 logger.error(f'[{self.address}] Error: {error}')
                 sleeping_sync(f'[{self.address}] Error fault. Update after ')
-
 
     def get_txn_data(self, value=0):
         gas_price = self.get_gas_price()
@@ -93,7 +92,8 @@ class EVMToken():
                         )
         return txn
     
-    def get_price(self):
+    def get_price(self, proxy=None):
+        proxies = {'https': proxy, 'http': proxy} if proxy else None
         if self.symbol in ["USDC", "USDT"]:
             return 1
         else:
@@ -103,7 +103,7 @@ class EVMToken():
                     if name == ticker.upper() + 'USDT':
                         return float(k.get("price"))
             while True:
-                response = req("https://api.binance.com/api/v3/ticker/price")
+                response = req("https://api.binance.com/api/v3/ticker/price", proxies=proxies)
                 if type(response) is list:
                     return __find__(self.symbol, response)
                 else:
@@ -112,8 +112,6 @@ class EVMToken():
 
     def get_usd_value(self, amount):
         return self.get_price()*amount
-        
-            
 
 class EVMNativeToken(EVMToken):
     def __init__(self, net) -> None:
@@ -136,7 +134,6 @@ class EVMNativeToken(EVMToken):
 
 
 class BaseAccount(ABC):
-
     @abstractmethod
     def send_txn(self, txn):
         """sends transaction"""
@@ -165,15 +162,18 @@ class BaseStarkAccount(ABC):
         pass
 
 class StarkAccount(BaseStarkAccount):
-
-    def __init__(self, stark_native_account: StarkNativeAccount, call_data, salt, class_hash) -> None:
-        self.stark_native_account = stark_native_account
-        self.call_data = call_data
-        self.salt = salt
-        self.class_hash = class_hash
+    def __init__(self, stark_key, provider, stark_rpc, proxy=None) -> None:
+        self.client = FullNodeClient(stark_rpc, proxy=proxy)
+        (
+            self.stark_native_account,
+            self.call_data,
+            self.salt,
+            self.class_hash
+        ) = import_argent_account(stark_key, self.client, provider)
         self.formatted_hex_address = "0x" + "0"*(64 - len(hex(stark_native_account.address)[2::])) + hex(stark_native_account.address)[2::]
         self.client = stark_native_account.client
         self.address = self.stark_native_account.address
+        self.provider = provider
 
     def get_address(self):
         return self.formatted_hex_address
@@ -215,15 +215,15 @@ class StarkAccount(BaseStarkAccount):
             else:
                 await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
-            
-    async def send_txn(self, calldata):
+    async def send_txn(self, calldata, RetriesLimit=None):
+        RetriesLimit = RetriesLimit if RetriesLimit else SETTINGS["RetriesLimit"]
         await self.wait_for_better_eth_gwei()
         i = 0
-        while SETTINGS["RetriesLimit"] > i:
+        while RetriesLimit > i:
             resp = await self.get_invocation(calldata)
             if resp == -3:
                 logger.error(f"[{self.formatted_hex_address}] max retries limit reached")
-                return -3, ""
+                return -3, "max retries limit reached"
             try:
                 logger.success(f"[{self.formatted_hex_address}] sending txn with hash: {hex(resp.transaction_hash)}")
                 await self.stark_native_account.client.wait_for_tx(resp.transaction_hash)
@@ -234,11 +234,12 @@ class StarkAccount(BaseStarkAccount):
                 await sleeping(self.formatted_hex_address, True)
             i +=1
         logger.error(f"[{self.formatted_hex_address}] max retries limit reached")
-        return -1, ""
+        return -1, "max retries limit reached"
 
-    async def get_invocation(self, calls):
+    async def get_invocation(self, calls, RetriesLimit=None):
+        RetriesLimit = RetriesLimit if RetriesLimit else SETTINGS["RetriesLimit"]
         i = 0
-        while i <= SETTINGS["RetriesLimit"]:
+        while i <= RetriesLimit:
             i+=1
             try:
                 if SETTINGS["cairo_version"] == 1:
@@ -289,6 +290,75 @@ class StarkAccount(BaseStarkAccount):
                 await sleeping(self.formatted_hex_address, True)
         return -3
 
+    async def deploy(self):
+        call_data = self.call_data
+        class_hash = self.class_hash
+        salt = self.salt
+        account = self.stark_native_account
+        balance = 0
+        while True:
+            try:
+                nonce = await account.get_nonce()
+                if nonce > 0:
+                    return 0, 'already deployed'
+                else:
+                    break
+            except Exception as e:
+                if "contract not found" in (str(e)).lower():
+                    nonce = 0
+                    break
+                logger.error(f"[{self.formatted_hex_address}] got error while trying to get nonce: {e}")
+                await sleeping(self.formatted_hex_address, True)
+        while True:
+            logger.info(f"[{self.formatted_hex_address}] checking balance.")
+            balance = await self.get_balance()
+            logger.info(f"[{self.formatted_hex_address}] got balance: {balance/1e18} ETH")
+            if balance >= 1e14:
+                break
+            await sleeping(self.formatted_hex_address)
+        match self.provider:
+            case "argent":
+                deploy = StarkNativeAccount.deploy_account
+            case "argent_newest":
+                deploy = StarkNativeAccount.deploy_account
+            case "braavos_newest":
+                deploy = deploy_account_braavos
+            case _:
+                return -1, 'Provider unknown'
+        try:
+            account_deployment_result = await deploy(
+                address=account.address,
+                class_hash=class_hash,
+                salt=salt,
+                key_pair=account.signer.key_pair,
+                client=account.client,
+                chain=chain,
+                constructor_calldata=call_data,
+                auto_estimate=True,
+            )
+            await account_deployment_result.wait_for_acceptance()
+            # From now on, account can be used as usual
+            return 0, hex(account_deployment_result.hash)
+
+        except Exception:
+            return -1, traceback.format_exc().replace('\n', '\t')
+
+    async def upgrade(self, new_implementation_for_upgrade=None):
+        new_impl = int(new_implementation_for_upgrade if new_implementation_for_upgrade else SETTINGS["new_implementation_for_upgrade"], 16)
+        match self.provider:
+            case "argent" | "argent_newest":
+                abi = UPGRADE_ARGENT
+                call_args = new_impl, [0]
+            case "braavos_newest":
+                deploy = BRAAVOS_UPGRADE
+                call_args = new_impl
+            case _:
+                return -1, 'Provider unknown'
+        contract = Contract(self.account.stark_native_account.address, abi, self.account.stark_native_account)
+        calldata = [contract.functions["upgrade"].prepare(*call_args)]
+        status, result_tx = await self.account.send_txn(calldata)
+        return status, result_tx
+        
 
 class Token():
     def __init__(self, symbol: str, contract_address: int, decimals, stable = False) -> None:
@@ -314,7 +384,8 @@ class Token():
         )
         return call
     
-    def get_price(self):
+    def get_price(self, proxy=None):
+        proxies = {'https': proxy, 'http': proxy} if proxy else None
         if self.stable:
             return 1
         elif self.symbol == "LORDS":
@@ -324,7 +395,7 @@ class Token():
                     if name == ticker.upper() + 'USDT':
                         return float(k.get("price"))
             while True:
-                response = req("https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=lords")
+                response = req("https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=lords", proxies=proxies)
                 if type(response) is dict:
                     return response["lords"]["usd"]
                 else:
@@ -337,7 +408,7 @@ class Token():
                     if name == ticker.upper() + 'USDT':
                         return float(k.get("price"))
             while True:
-                response = req("https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=wrapped-steth")
+                response = req("https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&ids=wrapped-steth", proxies=proxies)
                 if type(response) is dict:
                     return response["wrapped-steth"]["usd"]
                 else:
@@ -350,7 +421,7 @@ class Token():
                     if name == ticker.upper() + 'USDT':
                         return float(k.get("price"))
             while True:
-                response = req(f'https://api.etherscan.io/api?module=stats&action=ethprice&apikey={SETTINGS["etherscanKey"]}')
+                response = req(f'https://api.etherscan.io/api?module=stats&action=ethprice&apikey={SETTINGS["etherscanKey"]}', proxies=proxies)
                 if type(response) is dict:
                     return float(response['result']['ethusd'])
                 else:
@@ -363,15 +434,15 @@ class Token():
                     if name == ticker.upper() + 'USDT':
                         return float(k.get("price"))
             while True:
-                response = req("https://api.binance.com/api/v3/ticker/price")
+                response = req("https://api.binance.com/api/v3/ticker/price", proxies=proxies)
                 if type(response) is list:
                     return __find__(self.symbol, response)
                 else:
                     print(f'Cant get response from binance for {self.symbol}, tring again...')
                     time.sleep(5)
 
-    def get_usd_value(self, amount):
-        return self.get_price()*amount
+    def get_usd_value(self, amount, proxy=None):
+        return self.get_price(proxy)*amount
 
 class LPToken(Token):
     def __init__(self, symbol, contract_address: int, decimals) -> None:
@@ -413,13 +484,8 @@ class BaseDex(ABC):
     async def create_txn_for_remove_liq(self, lptoken: Token, sender: BaseStarkAccount):
         pass
 
-    def get_pair_for_token(self, token: str):
-        for i in range(20):
-            pair = random.choice(self.supported_tokens)
-            if token != pair:
-                return pair
-        logger.error("Can't find pair for token")
-        return -5
+    def get_pair(self, token: str):
+        return random.choice([pair for pair in self.supported_tokens if pair != token])
     
 class BaseLend(ABC):
     contract_address = None

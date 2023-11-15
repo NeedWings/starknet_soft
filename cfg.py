@@ -14,7 +14,6 @@ from starknet_py.net.models import AddressRepresentation, StarknetChainId, parse
 from starknet_py.net.account.account_deployment_result import AccountDeploymentResult
 from starknet_py.net.account.account import _add_max_fee_to_transaction
 from starknet_py.net.signer import BaseSigner
-#from curl_cffi import requests as mod_requests
 from starknet_py.utils.iterable import ensure_iterable
 from starknet_py.net.models.transaction import (
     AccountTransaction,
@@ -104,26 +103,29 @@ from typing import (
 from typing_extensions import Literal
 import requests
 from web3 import Web3
-import uuid
 import decimal
-#from os import getcwd
 import os
 import base64
-#from cryptography.fernet import Fernet
 import getpass
 import hashlib
 import sys
 import socket
-#import wmi
 from aiohttp import ClientSession
 import sys, os
-import datetime
-#import inquirer
-#from termcolor import colored
-#from inquirer.themes import load_theme_from_dict as loadth
+import traceback
 
 import requests.utils
 import requests.adapters
+
+from importlib import resources
+from . import data
+
+with (resources.files(data) / 'settings_main.json').open() as f:
+    SETTINGS_RAW = json_remove_comments(f.read())
+    SETTINGS = json.loads(SETTINGS_RAW)
+
+with (resources.files(data) / 'wordlist.txt').open() as f:
+    wordlist = f.read().lower().split("\n")
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -168,16 +170,6 @@ autosoft = """
 |/     \|(_______)   )_(   (_______)\_______)(_______)|/          )_(   
 
 """
-subs_text = """
-You have purchased an AutoSoft software license.
-Thank you for your trust.
-Link to the channel with announcements: t.me/swiper_tools
-Ask all questions in our chat.
-
-"""
-
-KEY = "CEy426oSSaOTWDPgtuKxm1nS2uWN_4-L_eyt0dmAr40="
-SETTINGS_PATH = 'data/'
 
 CONTRACT_ADDRESS_PREFIX = str_to_felt('STARKNET_CONTRACT_ADDRESS')
 UNIVERSAL_DEPLOYER_PREFIX = str_to_felt('UniversalDeployerContract')
@@ -198,16 +190,6 @@ STARKGATE_CONTRACT = "0xae0Ee0A63A2cE6BaeEFFE56e7714FB4EFE48D419"
 ORBITER_CONTRACTS_REC = "0xE4eDb277e41dc89aB076a1F049f4a3EfA700bCE8"
 ORBITER_CONTRACT = "0xD9D74a29307cc6Fc8BF424ee4217f1A587FBc8Dc"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-
-print(SETTINGS_PATH)
-try:
-    f = open(f"{SETTINGS_PATH}settings_main.json", "r")
-    a = json_remove_comments(f.read())
-    SETTINGS = json.loads(a)
-    f.close()
-except Exception as e:
-    input("Error with settings_main.json")
-    exit()
 
 retries_limit = SETTINGS["RetriesLimit"]
 
@@ -283,19 +265,14 @@ SUSHI_SWAP = {
 
 MASK_250 = 2**250 - 1
 
-
-proxy_dict_cfg = {
-
-}
-
 NATIVE_TOKENS_SYMBOLS = {
-     "zkevm": "ETH",
-     "arbitrum": "ETH",
-     "polygon": "MATIC",
-     "bsc": "BNB",
-     "optimism": "ETH",
-     "avalanche": "AVAX",
-     "ethereum": "ETH"
+    "zkevm": "ETH",
+    "arbitrum": "ETH",
+    "polygon": "MATIC",
+    "bsc": "BNB",
+    "optimism": "ETH",
+    "avalanche": "AVAX",
+    "ethereum": "ETH"
 }
 
 chain = StarknetChainId.MAINNET
@@ -303,12 +280,6 @@ chain = StarknetChainId.MAINNET
 slippage = SETTINGS["Slippage"]
 
 ACTUAL_IMPL = 0x5dec330eebf36c8672b60db4a718d44762d3ae6d1333e553197acb47ee5a062
-
-
-out_wallets_result = {
-    
-}
-addr_dict = {}
 
 indexes = []
 
@@ -322,8 +293,6 @@ def req_post(url: str, **kwargs):
             pass
     except Exception as error:
         logger.error(f"Requests error: {error}")
-
-
 
 async def handle_dangerous_request(func, message, address = "", *args):
     for i in range(retries_limit):
@@ -439,7 +408,6 @@ def import_argent_account(private_key: int, client, wallet_provider):
 
     return account, call_data, salt, class_hash
 
-
 def sleeping_sync(address, error = False):
     if error:
         rand_time = random.randint(SETTINGS["ErrorSleepeng"][0], SETTINGS["ErrorSleepeng"][1])
@@ -447,29 +415,15 @@ def sleeping_sync(address, error = False):
         rand_time = random.randint(SETTINGS["TaskSleep"][0], SETTINGS["TaskSleep"][1])
     logger.info(f'[{address}] sleeping {rand_time} s')
     time.sleep(rand_time)
-#with open(f"{SETTINGS_PATH}starkstats.csv", "w") as f:
-#    f.write("address;txn count;ETH balance;USDC balance;USDT balance;DAI balance;WBTC balance;WSTETH balance;LORDS balance\n")
-#starkstats = ""
 
 from loguru import logger as console_log
 
 global_log = {}
 indexes = []
-pairs_for_okx = {}
 SETTINGS["retries_limit"] = SETTINGS["RetriesLimit"]
-
-date_and_time = str(datetime.datetime.now()).replace(":", ".")
 
 def write_global_log():
     return
-    log = ""
-    for key in global_log:
-        buff = f"{key}:\n"
-        for data in global_log[key]:
-            buff += f"{data}\n" 
-        log += buff + "\n"
-    with open(f"{SETTINGS_PATH}logs/log_{date_and_time}.txt", "a") as f:
-        f.write(log)
 
 class logger():
     @staticmethod
@@ -525,11 +479,11 @@ class logger():
         except:
             pass
 
-gas_high = asyncio.Event()
+#gas_high = asyncio.Event()
 
 async def gas_checker():
     global gas_high
-   
+
     w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
     while True:
         try:
