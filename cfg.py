@@ -120,12 +120,6 @@ import requests.adapters
 from importlib import resources
 from . import data
 
-with (resources.files(data) / 'settings_main.json').open() as f:
-    SETTINGS_RAW = json_remove_comments(f.read())
-    SETTINGS = json.loads(SETTINGS_RAW)
-
-with (resources.files(data) / 'wordlist.txt').open() as f:
-    wordlist = f.read().lower().split("\n")
 
 def str_to_felt(text: str) -> int:
     b_text = bytes(text, 'UTF-8')
@@ -157,6 +151,12 @@ def json_remove_comments(invalid_json: str):
             return json_remove_comments(invalid_json)
     return invalid_json
 
+with (resources.files(data) / 'settings_main.json').open() as f:
+    SETTINGS_RAW = json_remove_comments(f.read())
+    SETTINGS = json.loads(SETTINGS_RAW)
+
+with (resources.files(data) / 'wordlist.txt').open() as f:
+    wordlist = f.read().lower().split("\n")
 
 autosoft = """
 
