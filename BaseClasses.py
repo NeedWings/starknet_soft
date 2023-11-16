@@ -215,8 +215,6 @@ class StarkAccount(BaseStarkAccount):
                 await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
     async def send_txn(self, calldata, RetriesLimit=None):
-        RetriesLimit = RetriesLimit if RetriesLimit else SETTINGS["RetriesLimit"]
-        await self.wait_for_better_eth_gwei()
         i = 0
         while RetriesLimit > i:
             resp = await self.get_invocation(calldata)
