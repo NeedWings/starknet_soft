@@ -84,11 +84,11 @@ class AccRouter():
         status, tx = await self.account.send_txn(calldata)
         return status, tx
 
-    async def okx(self, okx_starknet_address=None):
+    async def okx(self, WithdrawShare=None, okx_starknet_address=None):
         okx_starknet_address = okx_starknet_address if okx_starknet_address else self.wallet.okx_starknet_address
         if not okx_starknet_address:
             return -1, 'No okx address for this wallet'
-        status, txn = await sender_hand.create_txn(eth, okx_starknet_address, self.account)
+        status, txn = await sender_hand.create_txn(eth, okx_starknet_address, self.account, WithdrawShare)
         if status < 0:
             return status, txn
         status, tx_result = await self.account.send_txn(txn)
