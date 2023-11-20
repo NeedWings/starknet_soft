@@ -243,8 +243,7 @@ class AccRouter():
         token_in=None,
         token_out=None,
         WorkPercent=None,
-        SaveEthOnBalance=None,
-        min_swap_values={}
+        slippage=0.999
         ):
         if not dex:
             return -1, 'No dex specified'
@@ -265,7 +264,7 @@ class AccRouter():
 
             #logger.info(f"[{self.account.formatted_hex_address}] going to swap {token1_val} {token1.symbol} for {token2.symbol} in {dex.name}")
 
-            status, swap_txn = await dex.create_txn_for_swap(token_in_val, token_in, token_out_val, token_out, self.account)
+            status, swap_txn = await dex.create_txn_for_swap(token_in_val, token_in, token_out_val, token_out, self.account, slippage)
             if status < 0:
                 return -1, f'Failed to create tx for swap because of: {swap_txn}'
             
