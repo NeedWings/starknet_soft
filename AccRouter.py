@@ -100,45 +100,31 @@ class AccRouter():
         status, tx = await self.account.send_txn(await domain_hand.create_txn(eth, self.account))
         return status, tx
 
-    async def withdraw(
+    async def bridge_to_evm(
         self,
-        wallet = None,
-        EtherToWithdraw=None,
-        WithdrawSaving=None,
-        DistNet=None
+        WithdrawShare=None,
+        distNet="ethereum"
         ):
         account = self.account.stark_native_account
-        web3 = Web3(Web3.HTTPProvider(random.choice(RPC_FOR_LAYERSWAP["ARBITRUM_MAINNET"])))
-        private_key = "0x" + "0"*(66-len(hex(account.signer.private_key))) + hex(account.signer.private_key)[2::]
-        if wallet == None:
-            wallet = web3.eth.account.from_key(private_key).address
-
-
-        amount = get_random_value(EtherToWithdraw if EtherToWithdraw else SETTINGS["EtherToWithdraw"])
+        wallet = self.wallet.eth_address
 
         balance = await self.account.get_balance()/1e18
-
-        balance = balance - get_random_value(WithdrawSaving if WithdrawSaving else SETTINGS["WithdrawSaving"])
-
-        if amount > balance:
-            amount = balance
+        amount = balance * WithdrawShare
 
         if amount < 0.006:
-            logger.error(f"[{self.account.formatted_hex_address}] amount to bridge less than minimal amount")
-            return
-        distNet = (DistNet if DistNet else SETTINGS["DistNet"]).lower()
-        if distNet == "arbitrum":
-            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
-        elif distNet == "zksync":
-            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
-        elif distNet == "ethereum":
-            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 3)
-        elif distNet == "linea":
-            amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
-        else:
-            logger.error(f"[{self.account.formatted_hex_address}] wrong value in DistNet")
-            input()
-            exit()
+            return -1, 'amount to bridge less than minimal amount'
+
+        match distNet:
+            case "ethereum":
+                amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 3)
+            case "arbitrum":
+                amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) - 2)
+            case "zksync":
+                amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 10)
+            case "linea":
+                amount = int((get_orbiter_value(amount) * decimal.Decimal(1e18)) + 19)
+            case _:
+                return -1, 'Uknown distNet'
         contract = Contract(eth.contract_address, STARK_TOKEN_ABI, account)
         approve_call = contract.functions["approve"].prepare(
             ORBITER_STARK_CONTRACT, int(amount)
@@ -151,10 +137,10 @@ class AccRouter():
                 int(wallet, 16)
                 )
 
-        logger.info(f"[{self.account.formatted_hex_address}] going to bridge {amount/1e18} ETH to {wallet}")
         calldata = [approve_call, call]
 
-        await self.account.send_txn(calldata)
+        status, result = await self.account.send_txn(calldata)
+        return status, result
 
     async def stark_id(self):
         id_contract = Contract(0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af, [{"name":"mint","type":"function","inputs":[{"name":"starknet_id","type":"felt"}],"outputs":[]}], self.account.stark_native_account)
