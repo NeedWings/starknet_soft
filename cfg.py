@@ -31,6 +31,7 @@ from starknet_py.hash.transaction import (
     compute_deploy_account_transaction_hash,
     compute_transaction_hash,
 )
+from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client_models import (
     Call,
     Calls,
@@ -277,7 +278,7 @@ NATIVE_TOKENS_SYMBOLS = {
 
 chain = StarknetChainId.MAINNET
 
-slippage = SETTINGS["Slippage"]
+slippage = 0.05
 
 ACTUAL_IMPL = 0x5dec330eebf36c8672b60db4a718d44762d3ae6d1333e553197acb47ee5a062
 

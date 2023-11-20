@@ -89,13 +89,13 @@ class ZkLend(BaseLend):
 
         return val
     
-    async def create_txn_for_adding_token(self, token: Token, amount: float, sender: BaseStarkAccount):
+    async def create_txn_for_adding_token(self, token: Token, amount: int, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
         call1 = token.get_approve_call(amount, self.contract_address, sender)
         call2 = contract.functions["deposit"].prepare(
             token.contract_address,
-            int(amount*10**token.decimals)
+            amount
         )
 
         coll_enabled = (await handle_dangerous_request(contract.functions["is_collateral_enabled"].call, "can't check for collateral Error", sender.formatted_hex_address, sender.stark_native_account.address, token.contract_address)).enabled
@@ -104,8 +104,8 @@ class ZkLend(BaseLend):
             call3 = contract.functions["enable_collateral"].prepare(
                 token.contract_address
             )
-            return [call1, call3, call2]
-        return [call1, call2]
+            return 0, [call1, call3, call2]
+        return 0, [call1, call2]
 
     async def create_txn_for_removing_token(self, amount: int, token: Token, sender: BaseStarkAccount):
         prices = await self.get_prices(sender)
@@ -134,7 +134,7 @@ class ZkLend(BaseLend):
             token_val
         )
 
-        return [call1]
+        return 0, [call1]
         
     async def create_txn_for_borrow(self, amount: float, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -144,8 +144,7 @@ class ZkLend(BaseLend):
             int(amount*10**token.decimals)
         )
 
-        return [call]
-         
+        return 0, [call]
 
     async def create_txn_for_return(self, token: Token, sender: BaseStarkAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
@@ -163,5 +162,5 @@ class ZkLend(BaseLend):
             val_in_token_wei
         )
 
-        return [call1, call2]
+        return 0, [call1, call2]
         

@@ -207,9 +207,9 @@ class AccRouter():
                 balance = balance - get_random_value(SaveEthOnBalance if SaveEthOnBalance else SETTINGS["SaveEthOnBalance"])*1e18
                 logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
             else:
-                if balance/10**token.decimals < (min_swap_values if min_swap_values else SETTINGS["MINIMAL_SWAP_AMOUNTS"])[token.symbol]:
+                if balance/10**token.decimals < (min_swap_values if min_swap_values else SETTINGS["min_swap_values"])[token.symbol]:
                     balance = 0
-                    logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance below MINIMAL_SWAP_AMOUNTS, will count as 0")
+                    logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance below min_swap_values, will count as 0")
                 else:
                     logger.info(f"[{self.account.formatted_hex_address}] {token.symbol} balance: {balance/10**token.decimals}")
             usd_value = token.get_usd_value(balance/10**token.decimals)
@@ -218,10 +218,34 @@ class AccRouter():
                 max_value = usd_value
         return max_valued, max_value
 
+    async def get_max_valued_token_unsafe(
+        self,
+        token_list
+        ):
+        max_valued = None
+        max_value = 0
+        for token in token_list:
+            balance = await self.account.get_balance(token.contract_address, token.symbol)
+            usd_value = token.get_usd_value(balance/10**token.decimals)
+            if usd_value>max_value:
+                max_valued = token
+                max_value = usd_value
+        return max_valued, max_value
+
+    async def get_tokens(
+        self,
+        token_list
+        ):
+        for token in token_list:
+            balance = await self.account.get_balance(token.contract_address, token.symbol)
+            usd_value = token.get_usd_value(balance/10**token.decimals)
+        return max_valued, max_value
+
     async def swaps_handler(
         self,
         dex=None,
-        swapAmounts=None,
+        token_in=None,
+        token_out=None,
         WorkPercent=None,
         SaveEthOnBalance=None,
         min_swap_values={}
@@ -230,16 +254,19 @@ class AccRouter():
             return -1, 'No dex specified'
         dex = swap_dexes[dex]
         try:
-            token_in, usd_value =  await self.get_max_valued_token(self.tokens_to_list(dex.supported_tokens), SaveEthOnBalance, min_swap_values)
-            if token_in == None:
-                logger.error(f"[{self.account.formatted_hex_address}] all balances is 0")
-                return -1, 'Not enough balance'
-            token_out = tokens[dex.get_pair(token_in.symbol)]
+            if not token_in:
+                token_in, usd_value =  await self.get_max_valued_token(self.tokens_to_list(dex.supported_tokens), SaveEthOnBalance, min_swap_values)
+                if token_in == None:
+                    logger.error(f"[{self.account.formatted_hex_address}] all balances is 0")
+                    return -1, 'Not enough balance'
+            else:
+                token_in = tokens[token_in]
+            balance = await self.account.get_balance(token_in.contract_address, token_in.symbol)
+            token_out = tokens[token_out] if token_out else tokens[dex.get_pair(token_in.symbol)]
             
-            amount_to_swap = usd_value * get_random_value(WorkPercent if WorkPercent else SETTINGS["WorkPercent"])
-            
-            token_in_val = amount_to_swap/token_in.get_price(self.proxy)
-            token_out_val = amount_to_swap/token_out.get_price(self.proxy)
+            token_in_val = int(balance * get_random_value(WorkPercent if WorkPercent else SETTINGS["WorkPercent"]))
+            token_out_val = int((token_in_val * token_in.get_price(self.proxy)) / token_out.get_price(self.proxy))
+
             #logger.info(f"[{self.account.formatted_hex_address}] going to swap {token1_val} {token1.symbol} for {token2.symbol} in {dex.name}")
 
             status, swap_txn = await dex.create_txn_for_swap(token_in_val, token_in, token_out_val, token_out, self.account)
@@ -296,25 +323,23 @@ class AccRouter():
     async def lend_add(
         self,
         lend=None,
-        LendWorkPercent=None,
-        BorrowAddAmount=None,
-        BorrowWorkPercent=None,
-        SaveEthOnBalance=None,
-        min_swap_values={}
+        token_in=None,
+        LendWorkPercent=None
         ):
         if not lend:
             return -1, 'No lend specified'
+        if not token_in:
+            return -1, 'No token_to_swap specified'
         lend = lends[lend]
+        token_in = tokens[token_in]
         try:
-            token, usd_value = await self.get_max_valued_token(self.tokens_to_list(lend.supported_tokens), SaveEthOnBalance, min_swap_values)
-            if token == None:
-                return -1, 'all balances are 0'
-            amount_to_add = usd_value * get_random_value(LendWorkPercent if LendWorkPercent else SETTINGS["LendWorkPercent"])
-            amount_to_add_in_token = amount_to_add/token.get_price(self.proxy)
+            balance = await self.account.get_balance(token_in.contract_address, token_in.symbol)
             
-            logger.info(f"[{self.account.formatted_hex_address}] going to add {amount_to_add_in_token} {token.symbol} in {lend.name}")
+            amount_to_add = int(balance * get_random_value(LendWorkPercent if LendWorkPercent else SETTINGS["LendWorkPercent"]))
+            
+            logger.info(f"[{self.account.formatted_hex_address}] going to add {amount_to_add/10**token_in.decimals} {token_in.symbol} in {lend.name}")
 
-            status, lend_txn = await lend.create_txn_for_adding_token(token, amount_to_add_in_token, self.account)
+            status, lend_txn = await lend.create_txn_for_adding_token(token_in, amount_to_add, self.account)
             if status < 0:
                 return -1, lend_txn
             status, lend_result = await self.account.send_txn(lend_txn)
@@ -342,14 +367,13 @@ class AccRouter():
                 logger.info(f"[{self.account.formatted_hex_address}] Supplied {token.symbol} is 0. Skip")
                 continue
             logger.info(f"[{self.account.formatted_hex_address}] going to return {token.symbol} from {lend.name}")
-            txn = await lend.create_txn_for_removing_token(balance, token, self.account)
-            if txn[0] == -1:
+            status, txn = await lend.create_txn_for_removing_token(balance, token, self.account)
+            if status < 0:
                 logger.info(f"[{self.account.formatted_hex_address}] not enough repayed for removing. Skip")
                 continue
                 #return -1, 'Not enough repayed for removing. Skip'
-            await self.account.send_txn(txn)
-
-            await sleeping(self.account.formatted_hex_address)
+            status, lend_result= await self.account.send_txn(txn)
+            return status, lend_result
 
     async def lend_borrow(
         self,
@@ -358,7 +382,7 @@ class AccRouter():
         BorrowAddAmount=None,
         BorrowWorkPercent=None,
         SaveEthOnBalance=None,
-        MINIMAL_SWAP_AMOUNTS=None
+        min_swap_values=None
         ):
         if not lend:
             return -1, 'No lend specified'
@@ -379,10 +403,12 @@ class AccRouter():
             amount = to_borrow_usd/token.get_price()
             logger.info(f"[{self.account.formatted_hex_address}] going to borrow {amount} {token.symbol} in {lend.name}")
 
-            txn = await lend.create_txn_for_borrow(amount, token, self.account)
-            lend_result = await self.account.send_txn(txn)
-            if lend_result[0] != 1:
-                return lend_result
+            status, txn = await lend.create_txn_for_borrow(amount, token, self.account)
+            if status < 0:
+                return -1, txn
+            status, lend_result = await self.account.send_txn(txn)
+            if status < 0:
+                return status, lend_result
         except Exception:
             return -1, traceback.format_exc().replace('\n', '\t')
 
@@ -405,12 +431,11 @@ class AccRouter():
     async def swap(
         self,
         dex=None,
-        token_out="ETH",
         token_in=None,
+        token_out="ETH",
         SaveEthOnBalance=None,
         StableShareToSwap=None,
-        MINIMAL_SWAP_AMOUNTS=None,
-        retries_limit=None
+        min_swap_values={},
         ):
         if not dex:
             return -1, 'No dex specified'
@@ -420,7 +445,7 @@ class AccRouter():
             return -1, 'Token_to_swap and token_out are the same'
 
         dex = swap_dexes[dex]
-        if token_in not in dex.tokens:
+        if token_in not in dex.supported_tokens:
             return -1, f'{dex.name} does not support {token_in.symbol}'
 
         token_out = tokens[token_out]
@@ -432,11 +457,11 @@ class AccRouter():
                 balance = balance_total - int(get_random_value(SaveEthOnBalance if SaveEthOnBalance else SETTINGS["SaveEthOnBalance"])*1e18)
             else:
                 balance = int(balance_total * get_random_value(StableShareToSwap if StableShareToSwap else SETTINGS['StableShareToSwap']))
-                if balance/10**token_in.decimals < (MINIMAL_SWAP_AMOUNTS if MINIMAL_SWAP_AMOUNTS else SETTINGS["MINIMAL_SWAP_AMOUNTS"])[token_in.symbol]:
+                if balance/10**token_in.decimals < (min_swap_values if min_swap_values else SETTINGS["min_swap_values"])[token_in.symbol]:
                     balance = 0
 
             if balance <=0:
-                return -1, f'Total balance is {balance_total} which is less than MINIMAL_SWAP_AMOUNTS. skip'
+                return -1, f'Total balance is {balance_total} which is less than min_swap_values. skip'
 
             usd_val = token_in.get_usd_value(balance/10**token_in.decimals)
             amount_out = usd_val/token_out.get_price()

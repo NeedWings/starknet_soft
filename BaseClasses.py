@@ -173,12 +173,28 @@ class StarkAccount(BaseStarkAccount):
         self.formatted_hex_address = "0x" + "0"*(64 - len(hex(self.stark_native_account.address)[2::])) + hex(self.stark_native_account.address)[2::]
         self.address = self.stark_native_account.address
         self.provider = provider
+        self.proxy = proxy
 
     def get_address(self):
         return self.formatted_hex_address
     
     async def get_balance(self, token: int = None, symbol: str = "ETH"):
         return await handle_dangerous_request(self.stark_native_account.get_balance, f"can't get balance of {symbol}. Error", self.formatted_hex_address, token)
+
+    async def wait_for_gwei(self, max_gwei=0):
+        limit = Web3.to_wei(max_gwei, "gwei")
+        client = GatewayClient(MAINNET, proxy=self.proxy)
+        while True:
+            try:
+                price = (await client.get_block()).gas_price
+                if price > limit:
+                    time.sleep(10)
+                    continue
+                return True
+            except Exception as e:
+                print(e)
+                time.sleep(10)
+                continue
 
     async def wait_for_better_eth_gwei(self, silent = False):
         w3 = Web3(Web3.HTTPProvider(random.choice(RPC_OTHER["ETHEREUM_MAINNET"])))
@@ -214,7 +230,7 @@ class StarkAccount(BaseStarkAccount):
             else:
                 await asyncio.sleep(get_random_value(SETTINGS["WaitGWEISleep"]))
 
-    async def send_txn(self, calldata, RetriesLimit=None):
+    async def send_txn(self, calldata, RetriesLimit=3):
         i = 0
         while RetriesLimit > i:
             resp = await self.get_invocation(calldata)
@@ -233,54 +249,31 @@ class StarkAccount(BaseStarkAccount):
         logger.error(f"[{self.formatted_hex_address}] max retries limit reached")
         return -1, "max retries limit reached"
 
-    async def get_invocation(self, calls, RetriesLimit=None):
-        RetriesLimit = RetriesLimit if RetriesLimit else SETTINGS["RetriesLimit"]
+    async def get_invocation(self, calls, RetriesLimit=3):
         i = 0
         while i <= RetriesLimit:
             i+=1
             try:
-                if SETTINGS["cairo_version"] == 1:
-                    nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
-                    calldata = _parse_calls_v2(ensure_iterable(calls))
-                    wrapped_calldata = _execute_payload_serializer_v2.serialize(
-                        {"calls": calldata}
-                    )
+                nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
+                calldata = _parse_calls_v2(ensure_iterable(calls))
+                wrapped_calldata = _execute_payload_serializer_v2.serialize(
+                    {"calls": calldata}
+                )
 
-                    transaction = Invoke(
-                        calldata=wrapped_calldata,
-                        signature=[],
-                        max_fee=0,
-                        version=1,
-                        nonce=nonce,
-                        sender_address=self.stark_native_account.address,
-                    )
-                    max_fee = await self.stark_native_account._get_max_fee(transaction, auto_estimate=True)/1e18
-                    if max_fee > SETTINGS["MaxFee"]:
-                        logger.error(f"[{self.formatted_hex_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
-                        await sleeping(self.formatted_hex_address, True)
-                        continue
-                    invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True, cairo_version=1)
-                else:
-                    nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.formatted_hex_address)
-                    call_descriptions, calldata = _merge_calls(ensure_iterable(calls))
-                    wrapped_calldata = _execute_payload_serializer.serialize(
-                        {"call_array": call_descriptions, "calldata": calldata}
-                    )
-
-                    transaction = Invoke(
-                        calldata=wrapped_calldata,
-                        signature=[],
-                        max_fee=0,
-                        version=1,
-                        nonce=nonce,
-                        sender_address=self.stark_native_account.address,
-                    )
-                    max_fee = await self.stark_native_account._get_max_fee(transaction, auto_estimate=True)/1e18
-                    if max_fee > SETTINGS["MaxFee"]:
-                        logger.error(f"[{self.formatted_hex_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
-                        await sleeping(self.formatted_hex_address, True)
-                        continue
-                    invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True, cairo_version=0)
+                transaction = Invoke(
+                    calldata=wrapped_calldata,
+                    signature=[],
+                    max_fee=0,
+                    version=1,
+                    nonce=nonce,
+                    sender_address=self.stark_native_account.address,
+                )
+                max_fee = await self.stark_native_account._get_max_fee(transaction, auto_estimate=True)/1e18
+                if max_fee > SETTINGS["MaxFee"]:
+                    logger.error(f"[{self.formatted_hex_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
+                    await sleeping(self.formatted_hex_address, True)
+                    continue
+                invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True)
                 return invocation
             except Exception as e:
                 logger.error(f"[{self.formatted_hex_address}] can't create transaction. Error:{e}")
