@@ -159,6 +159,9 @@ with (resources.files(data) / 'settings_main.json').open() as f:
 with (resources.files(data) / 'wordlist.txt').open() as f:
     wordlist = f.read().lower().split("\n")
 
+with (resources.files(data) / 'abi/starkgate.json').open() as f:
+    starkgate_abi = json.load(f)
+
 autosoft = """
 
  _______          _________ _______  _______  _______  _______ _________

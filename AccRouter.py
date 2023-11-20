@@ -100,7 +100,7 @@ class AccRouter():
         status, tx = await self.account.send_txn(await domain_hand.create_txn(eth, self.account))
         return status, tx
 
-    async def bridge_to_evm(
+    async def bridge_via_orb_to_evm(
         self,
         WithdrawShare=None,
         distNet="ethereum"
@@ -139,6 +139,16 @@ class AccRouter():
 
         calldata = [approve_call, call]
 
+        status, result = await self.account.send_txn(calldata)
+        return status, result
+
+    async def bridge_to_evm(self, WithdrawShare=None):
+        wallet = self.wallet.eth_address
+
+        balance = await self.account.get_balance()
+        amount = int(balance * WithdrawShare)
+        contract = Contract(provider=self.account.stark_native_account, address=0x073314940630fd6dcda0d772d4c972c4e0a9946bef9dabf4ef84eda8ef542b82, abi=starkgate_abi)
+        calldata = [contract.functions["initiate_withdraw"].prepare(int(wallet, 16), amount)]
         status, result = await self.account.send_txn(calldata)
         return status, result
 
