@@ -368,8 +368,8 @@ class AccRouter():
                 continue
                 #return -1, 'Not enough repayed for removing. Skip'
             status, lend_result= await self.account.send_txn(txn)
-            return status, lend_result
-        return 0, 'Nothing in lendings'
+            return status, token.symbol #lend_result
+        return 1, 'Nothing in lendings'
 
     async def lend_borrow(
         self,
