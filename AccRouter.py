@@ -226,7 +226,7 @@ class AccRouter():
             if usd_value>max_value:
                 max_valued = token
                 max_value = usd_value
-        return max_valued, max_value
+        return max_valued.symbol, max_value
 
     async def get_tokens(
         self,
@@ -369,6 +369,7 @@ class AccRouter():
                 #return -1, 'Not enough repayed for removing. Skip'
             status, lend_result= await self.account.send_txn(txn)
             return status, lend_result
+        return 0, 'Nothing in lendings'
 
     async def lend_borrow(
         self,
