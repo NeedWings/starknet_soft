@@ -57,7 +57,7 @@ class MySwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
+    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.001):
         try:
             a = self.POOLS[f"{token1.symbol}:{token2.symbol}"]
         except:

@@ -85,7 +85,7 @@ class SithSwap(BaseDex):
         else:
             return False
 
-    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
+    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.001):
         if token1.stable and token2.stable:
             stable = 1
         else:

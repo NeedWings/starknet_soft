@@ -54,7 +54,7 @@ class Fibrous(BaseDex):
         self.supported_tokens = new_supported_tokens
 
     
-    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, full: bool = False):
+    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.001):
         pair = self.normalize_tokens(token1.symbol, token2.symbol)
         pool = self.pool_from_token[pair]
 

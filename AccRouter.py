@@ -243,7 +243,7 @@ class AccRouter():
         token_in=None,
         token_out=None,
         WorkPercent=None,
-        slippage=0.999
+        slippage=0.001
         ):
         if not dex:
             return -1, 'No dex specified'

@@ -43,10 +43,10 @@ class Avnu(BaseDex):
         self.supported_tokens = new_supported_tokens
 
     
-    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.999):
+    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.001):
         call1 = token1.get_approve_call_wei(amount_in, self.contract_address, sender)
         relation, call2 = self.get_avnu_call(token1, token2, amount_in, sender)
-        if relation < slippage:
+        if relation < (1-slippage):
             return -1, 'Slippage too high (avnu)'
         return 0, [call1, call2]
 

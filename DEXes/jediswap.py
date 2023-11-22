@@ -65,7 +65,7 @@ class JediSwap(BaseDex):
 
 
 
-    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, full: bool = False, SaveEthOnBalance=None):
+    async def create_txn_for_swap(self, amount_in: int, token1: Token, amount_out: int, token2: Token, sender: BaseStarkAccount, slippage=0.001):
         call1 = token1.get_approve_call_wei(amount_in, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
         call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
