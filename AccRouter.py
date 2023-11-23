@@ -226,7 +226,7 @@ class AccRouter():
             if usd_value>max_value:
                 max_valued = token
                 max_value = usd_value
-        return max_valued.symbol, max_value
+        return max_valued, max_value
 
     async def get_tokens(
         self,
