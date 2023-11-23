@@ -250,7 +250,7 @@ class AccRouter():
         dex = swap_dexes[dex]
         try:
             if not token_in:
-                token_in, usd_value =  await self.get_max_valued_token(self.tokens_to_list(dex.supported_tokens), SaveEthOnBalance, min_swap_values)
+                token_in, usd_value =  await self.get_max_valued_token_unsafe(self.tokens_to_list(dex.supported_tokens))
                 if token_in == None:
                     logger.error(f"[{self.account.formatted_hex_address}] all balances is 0")
                     return -1, 'Not enough balance'
