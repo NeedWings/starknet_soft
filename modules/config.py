@@ -1,6 +1,6 @@
 from os import getcwd
 import json
-import os
+import eth_typing
 SETTINGS_PATH = (getcwd() + "/data/").replace("\\", "/")
 
 KEY = "CEy426oSSaOTWDPgtuKxm1nS2uWN_4-L_eyt0dmAr40="
