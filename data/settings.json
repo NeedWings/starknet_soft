@@ -1,14 +1,16 @@
 {
     
     "===============  RPC  ===============": "",
+        "UseOurRPCStark" : false,
         "RPC": {
-            "ETHEREUM_MAINNET"  : ["https://rpc.ankr.com/eth"],
-            "BSC_MAINNET"       : ["https://bsc-dataseed4.binance.org"],
-            "POLYGON_MAINNET"   : ["https://rpc.ankr.com/polygon"],
-            "ARBITRUM_MAINNET"  : ["https://rpc.ankr.com/arbitrum"],
-            "AVALANCHE_MAINNET" : ["https://rpc.ankr.com/avalanche"],
-            "OPTIMISM_MAINNET"  : ["https://rpc.ankr.com/optimism"],
-            "STARKNET_MAINNET"  : ["https://starknet-mainnet.infura.io/v3/3377b004b8064021b97034e899a769bf"]
+            "ethereum"  : ["https://rpc.ankr.com/eth"],
+            "bsc"       : ["https://bsc-dataseed4.binance.org"],
+            "polygon"   : ["https://rpc.ankr.com/polygon"],
+            "arbitrum"  : ["https://rpc.ankr.com/arbitrum"],
+            "avalanche" : ["https://rpc.ankr.com/avalanche"],
+            "optimism"  : ["https://rpc.ankr.com/optimism"],
+            "zksync"    : ["https://mainnet.era.zksync.io"],
+            "starknet"  : ["https://starknet-mainnet.public.blastapi.io"]
         },
      
     "===== Download Settings =====":"",
@@ -16,63 +18,71 @@
         "DecryptType" : "Password", 
     
     "===== SOFT MODE ===== ": "",
-        "own_tasks": [34, 35, [4, 5, 3], 23],
+        
+        "one thread mode": false,
 
-        "UseOurRPCStark" : true,
         "TaskSleep": [1, 2], // delay between tasks
         "ErrorSleepeng" : [1, 2], // delay if an error occurs
         "ThreadRunnerSleep" : [1, 2], // delay between two accounts starts work
-        "Slippage": 0.05, // slippage 0.02 = 2%
+        "ApproveSleep": [1, 2],
+
+        "Slippage": 0.04, // slippage 0.02 = 2%
+        "Max price impact": 0.05, //  price impact =  pool price * Slippage / binance price
+
+
         "RetriesLimit": 10, // how many times soft will try to resend transaction in starknet
         "UseProxies": false, // Use or not proxies
-        "Provider" : "Argent", // Which wallet provider to use (Argent/Braavos/argent_newest/braavos_newest)
-        "SwapAtTheEnd" : [false], // Swap or no to chosen token in toSaveFunds at the end
-        "toSaveFunds" : ["USDC"], // To which token soft will swap after full module
-        "SaveEthOnBalance" : [0.004, 0.004], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
+        "Provider" : "argent", // Which wallet provider to use (Argent/Braavos)
+        "toSaveFunds" : ["ETH"], // To which token soft will swap after full module
+        "SaveEthOnBalance" : [0.009, 0.009], // How many eth soft will save if SwapAtTheEnd true and toSaveFunds not ETH
         "delayed_start" : false,
         "delayed_start_time": 3,
     
 
-        "dmail_messages_amount": [0, 1],
-        "starknet_id_amount": [0, 0],
+        "dmail_messages_amount": [1, 1],
+        "starknet_id_amount": [1, 1],
         "starkstars_nft_amount": [1, 2],
+        "do not mint minted": true,
 
         "zklend_collateral_amount": [1, 1],
-        "bids_amount"             : [0, 1],
-
+        "bids_amount"             : [1, 1],
     
-    "===== ADVANCED PROVIDER =====": "",
-        "useAdvanced"                 : false,
-        "class_hash"                  : "0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e",
-        "implementation"              : "0x69577e6756a99b584b5d1ce8e60650ae33b6e2b13541783458268f07da6b38a",
-        "selector"                    : "0x2dd76e7ad84dbed81c314ffe5e7a7cacfb8f4836f01af4e913f275f89a3de1a",
         "new_implementation_for_upgrade": "0x1a736d6ed154502257f02b1ccdf4d9d1089f80811cd6acad48e6b6a9d1f2003",
-        "cairo_version"               : 1,
+
+    "========== Own Tasks ==========": "",
+
+        "own tasks": [[71]],
+        "own tasks mode" : "standart",
+
+    "=============== OKX ===============": "",
+        "to withdraw from okx" : [0.03, 0.04],
+        "api_key": "",
+        "secret": "",
+        "password": "",
+        "nets for okx": ["optimism", "arbitrum"],
+        "send to okx from": "starknet",
+        "wait for okx deposit" : 25,
+
 
     "======== BRIDGE =========": "",
-        "BridgeType"                  : ["orbiter"], // bridge to deposit in starknet
         "MinEthValue"                 : 0.01, // minimal value of eth to be on wallet
         "SaveOnWallet"                : [0.004, 0.007], // how many eth save on wallet
         "USDAmountToBridge"           : [20, 20], // amount in usd to bridge
-        "nets_for_deposit"            : ["arbitrum", "ethereum", "optimism"],
+        "nets_for_deposit"            : ["arbitrum", "ethereum", "optimism", "zksync"],
+        "check weth nets"             : ["polygon", "bsc"],
+        "check stables nets"          : ["polygon", "bsc", "arbitrum"],
 
     
     "======== WITHDRAW  =========": "",
-        "WithdrawSaving"              : [0.0001, 0.0002], // how many eth save on starknet wallet
+        "WithdrawSaving"              : [0.0035, 0.0035], // how many eth save on starknet wallet
         "EtherToWithdraw"             : [0.05, 0.8], // how many eth to withdraw
-        "DistNet"                     : "arbitrum", 
-
-
-    "====== PARSER ======": "",
-        "ParsingSleep" : 71, // delay between parsing ballance for bridge to starknet
-        "minUSDamount" : 30, // minimal usd value for module 9
-        
+        "DistNet"                     : ["arbitrum"], 
 
     "====== SWAPS =====": "",
         "swapAmounts"               : [20, 20], // amount of swaps
-        "SwapDEXs"                  : ["JediSwap"], // DEX where will be swaps
+        "SwapDEXs"                  : ["MySwap", "JediSwap", "10kSwap", "SithSwap", "Avnu"], // DEX where will be swaps
         "WorkPercent"               : [0.97, 0.98], // percent of balance to swap (0.5 = 50%)
-        "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC", "WSTETH", "LORDS"], // tokens for swap
+        "Supported_tokens"          : ["ETH", "USDC", "USDT", "DAI", "WBTC"], // tokens for swap
         "MINIMAL_SWAP_AMOUNTS": { 
             "USDC": 0, // minimal amount to swap for every token
             "USDT": 0,
@@ -86,42 +96,32 @@
 
     "===== LIQUIDITY =====": "",
         "LiqWorkPercent"          : [0.1, 0.5], // percent of balance to add liquidity (0.5 = 50%)
-        "LiqDEXs"                 : ["JediSwap"], // DEX where will be added liquidity
+        "LiqDEXs"                 : ["MySwap", "JediSwap", "10kSwap", "SithSwap"], // DEX where will be added liquidity
         "RemoveOnFullMode"        : [true, true], // remove liquidity from DEXes on the end of FULL module
         "AddLiqAmount"            : [2, 2], // how many times add liquidity
 
     "======= LENDS =======": "",
         "LendWorkPercent"    : [0.1, 0.5], // How many eth add to lend
         "Lends"             : ["ZkLend"], //which lending to use
-        "AddLendAmount"     : [0, 0],
-        "BorrowAddAmount"   : [0, 0],
+        "AddLendAmount"     : [1, 2],
+        "BorrowAddAmount"   : [1, 2],
         "BorrowWorkPercent" : [0.5, 0.6],
 
     
     "======= MAX GWEI =======": "",
         "GWEI": {
-            "ARBITRUM_MAINNET"  : 0.25,
-            "AVALANCHE_MAINNET" : 50,
-            "POLYGON_MAINNET"   : 700,
-            "ETHEREUM_MAINNET"  : 27,
-            "BSC_MAINNET"       : 10,
-            "OPTIMISM_MAINNET"  : 0.3
-        },
-
-    "======= Max L0 Fees Settings =======": "",
-        "FEES": {
-            "BSC_MAINNET"       : 0.005,
-            "POLYGON_MAINNET"   : 1.3,
-            "ARBITRUM_MAINNET"  : 0.00095,
-            "AVALANCHE_MAINNET" : 0.11,
-            "OPTIMISM_MAINNET"  : 0.00095,
-            "ETHEREUM_MAINNET"  : 0.00095
+            "arbitrum"  : 0.25,
+            "avalanche" : 50,
+            "polygon"   : 700,
+            "ethereum"  : 27,
+            "bsc"       : 10,
+            "optimism"  : 0.3,
+            "zksync"    : 1
         },
 
     "======= Max Starknet Fee Settings =======": "",
-        "MaxFee" : 0.00105, // Max gas soft can spend on starknet transaction
-        "MaxETHGwei": 20, // Max gwei value in Etherium net
-        "UseStarknetGwei": true,
+        "MaxFee" : 0.100105, // Max gas soft can spend on starknet transaction
+        "MaxEthGwei": 202, // Max gwei value in Etherium net
         "WaitGWEISleep" : [100, 200],
 
 
