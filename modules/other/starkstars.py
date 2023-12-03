@@ -47,4 +47,19 @@ class StarkStars:
 
         return [call1, call2]
     
+    async def asd(self, sender):
+        print(1)
+        calls = []
+        print(2)
+        for address in self.contracts:
+            print(3)
+            contract = Contract(address, self.ABI, sender.stark_native_account, cairo_version=1)
+            print(4)
+            call2 = contract.functions["withdraw"].prepare()
+            print(5)
+            calls.append(call2)
+        
+        return calls
+            
+    
 starkstars = StarkStars()

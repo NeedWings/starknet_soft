@@ -194,14 +194,20 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                     "http"  : proxy,
                     "https" : proxy
                 },
-                "timeout": 10
+                "timeout": 10,
+                "ssl": False,
             }
             self.proxies = req_proxy["proxies"]
             for chain in RPC_LIST:
                 self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain]), request_kwargs=req_proxy))
         else:
+            req_proxy = {
+                
+                "timeout": 10,
+                "ssl": False,
+            }
             for chain in RPC_LIST:
-                self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain])))
+                self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain]), request_kwargs=req_proxy))
 
     def get_w3(self, net_name):
         return self.w3[net_name]
