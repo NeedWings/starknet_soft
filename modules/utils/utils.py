@@ -11,7 +11,7 @@ from modules.config import SETTINGS, SETTINGS_PATH, RPC_LIST, json_remove_commen
 async def req(url: str, **kwargs):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, **kwargs) as resp:
+            async with session.get(url, ssl=False, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 else:
@@ -22,7 +22,7 @@ async def req(url: str, **kwargs):
 async def req_post(url: str, **kwargs):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, **kwargs) as resp:
+            async with session.post(url, ssl= False, **kwargs) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 else:
