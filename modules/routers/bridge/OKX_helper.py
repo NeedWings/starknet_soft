@@ -178,7 +178,6 @@ class OKXHelper:
             if rec is None:
                 logger.error(f"[{self.address}] can't find pair. Skip")
                 return
-            res = AsyncWeb3.to_checksum_address(rec)
             
             eth = nets_eth[net]
             balance = (await self.account.get_balance_starknet(eth))[1]
@@ -197,7 +196,7 @@ class OKXHelper:
             if rec is None:
                 logger.error(f"[{self.address}] can't find pair. Skip")
                 return
-            res = AsyncWeb3.to_checksum_address(rec)
+            reс = AsyncWeb3.to_checksum_address(reс)
             
             eth = nets_eth[net]
             balance = (await self.account.get_balance_evm(eth))[1]

@@ -75,8 +75,8 @@ class OtherHandler:
 
             for _ in range(get_random_value_int(SETTINGS["starkstars_nft_amount"])):
                 logger.info(f"[{self.account.stark_address}] going to mint starkstars nft")
-                calldata = await starkstars.asd(self.account)
-                #calldata = await starkstars.create_tnx_for_mint(self.account, eth)
+                #calldata = await starkstars.asd(self.account)
+                calldata = await starkstars.create_tnx_for_mint(self.account, eth)
                 await self.account.send_txn_starknet(calldata)
                 await sleeping(self.account.stark_address)
 

@@ -123,7 +123,7 @@ if PLATFORM == "Windows":
         json_wallets = {}
         for k in data:
             try:
-                address = Account(k.replace("\n", "")).get_address()
+                address = Account(k.replace("\n", "")).evm_address
                 json_wallets.update({
                 address.lower(): k.replace("\n", "")
                 })
@@ -319,7 +319,7 @@ else:
         json_wallets = {}
         for k in data:
             try:
-                address = Account(k.replace("\n", "")).get_address()
+                address = Account(k.replace("\n", "")).evm_address
                 json_wallets.update({
                 address.lower(): k.replace("\n", "")
                 })
