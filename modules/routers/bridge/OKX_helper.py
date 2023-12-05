@@ -174,11 +174,11 @@ class OKXHelper:
     async def deposit_handl(self):
         net = SETTINGS["send to okx from"]
         if net == "starknet":
+            self.address = self.account.stark_address
             rec = get_pair_for_address_from_file("okx_wallet_pairs.txt", self.address)
             if rec is None:
                 logger.error(f"[{self.address}] can't find pair. Skip")
                 return
-            
             balance = (await self.account.get_balance_starknet(eth))[1]
             
             res = False
@@ -191,6 +191,7 @@ class OKXHelper:
                 if res:
                     break
         else:
+            self.address = self.account.evm_address
             rec = get_pair_for_address_from_file("okx_wallet_pairs.txt", self.address)
             if rec is None:
                 logger.error(f"[{self.address}] can't find pair. Skip")
