@@ -41,6 +41,7 @@ nets_eth = {
     "optimism": eth_optimism,
     "zksync": eth_zksync,
     "ethereum": eth_ethereum,
+    
 }
 
 tokens = [eth, usdc, usdt, dai, wbtc, wsteth, lords]

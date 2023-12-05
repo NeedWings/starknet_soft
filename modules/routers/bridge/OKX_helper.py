@@ -179,7 +179,6 @@ class OKXHelper:
                 logger.error(f"[{self.address}] can't find pair. Skip")
                 return
             
-            eth = nets_eth[net]
             balance = (await self.account.get_balance_starknet(eth))[1]
             
             res = False
