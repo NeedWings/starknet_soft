@@ -13,7 +13,8 @@ from modules.utils.logger import logger
 from modules.utils.txn_data_handler import TxnDataHandler
 from modules.utils.utils import sleeping, get_random_value, get_pair_for_address_from_file
 from modules.utils.token import STARK_TOKEN_ABI
-from modules.utils.token_storage import nets_eth, eth
+from modules.utils.token_storage import nets_eth
+from modules.utils.token_storage import eth as stark_eth
 from modules.config import SETTINGS
 
 
@@ -103,7 +104,7 @@ class OKXHelper:
         net = choice(SETTINGS["nets for okx"])
         if net == "starket":
             self.address = self.account.stark_address
-            start_balance = (await self.account.get_balance_starknet(eth))[1]
+            start_balance = (await self.account.get_balance_starknet(stark_eth))[1]
             new_balance = start_balance
             res = False
             while not res:
@@ -118,7 +119,7 @@ class OKXHelper:
             while new_balance == start_balance:
                 logger.info(f"[{self.address}] waiting for balance. current: {new_balance} ETH")
                 await sleeping(self.address)
-                new_balance = (await self.account.get_balance_starknet(eth))[1]
+                new_balance = (await self.account.get_balance_starknet(stark_eth))[1]
         else:
             self.address = self.account.evm_address
             start_balance = (await self.account.get_balance_evm(nets_eth[net]))[1]
@@ -158,7 +159,7 @@ class OKXHelper:
     async def deposit_stark(self, to: str, amount: float):
         try:
            
-            contract = Contract(eth.contract_address, STARK_TOKEN_ABI, self.account.stark_native_account)
+            contract = Contract(stark_eth.contract_address, STARK_TOKEN_ABI, self.account.stark_native_account)
            
             call = contract.functions["transfer"].prepare(
                 int(to, 16),
@@ -179,13 +180,13 @@ class OKXHelper:
             if rec is None:
                 logger.error(f"[{self.address}] can't find pair. Skip")
                 return
-            balance = (await self.account.get_balance_starknet(eth))[1]
-            
+           
+            balance = (await self.account.get_balance_starknet(stark_eth))[1]
             res = False
             for i in range(10):
-                to_send = balance - get_random_value(SETTINGS["withdrawSave"])
+                to_send = balance - get_random_value(SETTINGS["WithdrawSaving"])
                 logger.info(f"[{self.address}] going to send {to_send} ETH to {rec}")
-                res = await self.deposit_stark(rec, to_send, net)
+                res = await self.deposit_stark(rec, to_send)
                 if not res:
                     await sleeping(self.address, True)
                 if res:
@@ -203,7 +204,7 @@ class OKXHelper:
             
             res = False
             for i in range(10):
-                to_send = balance - get_random_value(SETTINGS["withdrawSave"])
+                to_send = balance - get_random_value(SETTINGS["WithdrawSaving"])
                 logger.info(f"[{self.address}] going to send {to_send} ETH to {rec}")
                 res = await self.deposit_evm(rec, to_send, net)
                 if not res:
