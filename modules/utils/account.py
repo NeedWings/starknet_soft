@@ -29,6 +29,7 @@ from modules.utils.token_storage import eth
 class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_starknet to get_balance
     w3 = {}
     def __init__(self, private_key: str, proxy = None):
+        private_key = normalize_to_32_bytes(private_key)
         self.private_key = private_key
         self.evm_address = ethAccount.from_key(private_key).address
         self.setup_w3(proxy=proxy)
