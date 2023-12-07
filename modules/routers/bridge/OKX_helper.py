@@ -37,12 +37,14 @@ class OKXHelper:
 
     }
     def __init__(self, api_key: str, secret: str, password: str, account: BaseAccount) -> None:
+        print("setting ccxt object")
         self.okx_account = ccxt.okex5({
         'apiKey': api_key,
         'secret': secret,
         'password': password,
         'enableRateLimit': True,
     })
+        print("setting account")
         self.account = account
 
     def okx_data(self, api_key, secret_key, passphras, request_path="/api/v5/account/balance?ccy=USDT", body='', meth="GET"):
