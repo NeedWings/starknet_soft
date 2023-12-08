@@ -78,18 +78,14 @@ def decimal_to_int(qty, decimal):
 
 
 def get_pair_for_address_from_file(filename: str, address: str):
-    print(f"address: {address}")
-    print(f"filename: {filename}")
     address = address.lower()
     
     with open(f"{SETTINGS_PATH}{filename}", "r") as f:
         buff = f.read().lower().split("\n")
-    print("got pairs")
     pairs_raw = []
     for i in buff:
         if ";" in i:
             pairs_raw.append(i)
-    print("going to search pair")
     for pair in pairs_raw:
         if pair.split(";")[0] == address:
             return pair.split(";")[1].lower()

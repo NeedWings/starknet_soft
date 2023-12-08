@@ -23,12 +23,9 @@ class MainRouter():
 
     
     async def start(self, gas_lock: Event = None, one_thread_lock: Event = None):
-        print("start")
         one_thread_mode = SETTINGS["one thread mode"]
         if not self.account.is_set:
-            print("setting up account")
             await self.account.setup_account()
-            print("account set!")
         if self.delay != 0:
             for i in range(100):
                 await sleep(self.delay/100)
@@ -36,9 +33,7 @@ class MainRouter():
                     await sleep(10)
         
         if one_thread_mode and one_thread_lock is not None:
-            print("setting one thread mode")
             one_thread_lock.set()
-        print(f"task number is: {self.task_number}")
         if self.task_number == 110:
             bridger = BridgeRouter(self.account, self.account.stark_address)
             await bridger.bridge(STARKGATE)
@@ -157,14 +152,10 @@ class MainRouter():
             await okx_helper.withdraw_handl()
         
         elif self.task_number == 62:
-            print("starting okx sender")
             api_key = SETTINGS["api_key"]
             secret = SETTINGS["secret"]
             password = SETTINGS["password"]
-            print("setting okx Helper")
             okx_helper = OKXHelper(api_key, secret, password, self.account)
-            print("okx helper set")
-            print("starting deposit handler")
             await okx_helper.deposit_handl()
 
         elif self.task_number == 71:

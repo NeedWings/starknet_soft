@@ -37,13 +37,9 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
         self.is_set = False
 
     async def setup_account(self):
-        print("setting up client")
         await self.setup_client(proxy=self.proxy)
-        print("setting stark private key")
         self.stark_key_pair = KeyPair.from_private_key(int(self.private_key, 16))
-        print("setting address")
         self.stark_address = Account.get_starknet_address_from_private(self.private_key)
-        print("setting native account")
         self.stark_native_account = StarkNativeAccount(
             address=self.stark_address,
             client=self.client,
