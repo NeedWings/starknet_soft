@@ -189,6 +189,8 @@ try:
                 proxy_dict = {}
                 args = []
                 for proxy in proxies:
+                    if proxy == "":
+                        continue
                     if f"http://{proxy[0]}@{proxy[1]}" in proxy_dict.keys():
                         proxy_dict[f"http://{proxy[0]}@{proxy[1]}"].append(('0x' + '0'*(66-len(proxy[2])) + proxy[2][2::]).lower())
                     else:
@@ -200,7 +202,7 @@ try:
 
                     addresses = proxy_dict[proxy]
                     for key in accounts:
-                        address =  Account.get_starknet_address_from_private(hex(key))
+                        address =  Account.get_starknet_address_from_private(key)
                         
                         if address in addresses:
                             print(f"[{address}] connected to proxy: {proxy}")
