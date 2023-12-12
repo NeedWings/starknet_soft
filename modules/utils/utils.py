@@ -96,7 +96,7 @@ def get_pair_for_address_from_file(filename: str, address: str):
 
 
 async def gas_locker(gas_lock: Event):
-    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST["ethereum"])))
+    w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST["ethereum"]), request_kwargs={"ssl": False}))
     while True:
         while True:
             try:

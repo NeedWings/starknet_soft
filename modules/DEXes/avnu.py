@@ -1,11 +1,14 @@
 from starknet_py.contract import Contract
+from starknet_py.net.client_models import Call
+from starknet_py.hash.selector import get_selector_from_name
 
 from modules.DEXes.myswap import MySwap, BaseDEX
-from modules.utils.utils import req, get_random_value, handle_dangerous_request
+from modules.utils.utils import req, req_post, get_random_value, handle_dangerous_request
 from modules.config import SETTINGS, SLIPPAGE
 from modules.utils.token import StarkToken
 from modules.utils.logger import logger
 from modules.base_classes.base_account import BaseAccount
+from modules.utils.token_storage import tokens_from_contracts
 
 class Avnu(BaseDEX):
     name = "Avnu"
@@ -17,24 +20,11 @@ class Avnu(BaseDEX):
     
     tokens_from_lpt = {}
     
-    def create_additional_payload_for_dex(self, dex, token1: StarkToken, token2: StarkToken):
-        if dex == 0x041fd22b238fa21cfcf5dd45a8548974d8263b3a531a60388411c5e230f97023:
-            return []
-        elif dex == 0x10884171baf1914edc28d7afb619b40a4051cfae78a094a55d230f19e944a28:
-            pool = MySwap().POOLS[f"{token1.symbol}:{token2.symbol}"]
-            return [pool]
-        elif dex == 0x28c858a586fa12123a1ccb337a0a3b369281f91ea00544d0c086524b759f627:
-            if token1.stable and token2.stable:
-                return [1]
-            else:
-                return [0]
-        elif dex == 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1:
-            return []
-
+    
     async def get_token1_for_token2_price(self, token1: StarkToken, token2: StarkToken, amount_in: float, sender: BaseAccount):
 
         _, amount_out_avnu = await handle_dangerous_request(
-            self.get_best_dex, 
+            self.get_quotes, 
             "Can't get pool info: ", 
             sender.stark_address, 
             token1,
@@ -45,26 +35,24 @@ class Avnu(BaseDEX):
         
         return amount_in/(amount_out_avnu/10**token2.decimals)
 
-    async def get_best_dex(self, token1, token2, amount_in, sender):
-        resp = await req(f"https://starknet.api.avnu.fi/swap/v1/prices?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
+            
+    async def get_quotes(self, token1, token2, amount_in, sender):
+        resp = await req(f"https://starknet.api.avnu.fi/swap/v1/quotes?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
 
-        dex_name = resp[0]["sourceName"]
+        return resp[0]["quoteId"], int(resp[0]["buyAmount"], 16)
+    
+    async def build_transaction(self, quote_id: str, sender: BaseAccount):
 
-        DEXes = {
-            "JediSwap":0x041fd22b238fa21cfcf5dd45a8548974d8263b3a531a60388411c5e230f97023,
-            "MySwap": 0x10884171baf1914edc28d7afb619b40a4051cfae78a094a55d230f19e944a28,
-            "SithSwap": 0x28c858a586fa12123a1ccb337a0a3b369281f91ea00544d0c086524b759f627,
-            "10kSwap" : 0x07a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1
+        data = {
+            "quoteId": quote_id,
+            "takerAddress": sender.stark_address,
+            "slippage": SLIPPAGE,
         }
-        try:
-            return DEXes[dex_name], int(resp[0]["buyAmount"], 16)
-        except:
-            try:
-                dex_name = resp[1]["sourceName"]
-                return DEXes[dex_name], int(resp[1]["buyAmount"], 16)
-            except:
-                dex_name = resp[2]["sourceName"]
-                return DEXes[dex_name], int(resp[2]["buyAmount"], 16)
+
+        resp = await req_post("https://starknet.api.avnu.fi/swap/v1/build", json=data)
+
+        return resp
+
 
     def __init__(self) -> None:
         new_supported_tokens = []
@@ -78,40 +66,30 @@ class Avnu(BaseDEX):
         
         
         if not full:
-            dex, amount_out_avnu = await handle_dangerous_request(self.get_best_dex, "Can't get best dex for avnu: ", sender.stark_address, token1, token2, amount_in, sender)
+            quote, amount_out_avnu = await handle_dangerous_request(self.get_quotes, "Can't get best dex for avnu: ", sender.stark_address, token1, token2, amount_in, sender)
             if amount_out_avnu < (1-SLIPPAGE)*amount_out*10**token2.decimals:
                 logger.error(f"[{sender.stark_address}] AVNU MIN VALUE TOO LOW. SKIP")
                 return -1
             amount_out = amount_out_avnu
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
-            call2 = contract.functions["multi_route_swap"].prepare(
-                token1.contract_address,
-                int(amount_in*10**token1.decimals),
-                token2.contract_address,
-                int(amount_out),
-                int(amount_out*(1-SLIPPAGE)),
-                sender.stark_native_account.address,
-                0,
-                0,
-                [
-                    {
-                        "token_from":token1.contract_address,
-                        "token_to":token2.contract_address,
-                        "exchange_address":dex,
-                        "percent":100,
-                        "additional_swap_params":self.create_additional_payload_for_dex(dex, token1, token2)
-                    }
-                ]
-            )
+            txn_data = await self.build_transaction(quote, sender)
+            calldata = list(map(lambda x: int(x, 16), txn_data["calldata"]))
+            call2 =  Call(
+                to_addr=self.contract_address,
+                selector=get_selector_from_name(txn_data["entrypoint"]),
+                calldata=calldata,
+            ) 
+
+            
         else:
-            bal = (await sender.get_balance_starknet(token1))[0] - 1
+            bal = (await sender.get_balance_starknet(token1))[0] - 20
             
             if token1.symbol == "ETH":
                 bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
         
-            dex, amount_out_avnu = await handle_dangerous_request(
-                self.get_best_dex, "Can't get best dex for avnu: ", 
+            quote, amount_out_avnu = await handle_dangerous_request(
+                self.get_quotes, "Can't get best dex for avnu: ", 
                 sender.stark_address, 
                 token1, 
                 token2, 
@@ -125,25 +103,15 @@ class Avnu(BaseDEX):
             amount_out = amount_out_avnu
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
-            call2 = contract.functions["multi_route_swap"].prepare(
-                token1.contract_address,
-                bal,
-                token2.contract_address,
-                int(amount_out),
-                int(amount_out*(1-SLIPPAGE)),
-                sender.stark_native_account.address,
-                0,
-                0,
-                [
-                    {
-                        "token_from":token1.contract_address,
-                        "token_to":token2.contract_address,
-                        "exchange_address":dex,
-                        "percent":100,
-                        "additional_swap_params":self.create_additional_payload_for_dex(dex, token1, token2)
-                    }
-                ]
-            )
+            txn_data = await self.build_transaction(quote, sender)
+            calldata = list(map(lambda x: int(x, 16), txn_data["calldata"]))
+            
+            call2 =  Call(
+                to_addr=self.contract_address,
+                selector=get_selector_from_name(txn_data["entrypoint"]),
+                calldata=calldata,
+            ) 
+
 
         return [call1, call2]
 

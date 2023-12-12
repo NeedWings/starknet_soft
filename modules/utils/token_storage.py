@@ -55,3 +55,13 @@ tokens_dict = {
     "WSTETH": wsteth,
     "LORDS": lords
 }
+
+tokens_from_contracts = {
+    eth.contract_address: eth,
+    usdc.contract_address: usdc,
+    usdt.contract_address: usdt,
+    dai.contract_address: dai,
+    wbtc.contract_address: wbtc,
+    wsteth.contract_address: wsteth,
+    lords.contract_address: lords
+}
