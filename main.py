@@ -1,6 +1,7 @@
 from time import sleep
 from random import shuffle
 import asyncio
+import pickle
 from asyncio import Event
 
 import inquirer
@@ -11,9 +12,9 @@ from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.full_node_client import FullNodeClient
 
 try:
-    from modules.utils.utils import get_random_value, get_random_value_int, gas_locker
+    from modules.utils.utils import get_random_value, get_random_value_int, gas_locker, normalize_to_32_bytes
     from modules.routers.activity.main_router import MainRouter
-    from modules.config import autosoft, subs_text, RPC_LIST
+    from modules.config import autosoft, subs_text, RPC_LIST, SETTINGS_PATH, PUBLIC_KEYS_PAIRS, NEW_PRIVATE_KEYS
 
     from modules.utils.starter import *
     
@@ -73,6 +74,11 @@ try:
                     "own tasks",
                     "",
                     "encrypt_secrets",
+                    "change private keys",
+                    "add public keys",
+                    "clear wallets_data",
+                    "show public keys",
+                    "show public keys from keys from new_private_keys.txt"
                 ],
             )
         ]
@@ -151,6 +157,18 @@ try:
             task_number = 0
         elif action == "encrypt_secrets":
             task_number = 11
+        elif action == "change private keys(argent only)":
+            task_number = 9997
+        elif action == "add public keys":
+            task_number = 9999
+        elif action == "show public keys":
+            task_number = 9998
+        elif action == "show public keys from keys from new_private_keys.txt":
+            task_number = 9995
+        elif action == "clear wallets_data":
+            task_number = 9994
+        elif action == "change private keys":
+            task_number = 9996
         for i in range(len(addresses)):
             if len(addresses[i]) < 50:
                 addresses[i] = "0x" + "0"*(42-len(addresses[i])) + addresses[i][2::]
@@ -158,9 +176,45 @@ try:
                 addresses[i] = "0x" + "0"*(66-len(addresses[i])) + addresses[i][2::]
         if task_number == 11:
             encode_secrets()
+        elif task_number == 9999:
+            try:
+                with open(f"{SETTINGS_PATH}public_address_pairs.txt", "r") as f:
+                    new_pairs = f.read().split("\n")
+            except Exception as e:
+                input(f"Can't load public keys, most likely data not updated. Error: {e}")
+                exit()
+
+            for raw_pair in new_pairs:
+                if raw_pair == "":
+                    continue
+                pair = raw_pair.split(";")
+                PUBLIC_KEYS_PAIRS[normalize_to_32_bytes(pair[0])] = normalize_to_32_bytes(pair[1])
+
+            with open(f"{SETTINGS_PATH}wallets_data.ser", "wb") as f:
+                f.write(pickle.dumps(PUBLIC_KEYS_PAIRS))
+            input("All OK")
+            exit()
+        elif task_number == 9998:
+            res = "Public key;address\n"
+            for i in PUBLIC_KEYS_PAIRS:
+                res += f"{i};{PUBLIC_KEYS_PAIRS[i]}\n"
+            with open(f"{SETTINGS_PATH}result.csv", "w") as f:
+                f.write(res)
+            input("check result.csv")
+            exit()
+        elif task_number == 9995:
+            res = "Public key;Private key\n"
+            for i in NEW_PRIVATE_KEYS:
+                res += f"{i};{NEW_PRIVATE_KEYS[i]}\n"
+            with open(f"{SETTINGS_PATH}result.csv", "w") as f:
+                f.write(res)
+            input("check result.csv")
+            exit()
         else:    
             private_keys = decode_secrets()
             accounts, counter = transform_keys(private_keys, addresses)
+            with open(f"{SETTINGS_PATH}wallets_data.ser", "wb") as f:
+                f.write(pickle.dumps(PUBLIC_KEYS_PAIRS))
             print(f"Soft found {counter} keys to work")
             tasks = []
 
@@ -172,7 +226,9 @@ try:
 
             
             print(f"Bot found {counter} private keys to work")
-            
+            if task_number == 9996:
+                console_log.error("\nWARNING\nPlease make sure you do everything right. If this is your first time running this, then check it on one account. \nA broken order of actions or an error in filling out can lead to the complete loss of the wallet. \nIf you're confident in what you're doing, press Enter")
+                input()
             if SETTINGS["UseProxies"]:
                 loop = asyncio.new_event_loop()
 
