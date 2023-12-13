@@ -20,7 +20,7 @@ from starknet_py.net.models.transaction import Invoke
 from loguru import logger as console_log
 
 from modules.base_classes.base_account import BaseAccount
-from modules.config import RPC_LIST, SETTINGS, SETTINGS_PATH, json_remove_comments
+from modules.config import RPC_LIST, SETTINGS, SETTINGS_PATH, PUBLIC_KEYS_PAIRS, json_remove_comments
 from modules.utils.logger import logger
 from modules.utils.utils import sleeping, normalize_to_32_bytes, handle_dangerous_request
 from modules.utils.token import EVMToken, StarkToken
@@ -156,15 +156,17 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
             constructor_calldata=call_data,
             deployer_address=0,
         )
-
+        PUBLIC_KEYS_PAIRS[normalize_to_32_bytes(hex(key_pair.public_key))] = normalize_to_32_bytes(hex(address))
         return normalize_to_32_bytes(hex(address))
         
 
     @staticmethod
     def get_starknet_address_from_private(private_key: str):
-        base_link = "https://recovery.braavos.app/pubkey-to-address/?network=mainnet-alpha&pubkey="
         key_pair =  KeyPair.from_private_key(int(private_key, 16))
         pub_key = normalize_to_32_bytes(hex(key_pair.public_key))
+        if pub_key in list(PUBLIC_KEYS_PAIRS.keys()):
+            return normalize_to_32_bytes(PUBLIC_KEYS_PAIRS[pub_key])
+        base_link = "https://recovery.braavos.app/pubkey-to-address/?network=mainnet-alpha&pubkey="
 
         while True:
             try:
@@ -172,6 +174,7 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                 addrs = resp.json()["address"]
                 if len(addrs) == 0:
                     return Account.create_starknet_address(private_key)
+                PUBLIC_KEYS_PAIRS[pub_key] = normalize_to_32_bytes(addrs[0])
                 return normalize_to_32_bytes(addrs[0])
                     
             except Exception as e:

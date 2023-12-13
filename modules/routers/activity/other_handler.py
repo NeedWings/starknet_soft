@@ -11,10 +11,11 @@ from modules.other.bids import bidder
 from modules.other.dmail import dmail_hand
 from modules.other.starkstars import starkstars
 from modules.other.upgrader import upgrader
-from modules.config import SETTINGS
+from modules.other.key_changer import key_changer
+from modules.config import SETTINGS, NEW_PRIVATE_KEYS, NEW_PAIRS
 from modules.base_classes.base_account import BaseAccount
 from modules.utils.logger import logger
-from modules.utils.utils import get_random_value_int, sleeping, handle_dangerous_request
+from modules.utils.utils import get_random_value_int, sleeping, handle_dangerous_request, normalize_to_32_bytes
 from modules.utils.token_storage import eth
 from modules.utils.braavos_deploy_utils import deploy_account_braavos
 
@@ -203,3 +204,17 @@ class OtherHandler:
                 await sleeping(self.account.stark_address, True)
         logger.error(f"[{self.account.stark_address}] got error")
         return -1
+    
+    async def change_owner(self):
+        if self.account.stark_native_account.address not in list(NEW_PAIRS.keys()):
+            logger.error(f"[{self.account.stark_address}] can't find new key")
+            return
+        new_public_key = normalize_to_32_bytes(hex(NEW_PAIRS[self.account.stark_native_account.address]))
+        if new_public_key not in list(NEW_PRIVATE_KEYS.keys()):
+            logger.error(f"[{self.account.stark_address}] can't find private key in new_private_keys.txt file")
+            return
+        new_private_key = NEW_PRIVATE_KEYS[new_public_key]
+
+        txn = await key_changer.create_txn_for_changing_key(int(new_private_key, 16), self.account)
+        logger.info(f"[{self.account.stark_address}] going to change owner to key with public key {new_public_key}")
+        await self.account.send_txn_starknet(txn)

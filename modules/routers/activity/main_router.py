@@ -165,7 +165,10 @@ class MainRouter():
             own_tasks_router = OwnTasks(self.account)
             await own_tasks_router.main(self)
 
-        
+        elif self.task_number == 9996:
+            other_handler = OtherHandler(self.account)
+            await other_handler.change_owner()
+            
         if one_thread_mode and one_thread_lock:
             one_thread_lock.clear()
     

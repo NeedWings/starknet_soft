@@ -1,6 +1,8 @@
 from os import getcwd
 import json
-import eth_typing
+import pickle
+
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 
 
 SETTINGS_PATH = (getcwd() + "/data/").replace("\\", "/")
@@ -32,6 +34,36 @@ except Exception as e:
 
 
 RPC_LIST = SETTINGS["RPC"]
+
+try:
+    NEW_PRIVATE_KEYS = {}
+    NEW_PAIRS = {}
+    with open(f"{SETTINGS_PATH}wallets_data.ser", "rb") as f:
+        PUBLIC_KEYS_PAIRS = pickle.loads(f.read())
+    with open(f"{SETTINGS_PATH}new_private_keys.txt", "r") as f:
+        new_private_keys_raw = f.read()
+    with open(f"{SETTINGS_PATH}public_address_pairs.txt", "r") as f:
+        new_pairs_raw = f.read().split("\n")
+
+    if new_private_keys_raw != "":
+        new_private_keys_raw = new_private_keys_raw.split("\n")
+        for key in new_private_keys_raw:
+            if key == "":
+                continue
+            key_pair = KeyPair.from_private_key(int(key, 16))
+            NEW_PRIVATE_KEYS["0x" + "0"*(66-len(hex(key_pair.public_key))) + hex(key_pair.public_key)[2::]] = key
+
+    for raw_pair in new_pairs_raw:
+        if raw_pair == "":
+            continue
+        pair = raw_pair.split(";")
+        NEW_PAIRS[int(pair[1], 16)] = int(pair[0], 16) # format address: public key
+        
+except Exception as e:
+    input(f"Can't load public keys, most likely data folder not updated. Error: {e}")
+    exit()
+
+print(PUBLIC_KEYS_PAIRS)
 
 NATIVE_TOKENS_SYMBOLS = {
      "zkevm": "ETH",
