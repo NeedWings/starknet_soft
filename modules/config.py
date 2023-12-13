@@ -63,7 +63,6 @@ except Exception as e:
     input(f"Can't load public keys, most likely data folder not updated. Error: {e}")
     exit()
 
-print(PUBLIC_KEYS_PAIRS)
 
 NATIVE_TOKENS_SYMBOLS = {
      "zkevm": "ETH",
