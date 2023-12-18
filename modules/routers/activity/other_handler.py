@@ -100,7 +100,7 @@ class OtherHandler:
             txn = await upgrader.upgrade_braavos(self.account)
 
         logger.info(f"[{self.account.stark_address}] going to upgrade")
-        self.account.send_txn_starknet(txn)
+        await self.account.send_txn_starknet(txn)
 
     async def deployer(self):
         if SETTINGS["Provider"].lower() in ["argent_newest", "argent"]:
