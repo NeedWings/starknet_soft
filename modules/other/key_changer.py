@@ -14,7 +14,9 @@ class KeyChanger:
     ABI = [{"name": "change_owner","type": "function","inputs": [{"name": "new_owner","type": "core::felt252"},{"name": "signature_r","type": "core::felt252"},{"name": "signature_s","type": "core::felt252"}],"outputs": [],"state_mutability": "external"}]
     
     async def create_txn_for_changing_key(self, new_key: int, sender: BaseAccount):
+        print(1)
         new_key_pair = KeyPair.from_private_key(new_key)
+        print(2)
 
         msg = compute_hash_on_elements(
             [
@@ -24,17 +26,17 @@ class KeyChanger:
                 sender.stark_native_account.signer.public_key
             ]
         )
-
+        print(3)
         r, s = message_signature(msg, new_key)
-
-        contract = Contract(sender.stark_native_account.address, self.ABI, sender.stark_native_account, cairo_version=await sender.stark_native_account.cairo_version)
-
+        print(4)
+        contract = Contract(sender.stark_native_account.address, self.ABI, sender.stark_native_account, cairo_version=1)
+        print(5)
         call = contract.functions["change_owner"].prepare(
                 new_key_pair.public_key,
                 r,
                 s
         )
-
+        print(6)
         return [call]
     
 key_changer = KeyChanger()
