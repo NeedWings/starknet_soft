@@ -6,3 +6,6 @@ WMI==1.5.1
 cryptography==40.0.2
 loguru==0.7.0
 ccxt==4.1.53
+inquirer
+termcolor
+aiohttp_socks
