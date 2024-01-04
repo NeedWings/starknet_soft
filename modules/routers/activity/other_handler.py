@@ -12,6 +12,7 @@ from modules.other.dmail import dmail_hand
 from modules.other.starkstars import starkstars
 from modules.other.upgrader import upgrader
 from modules.other.key_changer import key_changer
+from modules.other.starkrocket import StarkRocket
 from modules.config import SETTINGS, NEW_PRIVATE_KEYS, NEW_PAIRS
 from modules.base_classes.base_account import BaseAccount
 from modules.utils.logger import logger
@@ -218,3 +219,11 @@ class OtherHandler:
         txn = await key_changer.create_txn_for_changing_key(int(new_private_key, 16), self.account)
         logger.info(f"[{self.account.stark_address}] going to change owner to key with public key {new_public_key}")
         await self.account.send_txn_starknet(txn)
+
+    async def mint_rocket(self):
+        logger.info(f"[{self.account.stark_address}] going to mint stark rocket")
+        stark_rocket = StarkRocket(self.account)
+        txn = await stark_rocket.get_txn()
+
+        await self.account.send_txn_starknet(txn)
+        

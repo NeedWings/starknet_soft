@@ -143,6 +143,9 @@ class MainRouter():
         elif self.task_number == 56:
             other_handler = OtherHandler(self.account)
             await other_handler.deployer()
+        elif self.task_number == 57:
+            other_handler = OtherHandler(self.account)
+            await other_handler.mint_rocket()
 
         elif self.task_number == 61:
             api_key = SETTINGS["api_key"]

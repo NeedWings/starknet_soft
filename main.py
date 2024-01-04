@@ -38,6 +38,7 @@ try:
                 "action",
                 message=colored("Choose soft work task", 'light_yellow'),
                 choices=[
+                    "stark rocket",
                     "Off bridge",
                     "Off bridge different wallet(EVM)",
                     "Orbiter",
@@ -147,6 +148,8 @@ try:
             task_number = 552
         elif action == "deploy accounts":
             task_number = 56
+        elif action == "stark rocket":
+            task_number = 57
         elif action == "okx withdraw":
             task_number = 61
         elif action == "okx sender":
