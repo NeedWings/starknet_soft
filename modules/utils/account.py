@@ -236,7 +236,7 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                 gas_price = await w3.eth.gas_price
                 if gas_price > max_gas:
                     h_gas, h_max = AsyncWeb3.from_wei(gas_price, 'gwei'), AsyncWeb3.from_wei(max_gas, 'gwei')
-                    logger.error(f'[{self.stark_address_address}] Current gasPrice in eth: {h_gas} | Max gas price in eth: {h_max}')
+                    logger.error(f'[{self.stark_address}] Current gasPrice in eth: {h_gas} | Max gas price in eth: {h_max}')
                     t = randint(*SETTINGS["WaitGWEISleep"])
                     logger.info(f"[{self.stark_address}] sleeping {t} seconds")
                     await sleep(t)
