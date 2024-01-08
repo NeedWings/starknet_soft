@@ -9,3 +9,4 @@ ccxt==4.1.53
 inquirer
 termcolor
 aiohttp_socks
+curl_cffi
