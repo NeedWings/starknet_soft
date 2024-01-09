@@ -84,6 +84,10 @@ class MainRouter():
             swap_handler = SwapsHandler(self.account)
             await swap_handler.save_assets(choice(SETTINGS["toSaveFunds"]))
 
+        elif self.task_number == 23:
+            swap_handler = SwapsHandler(self.account)
+            await swap_handler.danger_save_assets(choice(SETTINGS["toSaveFunds"]))
+
         elif self.task_number == 31:
             liquidity_handler = LiquidityHandler(self.account)
             await liquidity_handler.add_liq()

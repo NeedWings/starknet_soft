@@ -48,6 +48,7 @@ try:
                     "",
                     "random swaps",
                     "swap to one token",
+                    "danger swap to one token",
                     "",
                     "add liquidity",
                     "remove liquidity",
@@ -118,6 +119,8 @@ try:
             task_number = 21
         elif action == "swap to one token":
             task_number = 22
+        elif action == "danger swap to one token":
+            task_number = 23
         elif action == "add liquidity":
             task_number = 31
         elif action == "remove liquidity":
