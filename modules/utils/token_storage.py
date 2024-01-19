@@ -1,5 +1,5 @@
 from modules.utils.token import EVMToken, EVMNativeToken, StarkToken
-from modules.config import SETTINGS
+
 
 eth = StarkToken("ETH", 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, 18)
 usdc = StarkToken("USDC", 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, 6, stable=True)
@@ -8,7 +8,6 @@ dai = StarkToken("DAI", 0x00da114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0
 wbtc = StarkToken("WBTC", 0x03fe2b97c1fd336e750087d68b9b867997fd64a2661ff3ca5a7c771641e8e7ac, 8)
 wsteth = StarkToken("WSTETH", 0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2, 18)
 lords = StarkToken("LORDS", 0x0124aeb495b947201f5fac96fd1138e326ad86195b98df6dec9009158a533b49, 18)
-shit_coin = StarkToken("SHIT_COIN", int(SETTINGS["SHIT_COIN_CONTRACT_ADDRESS"], 16), 18)
 
 eth_ethereum = EVMNativeToken("ethereum")
 weth_bsc = EVMToken("ETH", "0x2170Ed0880ac9A755fd29B2688956BD959F933F8", 18, "bsc")
@@ -45,7 +44,7 @@ nets_eth = {
     
 }
 
-tokens = [eth, usdc, usdt, dai, wbtc, wsteth, lords, shit_coin]
+tokens = [eth, usdc, usdt, dai, wbtc, wsteth, lords]
 
 tokens_dict = {
     "ETH": eth,
@@ -54,8 +53,7 @@ tokens_dict = {
     "DAI": dai,
     "WBTC": wbtc,
     "WSTETH": wsteth,
-    "LORDS": lords,
-    "SHIT_COIN": shit_coin 
+    "LORDS": lords
 }
 
 tokens_from_contracts = {
@@ -65,6 +63,5 @@ tokens_from_contracts = {
     dai.contract_address: dai,
     wbtc.contract_address: wbtc,
     wsteth.contract_address: wsteth,
-    lords.contract_address: lords,
-    shit_coin.contract_address: shit_coin
+    lords.contract_address: lords
 }
