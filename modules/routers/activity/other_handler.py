@@ -1,5 +1,4 @@
 from random import randint, shuffle
-from asyncio import sleep
 
 from starknet_py.contract import Contract
 from starknet_py.net.signer.stark_curve_signer import KeyPair
@@ -13,7 +12,7 @@ from modules.other.dmail import dmail_hand
 from modules.other.starkstars import starkstars
 from modules.other.upgrader import upgrader
 from modules.other.key_changer import key_changer
-from modules.other.element import element_market
+from modules.other.starkrocket import StarkRocket
 from modules.config import SETTINGS, NEW_PRIVATE_KEYS, NEW_PAIRS
 from modules.base_classes.base_account import BaseAccount
 from modules.utils.logger import logger
@@ -57,16 +56,13 @@ class OtherHandler:
             logger.info(f"[{self.account.stark_address}] checking minted nfts")
             amount = get_random_value_int(SETTINGS["starkstars_nft_amount"])
             for address in contracts:
-                while True:
-                    contract = Contract(address, starkstars.ABI, self.account.stark_native_account, cairo_version=1)
-                    try:
-                        have = (await contract.functions["balance_of"].call(self.account.stark_native_account.address))[0]
-                        break
-                    except Exception as e:
-                        logger.error(f"[{self.account.stark_address}] can't get NFT info. Error: {e}")
-                        await sleeping(self.account.stark_address, True)
-                        await self.account.setup_account()
-                await sleep(2)
+                contract = Contract(address, starkstars.ABI, self.account.stark_native_account, cairo_version=1)
+                have = (await handle_dangerous_request(
+                    contract.functions["balance_of"].call,
+                    "can't get NFT info",
+                    self.account.stark_address,
+                    self.account.stark_native_account.address
+                ))[0]
                 if not have:
                     new_contracts.append(address)
             shuffle(new_contracts)
@@ -224,6 +220,10 @@ class OtherHandler:
         logger.info(f"[{self.account.stark_address}] going to change owner to key with public key {new_public_key}")
         await self.account.send_txn_starknet(txn)
 
-    async def el(self):
+    async def mint_rocket(self):
+        logger.info(f"[{self.account.stark_address}] going to mint stark rocket")
+        stark_rocket = StarkRocket(self.account)
+        txn = await stark_rocket.get_txn()
 
-        await element_market.sell(self.account)
+        await self.account.send_txn_starknet(txn)
+        

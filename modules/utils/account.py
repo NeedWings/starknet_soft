@@ -28,7 +28,6 @@ from modules.utils.token_storage import eth
 
 class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_starknet to get_balance
     w3 = {}
-    session = None
     def __init__(self, private_key: str, proxy = None):
         private_key = normalize_to_32_bytes(private_key)
         self.private_key = private_key
@@ -186,9 +185,6 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
 
 
     async def setup_client(self, proxy):
-        if self.session is not None:
-            await self.session.close()
-            self.session = None
         if proxy is not None:
             self.session = ClientSession(connector=ProxyConnector.from_url(proxy))
         else:
@@ -198,14 +194,11 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
     def setup_w3(self, proxy=None):
         if proxy:
             req_proxy = {
-                "proxies": {
-                    "http"  : proxy,
-                    "https" : proxy
-                },
+                "proxy": proxy,
                 "timeout": 10,
                 "ssl": False,
             }
-            self.proxies = req_proxy["proxies"]
+            self.proxies = req_proxy["proxy"]
             for chain in RPC_LIST:
                 self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain]), request_kwargs=req_proxy))
         else:
@@ -218,7 +211,6 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                 self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain]), request_kwargs=req_proxy))
 
     def get_w3(self, net_name):
-        self.setup_w3(self.proxy)
         return self.w3[net_name]
     
     async def get_balance_evm(self, token: EVMToken):
@@ -249,7 +241,6 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                     return round(gas_price)
                 
             except Exception as error:
-                print(error)
                 logger.error(f'[{self.evm_address}] Error: {error}')
                 await sleeping(self.evm_address, True)
 
