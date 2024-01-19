@@ -198,14 +198,11 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
     def setup_w3(self, proxy=None):
         if proxy:
             req_proxy = {
-                "proxies": {
-                    "http"  : proxy,
-                    "https" : proxy
-                },
+                "proxy": proxy,
                 "timeout": 10,
                 "ssl": False,
             }
-            self.proxies = req_proxy["proxies"]
+            self.proxies = req_proxy["proxy"]
             for chain in RPC_LIST:
                 self.w3[chain] =  AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(choice(RPC_LIST[chain]), request_kwargs=req_proxy))
         else:
