@@ -21,7 +21,7 @@ try:
 
     if __name__ == "__main__":
         pass
-        checking_license()
+        #checking_license()
 
     def get_action() -> str:
         theme = {
@@ -38,7 +38,6 @@ try:
                 "action",
                 message=colored("Choose soft work task", 'light_yellow'),
                 choices=[
-                    "stark rocket",
                     "Off bridge",
                     "Off bridge different wallet(EVM)",
                     "Orbiter",
@@ -48,7 +47,6 @@ try:
                     "",
                     "random swaps",
                     "swap to one token",
-                    "danger swap to one token",
                     "",
                     "add liquidity",
                     "remove liquidity",
@@ -119,8 +117,6 @@ try:
             task_number = 21
         elif action == "swap to one token":
             task_number = 22
-        elif action == "danger swap to one token":
-            task_number = 23
         elif action == "add liquidity":
             task_number = 31
         elif action == "remove liquidity":
@@ -151,8 +147,6 @@ try:
             task_number = 552
         elif action == "deploy accounts":
             task_number = 56
-        elif action == "stark rocket":
-            task_number = 57
         elif action == "okx withdraw":
             task_number = 61
         elif action == "okx sender":

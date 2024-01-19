@@ -1,6 +1,7 @@
 from modules.base_classes.base_account import BaseAccount
 from starknet_py.contract import Contract
 from curl_cffi import requests
+from modules.utils.logger import logger
 import time 
 import random
 import json
@@ -59,8 +60,11 @@ class ElementMarket:
 
     async def sell(self, sender: BaseAccount):
         token_id = await self.get_token_id(sender)
-        price = int(round(random.uniform(0.00401, 0.00411), 6)*1e18)
-        await self.approve_collection(sender)
+        if token_id is None:
+            logger.info(f"[{sender.stark_address}] sold")
+            return
+        price = int(round(random.uniform(0.00391, 0.00400), 6)*1e18)
+        #await self.approve_collection(sender)
         c = int(time.time()*1000)
         to_sign = {
             "domain": {
@@ -73,7 +77,7 @@ class ElementMarket:
                     "counter": "0",
                     "erc20_address": "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
                     "erc20_amount": str(price),
-                    "expiry_time": int(time.time()+3600),
+                    "expiry_time": int(time.time()+30*24*3600),
                     "fees": [
                         {
                         "amount": str(int(price*0.02)),
@@ -256,7 +260,7 @@ class ElementMarket:
 
         r = requests.post("https://api.element.market/v3/orders/genericPostBatch", headers=headers, impersonate="chrome101", json=data)
 
-        print(r.text)
+        logger.info(f"[{sender.stark_address}] {r.text}")
 
     async def approve_collection(self, sender: BaseAccount):
         contract = Contract(0x00b719f69b00a008a797dc48585449730aa1c09901fdbac1bc94b3bdc287cf76, abi=[

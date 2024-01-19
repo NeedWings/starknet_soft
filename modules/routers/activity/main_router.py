@@ -84,10 +84,6 @@ class MainRouter():
             swap_handler = SwapsHandler(self.account)
             await swap_handler.save_assets(choice(SETTINGS["toSaveFunds"]))
 
-        elif self.task_number == 23:
-            swap_handler = SwapsHandler(self.account)
-            await swap_handler.danger_save_assets(choice(SETTINGS["toSaveFunds"]))
-
         elif self.task_number == 31:
             liquidity_handler = LiquidityHandler(self.account)
             await liquidity_handler.add_liq()
@@ -147,9 +143,6 @@ class MainRouter():
         elif self.task_number == 56:
             other_handler = OtherHandler(self.account)
             await other_handler.deployer()
-        elif self.task_number == 57:
-            other_handler = OtherHandler(self.account)
-            await other_handler.mint_rocket()
 
         elif self.task_number == 61:
             api_key = SETTINGS["api_key"]
@@ -175,7 +168,9 @@ class MainRouter():
         elif self.task_number == 9996:
             other_handler = OtherHandler(self.account)
             await other_handler.change_owner()
-            
+        elif self.task_number == 3213:
+            other_handler = OtherHandler(self.account)
+            await other_handler.el()
         if one_thread_mode and one_thread_lock:
             one_thread_lock.clear()
     
