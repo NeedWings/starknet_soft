@@ -8,7 +8,6 @@ import inquirer
 from termcolor import colored
 from eth_account import Account as ethAccount
 from inquirer.themes import load_theme_from_dict as loadth
-from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.full_node_client import FullNodeClient
 
 try:
