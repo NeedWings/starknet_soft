@@ -161,7 +161,7 @@ class OKXHelper:
            
             contract = Contract(stark_eth.contract_address, STARK_TOKEN_ABI, self.account.stark_native_account)
            
-            call = contract.functions["transfer"].prepare(
+            call = contract.functions["transfer"].prepare_call(
                 int(to, 16),
                 int(amount*1e18)
             )

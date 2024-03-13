@@ -1,5 +1,7 @@
 from random import uniform, choice
 
+from web3 import Web3
+
 from modules.utils.token_checker import token_checker
 from modules.routers.bridge.starkgate import Starkgate
 from modules.routers.bridge.orbiter import Orbiter
@@ -143,6 +145,7 @@ class BridgeRouter:
         logger.success(f"[{self.recipient}] found balance! Current: {new_balance} ETH")
 
     async def withdraw_orbiter(self):
+        self.recipient = Web3.to_checksum_address(self.recipient)
         net = choice(SETTINGS["DistNet"])
         start_balance =( await nets_eth[net].balance_of(self.recipient, w3=self.account.get_w3(net)))[1]
         while True:

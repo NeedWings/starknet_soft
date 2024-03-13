@@ -37,14 +37,14 @@ class LendingHandler:
     async def collateral(self):
         for i in range(get_random_value_int(SETTINGS["zklend_collateral_amount"])):
             lend_contract = Contract(ZkLend().contract_address, zklend.ABI, self.account.stark_native_account)
-            call3 = lend_contract.functions["enable_collateral"].prepare(
+            call3 = lend_contract.functions["enable_collateral"].prepare_call(
                     eth.contract_address
                 )
             calldata = [call3]
             logger.info(f"[{self.account.stark_address}] enabling collateral")
             await self.account.send_txn_starknet(calldata)
             await sleeping(self.account.stark_address)
-            call3 = lend_contract.functions["disable_collateral"].prepare(
+            call3 = lend_contract.functions["disable_collateral"].prepare_call(
                     eth.contract_address
                 )
             calldata = [call3]

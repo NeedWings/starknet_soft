@@ -101,7 +101,7 @@ class MySwap(BaseDEX):
         if not full:
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-            call2 = contract.functions["swap"].prepare(
+            call2 = contract.functions["swap"].prepare_call(
                 self.POOLS[f"{token1.symbol}:{token2.symbol}"],
                 token1.contract_address,
                 int(amount_in*10**token1.decimals),
@@ -113,7 +113,7 @@ class MySwap(BaseDEX):
                 bal -= int(get_random_value(SETTINGS["SaveEthOnBalance"])*1e18)
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-            call2 = contract.functions["swap"].prepare(
+            call2 = contract.functions["swap"].prepare_call(
                 self.POOLS[f"{token1.symbol}:{token2.symbol}"],
                 token1.contract_address,
                 bal,
@@ -132,7 +132,7 @@ class MySwap(BaseDEX):
         call2 = token2.get_approve_call(amount2, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
-        call3 = contract.functions["add_liquidity"].prepare(
+        call3 = contract.functions["add_liquidity"].prepare_call(
             token1.contract_address,
             int(amount1*10**token1.decimals),
             int(amount1*10**token1.decimals * (1-SLIPPAGE)),
@@ -176,7 +176,7 @@ class MySwap(BaseDEX):
         
         call1 = lptoken.get_approve_call(amount, self.contract_address, sender)
 
-        call2 = contract.functions["withdraw_liquidity"].prepare(
+        call2 = contract.functions["withdraw_liquidity"].prepare_call(
             self.pool_id_from_lpt[lptoken],
             amount,
             int(token1_val * (1-SLIPPAGE)),

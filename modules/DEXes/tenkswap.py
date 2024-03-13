@@ -72,7 +72,7 @@ class TenKSwap(BaseDEX):
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             
-            call2 = contract.functions["swapExactTokensForTokens"].prepare(
+            call2 = contract.functions["swapExactTokensForTokens"].prepare_call(
                 int(amount_in*10**token1.decimals),
                 int(amount_out*10**token2.decimals*(1-SLIPPAGE)),
                 [
@@ -89,7 +89,7 @@ class TenKSwap(BaseDEX):
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             
-            call2 = contract.functions["swapExactTokensForTokens"].prepare(
+            call2 = contract.functions["swapExactTokensForTokens"].prepare_call(
                 bal,
                 int(amount_out*10**token2.decimals*(1-SLIPPAGE)),
                 [
@@ -108,7 +108,7 @@ class TenKSwap(BaseDEX):
         call2 = token2.get_approve_call(amount2, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
-        call3 = contract.functions["addLiquidity"].prepare(
+        call3 = contract.functions["addLiquidity"].prepare_call(
             token1.contract_address,
             token2.contract_address,
             int(amount1*10**token1.decimals),
@@ -163,7 +163,7 @@ class TenKSwap(BaseDEX):
         
         call1 = lptoken.get_approve_call(amount, self.contract_address, sender)
 
-        call2 = contract.functions["removeLiquidity"].prepare(
+        call2 = contract.functions["removeLiquidity"].prepare_call(
             token1_address,
             token2_address,
             amount,

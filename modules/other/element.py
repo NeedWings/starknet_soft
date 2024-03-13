@@ -772,7 +772,7 @@ class ElementMarket:
     "type": "function"
   }
 ], provider=sender.stark_native_account)
-        call = contract.functions["setApprovalForAll"].prepare(0x04d8bb956e6bd7a50fcb8b49d8e9fd8269cfadbeb73f457fd6d3fc1dff4b879e, 1)
+        call = contract.functions["setApprovalForAll"].prepare_call(0x04d8bb956e6bd7a50fcb8b49d8e9fd8269cfadbeb73f457fd6d3fc1dff4b879e, 1)
 
         await sender.send_txn_starknet([call])
 

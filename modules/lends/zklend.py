@@ -109,7 +109,7 @@ class ZkLend(BaseLend):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
         call1 = token.get_approve_call(amount, self.contract_address, sender)
-        call2 = contract.functions["deposit"].prepare(
+        call2 = contract.functions["deposit"].prepare_call(
             token.contract_address,
             int(amount*10**token.decimals)
         )
@@ -123,7 +123,7 @@ class ZkLend(BaseLend):
         )).enabled
 
         if coll_enabled == 0:
-            call3 = contract.functions["enable_collateral"].prepare(
+            call3 = contract.functions["enable_collateral"].prepare_call(
                 token.contract_address
             )
             return [call1, call3, call2]
@@ -151,7 +151,7 @@ class ZkLend(BaseLend):
             token_val = token_bal
         if token_val <= 1:
             return -1
-        call1 = contract.functions["withdraw"].prepare(
+        call1 = contract.functions["withdraw"].prepare_call(
             stark_token.contract_address,
             token_val
         )
@@ -161,7 +161,7 @@ class ZkLend(BaseLend):
     async def create_txn_for_borrow(self, amount: float, token: StarkToken, sender: BaseAccount):
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
-        call = contract.functions["borrow"].prepare(
+        call = contract.functions["borrow"].prepare_call(
             token.contract_address,
             int(amount*10**token.decimals)
         )
@@ -186,7 +186,7 @@ class ZkLend(BaseLend):
             return -1
         call1 = token.get_approve_call_wei(val_in_token_wei, self.contract_address, sender)
 
-        call2 = contract.functions["repay"].prepare(
+        call2 = contract.functions["repay"].prepare_call(
             token.contract_address,
             val_in_token_wei
         )

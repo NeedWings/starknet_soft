@@ -86,7 +86,7 @@ class OtherHandler:
         for _ in range(get_random_value_int(SETTINGS["starknet_id_amount"])):
             id_contract = Contract(0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af, [{"name":"mint","type":"function","inputs":[{"name":"starknet_id","type":"felt"}],"outputs":[]}], self.account.stark_native_account)
             logger.info(f"[{self.account.stark_address}] going to mint starknet id")
-            call = id_contract.functions["mint"].prepare(
+            call = id_contract.functions["mint"].prepare_call(
                 randint(0, 999999999999)
             )
             calldata = [call]

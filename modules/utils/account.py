@@ -13,7 +13,6 @@ from starknet_py.hash.address import compute_address
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.account.account import Account as StarkNativeAccount
-from starknet_py.net.account.account import _parse_calls_v2, _merge_calls, _execute_payload_serializer, _execute_payload_serializer_v2
 from starknet_py.utils.iterable import ensure_iterable
 from starknet_py.net.models import StarknetChainId 
 from starknet_py.net.models.transaction import Invoke
@@ -74,32 +73,7 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
         while i <= SETTINGS["RetriesLimit"]:
             i+=1
             try:
-                nonce = await handle_dangerous_request(self.stark_native_account.get_nonce, "can't get nonce. Error", self.stark_address)
-                if await self.stark_native_account.cairo_version == 1:
-                    parsed_calls = _parse_calls_v2(ensure_iterable(calls))
-                    wrapped_calldata = _execute_payload_serializer_v2.serialize(
-                        {"calls": parsed_calls}
-                    )
-                else:
-                    call_descriptions, calldata = _merge_calls(ensure_iterable(calls))
-                    wrapped_calldata = _execute_payload_serializer.serialize(
-                        {"call_array": call_descriptions, "calldata": calldata}
-                    )
-
-                transaction = Invoke(
-                    calldata=wrapped_calldata,
-                    signature=[],
-                    max_fee=0,
-                    version=1,
-                    nonce=nonce,
-                    sender_address=self.stark_native_account.address,
-                )
-                max_fee = await self.stark_native_account._get_max_fee(transaction, auto_estimate=True)/1e18
-                if max_fee > SETTINGS["MaxFee"]:
-                    logger.error(f"[{self.stark_address}] counted fee for txn is {max_fee}, which is more than in settings ({SETTINGS['MaxFee']}). Trying again")
-                    await sleeping(self.stark_address, True)
-                    continue
-                invocation = await self.stark_native_account.execute(calls=calls, auto_estimate=True)
+                invocation = await self.stark_native_account.execute_v1(calls=calls, auto_estimate=True)
                 return invocation
             except Exception as e:
                 logger.error(f"[{self.stark_address}] can't create transaction. Error:{e}")

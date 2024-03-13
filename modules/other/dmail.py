@@ -28,7 +28,7 @@ class DmailHandler:
 
         dmail_contract = Contract(0x0454f0bd015e730e5adbb4f080b075fdbf55654ff41ee336203aa2e1ac4d4309, DMAIL_ABI, sender.stark_native_account)
 
-        call = dmail_contract.functions["transaction"].prepare(
+        call = dmail_contract.functions["transaction"].prepare_call(
                 felt_rec,
                 felt_text
             )

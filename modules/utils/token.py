@@ -205,7 +205,7 @@ class StarkToken():
     def get_approve_call(self, amount: float, spender: int, sender: BaseAccount):
         contract = Contract(self.contract_address, STARK_TOKEN_ABI, sender.stark_native_account)
         decimals = self.decimals
-        call = contract.functions["approve"].prepare(
+        call = contract.functions["approve"].prepare_call(
             spender, int(amount*10**decimals)
         )
         return call
@@ -213,7 +213,7 @@ class StarkToken():
     def get_approve_call_wei(self, amount: int, spender: int, sender: BaseAccount):
         contract = Contract(self.contract_address, STARK_TOKEN_ABI, sender.stark_native_account)
 
-        call = contract.functions["approve"].prepare(
+        call = contract.functions["approve"].prepare_call(
             spender, amount
         )
         return call

@@ -107,11 +107,11 @@ class StarkId:
         
         contract3 = Contract(self.contract_address3, self.abi3, sender.stark_native_account)
         id = randint(0, 1e12)
-        сall1 = contract1.functions["mint"].prepare(
+        сall1 = contract1.functions["mint"].prepare_call(
                 id
             )
         call2 = eth.get_approve_call_wei(get_random_value_int([599178082191783, 699178082191783]), 0x6ac597f8116f886fa1c97a23fa4e08299975ecaf6b598873ca6792b9bbfb678, sender)
-        call3 = contract3.functions["buy_discounted"].prepare(
+        call3 = contract3.functions["buy_discounted"].prepare_call(
             id,
             int_domain,
             81,
@@ -120,7 +120,7 @@ class StarkId:
             1,
             randint(0, 3618502788666131213697322783095070105623107215331596699973092056135872020481)
         )
-        call4 = contract3.functions["set_address_to_domain"].prepare(
+        call4 = contract3.functions["set_address_to_domain"].prepare_call(
             list_domain
         )
 

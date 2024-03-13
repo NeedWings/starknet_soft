@@ -133,11 +133,11 @@ class Orbiter:
 
         eth_contract = Contract(eth.contract_address, STARK_TOKEN_ABI, account)
 
-        approve_call = eth_contract.functions["approve"].prepare(
+        approve_call = eth_contract.functions["approve"].prepare_call(
             self.contracts["starknet"], value
         )
         contract = Contract(self.contracts["starknet"], self.STARK_ABI, account)
-        call = contract.functions["transferERC20"].prepare(
+        call = contract.functions["transferERC20"].prepare_call(
             eth.contract_address,
             0x64a24243f2aabae8d2148fa878276e6e6e452e3941b417f3c33b1649ea83e11,
             int(value),

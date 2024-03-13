@@ -86,7 +86,7 @@ class JediSwap(BaseDEX):
         if not full:
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
-            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
+            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare_call(
                 int(amount_in*10**token1.decimals),
                 int(amount_out*10**token2.decimals*(1-SLIPPAGE)),
                 (
@@ -103,7 +103,7 @@ class JediSwap(BaseDEX):
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             
-            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare(
+            call2 = contract.functions["swap_exact_tokens_for_tokens"].prepare_call(
                 bal,
                 int(amount_out*10**token2.decimals*(1-SLIPPAGE)),
                 (
@@ -122,7 +122,7 @@ class JediSwap(BaseDEX):
         call2 = token2.get_approve_call(amount2, self.contract_address, sender)
         contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
 
-        call3 = contract.functions["add_liquidity"].prepare(
+        call3 = contract.functions["add_liquidity"].prepare_call(
             token1.contract_address,
             token2.contract_address,
             int(amount1*10**token1.decimals),
@@ -177,7 +177,7 @@ class JediSwap(BaseDEX):
         
         call1 = lptoken.get_approve_call(amount, self.contract_address, sender)
 
-        call2 = contract.functions["remove_liquidity"].prepare(
+        call2 = contract.functions["remove_liquidity"].prepare_call(
             token1_address,
             token2_address,
             amount,

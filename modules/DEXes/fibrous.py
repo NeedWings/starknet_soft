@@ -73,7 +73,7 @@ class Fibrous(BaseDEX):
         if not full:
             call1 = token1.get_approve_call(amount_in, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account, cairo_version=1)
-            call2 = contract.functions["swap"].prepare(
+            call2 = contract.functions["swap"].prepare_call(
                 
                 {
                     "token_in":token1.contract_address,
@@ -100,7 +100,7 @@ class Fibrous(BaseDEX):
             call1 = token1.get_approve_call_wei(bal, self.contract_address, sender)
             contract = Contract(self.contract_address, self.ABI, sender.stark_native_account)
             
-            call2 = contract.functions["swap"].prepare(
+            call2 = contract.functions["swap"].prepare_call(
                 [
                     {
                         "token_in" : token1.contract_address,

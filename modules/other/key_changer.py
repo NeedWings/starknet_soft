@@ -31,7 +31,7 @@ class KeyChanger:
         print(4)
         contract = Contract(sender.stark_native_account.address, self.ABI, sender.stark_native_account, cairo_version=1)
         print(5)
-        call = contract.functions["change_owner"].prepare(
+        call = contract.functions["change_owner"].prepare_call(
                 new_key_pair.public_key,
                 r,
                 s

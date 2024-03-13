@@ -43,7 +43,7 @@ class StarkStars:
         price = (await handle_dangerous_request(contract.functions["get_price"].call, "can't get NFT price. Error", sender.stark_address))[0]
         call1 = eth.get_approve_call_wei(price, contract_address, sender)
 
-        call2 = contract.functions["mint"].prepare()
+        call2 = contract.functions["mint"].prepare_call()
 
         return [call1, call2]
     
@@ -55,7 +55,7 @@ class StarkStars:
             print(3)
             contract = Contract(address, self.ABI, sender.stark_native_account, cairo_version=1)
             print(4)
-            call2 = contract.functions["withdraw"].prepare()
+            call2 = contract.functions["withdraw"].prepare_call()
             print(5)
             calls.append(call2)
         
