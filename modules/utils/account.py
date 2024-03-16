@@ -196,8 +196,8 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
         return await token.balance_of(self.evm_address, self.get_w3(token.net_name))
     
     async def wait_for_better_eth_gwei(self):
-        w3 = self.w3["ethereum"]
         while True:
+            w3 = self.get_w3("ethereum")
             while True:
                 try:
                     f = open(f"{SETTINGS_PATH}settings.json", "r")
