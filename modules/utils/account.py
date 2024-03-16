@@ -209,7 +209,9 @@ class Account(BaseAccount): #TODO: combine get_balance_evm and get_balance_stark
                     input("Error with settings.json. Please fix it and press Enter")
             max_gas = AsyncWeb3.to_wei(SETTINGS["MaxEthGwei"], 'gwei')
             try:
+                print(1)
                 gas_price = await w3.eth.gas_price
+                print(gas_price)
                 if gas_price > max_gas:
                     h_gas, h_max = AsyncWeb3.from_wei(gas_price, 'gwei'), AsyncWeb3.from_wei(max_gas, 'gwei')
                     logger.error(f'[{self.stark_address}] Current gasPrice in eth: {h_gas} | Max gas price in eth: {h_max}')
