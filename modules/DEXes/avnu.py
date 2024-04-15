@@ -29,7 +29,7 @@ class Avnu(BaseDEX):
             sender.stark_address, 
             token1,
             token2, 
-            amount_in, 
+            amount_in*10**token1.decimals, 
             sender
             )
         
@@ -37,7 +37,7 @@ class Avnu(BaseDEX):
 
             
     async def get_quotes(self, token1, token2, amount_in, sender):
-        resp = await req(f"https://starknet.api.avnu.fi/swap/v1/quotes?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in*10**token1.decimals))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
+        resp = await req(f"https://starknet.api.avnu.fi/swap/v1/quotes?sellTokenAddress={hex(token1.contract_address)}&buyTokenAddress={hex(token2.contract_address)}&sellAmount={hex(int(amount_in))}&takerAddress={hex(sender.stark_native_account.address)}&size=3&integratorName=AVNU%20Portal")
 
         return resp[0]["quoteId"], int(resp[0]["buyAmount"], 16)
     
@@ -66,7 +66,7 @@ class Avnu(BaseDEX):
         
         
         if not full:
-            quote, amount_out_avnu = await handle_dangerous_request(self.get_quotes, "Can't get best dex for avnu: ", sender.stark_address, token1, token2, amount_in, sender)
+            quote, amount_out_avnu = await handle_dangerous_request(self.get_quotes, "Can't get best dex for avnu: ", sender.stark_address, token1, token2, amount_in*10**token1.decimals, sender)
             if amount_out_avnu < (1-SLIPPAGE)*amount_out*10**token2.decimals:
                 logger.error(f"[{sender.stark_address}] AVNU MIN VALUE TOO LOW. SKIP")
                 return -1
@@ -93,7 +93,7 @@ class Avnu(BaseDEX):
                 sender.stark_address, 
                 token1, 
                 token2, 
-                bal/10**token1.decimals, 
+                bal, 
                 sender
             
             )
